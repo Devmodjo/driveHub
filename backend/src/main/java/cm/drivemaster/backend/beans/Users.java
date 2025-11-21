@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 /* Entité représentative d'un utilisateur dans notre system*/
 
@@ -34,9 +35,11 @@ public class Users {
     private String password;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private Role roles;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private Statut statut;
 
     /**
@@ -47,4 +50,7 @@ public class Users {
 
     @CreationTimestamp
     private LocalDate createdAt;
+
+    @OneToMany(mappedBy = "users", cascade = CascadeType.ALL)
+    private Set<DrivingSchool> drivingSchool;
 }
