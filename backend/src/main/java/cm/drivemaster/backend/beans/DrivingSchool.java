@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 
 @Data
@@ -39,4 +40,7 @@ public class DrivingSchool {
 
     @CreationTimestamp
     private LocalDate createdAt;
+
+    @OneToMany(mappedBy = "drivingSchool", cascade = CascadeType.ALL)
+    private Set<Monitors> monitors;
 }
