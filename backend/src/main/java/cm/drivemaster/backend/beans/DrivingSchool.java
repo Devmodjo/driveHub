@@ -43,4 +43,7 @@ public class DrivingSchool {
 
     @OneToMany(mappedBy = "drivingSchool", cascade = CascadeType.ALL)
     private Set<Monitors> monitors;
+
+    @OneToMany(mappedBy = "drivingSchool", cascade = CascadeType.ALL)
+    private Set<Vehicles> vehicles;
 }

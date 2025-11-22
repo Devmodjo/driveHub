@@ -1,9 +1,10 @@
 package cm.drivemaster.backend.models.dto;
 
+
 public record MonitorResponseDto(
         Long id,
-        Long userId,
-        Long drivingSchoolId,
+        UserResponseDto users,
+        DrivingSchoolResponseDto drivingSchoolId,
         String phoneNumber
 ) {
 }
