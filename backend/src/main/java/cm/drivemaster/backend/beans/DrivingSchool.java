@@ -52,4 +52,7 @@ public class DrivingSchool {
 
     @OneToMany(mappedBy = "drivingSchool", cascade = CascadeType.ALL)
     private Set<Exams> exams;
+
+    @OneToMany(mappedBy = "drivingSchool", cascade = CascadeType.ALL)
+    private Set<Reservations> reservations;
 }

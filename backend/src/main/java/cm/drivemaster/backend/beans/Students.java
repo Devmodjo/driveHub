@@ -39,4 +39,7 @@ public class Students {
 
     @OneToMany(mappedBy = "students")
     private Set<ExamsInscription> examsInscriptionSet;
+
+    @OneToMany(mappedBy = "students")
+    private Set<Reservations> reservations;
 }

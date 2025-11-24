@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 
 @Data
 @Entity
@@ -31,4 +33,7 @@ public class Monitors {
 
     @Column(nullable = false)
     private String phoneNumber;
+
+    @OneToMany(mappedBy = "monitors")
+    private Set<Reservations> reservations;
 }
