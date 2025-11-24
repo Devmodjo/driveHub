@@ -2,7 +2,7 @@ package cm.drivemaster.backend.beans;
 
 
 import cm.drivemaster.backend.enums.Role;
-import cm.drivemaster.backend.enums.Statut;
+import cm.drivemaster.backend.enums.ProfileStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -40,7 +40,7 @@ public class Users {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private Statut statut;
+    private ProfileStatus profileStatus;
 
     /**
      * par defaut on considère que le profile n'est pas complet

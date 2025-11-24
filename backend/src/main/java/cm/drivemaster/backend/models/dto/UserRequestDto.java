@@ -1,7 +1,7 @@
 package cm.drivemaster.backend.models.dto;
 
 import cm.drivemaster.backend.enums.Role;
-import cm.drivemaster.backend.enums.Statut;
+import cm.drivemaster.backend.enums.ProfileStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -25,7 +25,7 @@ public record UserRequestDto(
         Role roles,
 
         @Schema(name = "PENDING")
-        Statut statut
+        ProfileStatus profileStatus
 
 ) {
 }

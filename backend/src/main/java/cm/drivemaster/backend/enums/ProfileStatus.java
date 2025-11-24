@@ -1,6 +1,6 @@
 package cm.drivemaster.backend.enums;
 
-public enum Statut {
+public enum ProfileStatus {
 
     ACTIVE("profile actif"),
     PENDING("profile suspendu"),
@@ -8,7 +8,7 @@ public enum Statut {
 
     private String value;
 
-    Statut(String value) {
+    ProfileStatus(String value) {
         this.value = value;
     }
 }

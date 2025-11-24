@@ -1,7 +1,7 @@
 package cm.drivemaster.backend.models.dto;
 
 import cm.drivemaster.backend.enums.Role;
-import cm.drivemaster.backend.enums.Statut;
+import cm.drivemaster.backend.enums.ProfileStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
@@ -24,7 +24,7 @@ public record UserResponseDto(
         Role roles,
 
         @Schema(name = "PENDING")
-        Statut statut,
+        ProfileStatus profileStatus,
 
         LocalDate createdAt
 ) {
