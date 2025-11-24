@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.Set;
 
 @Data
 @Entity
@@ -31,4 +32,7 @@ public class Exams {
 
     @Enumerated(EnumType.STRING)
     private LicenseCategory category;
+
+    @OneToMany(mappedBy = "exams", cascade = CascadeType.ALL)
+    private Set<ExamsInscription> examsInscriptionSet;
 }

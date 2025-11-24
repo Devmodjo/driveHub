@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 
 @Data
 @Entity
@@ -34,4 +36,7 @@ public class Students {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private LicenseCategory licenseCategory;
+
+    @OneToMany(mappedBy = "students")
+    private Set<ExamsInscription> examsInscriptionSet;
 }
