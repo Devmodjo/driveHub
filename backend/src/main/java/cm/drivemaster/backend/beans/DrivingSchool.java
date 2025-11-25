@@ -55,4 +55,7 @@ public class DrivingSchool {
 
     @OneToMany(mappedBy = "drivingSchool", cascade = CascadeType.ALL)
     private Set<Reservations> reservations;
+
+    @OneToMany(mappedBy = "drivingSchool", cascade = CascadeType.ALL)
+    private Set<Payments> payments;
 }

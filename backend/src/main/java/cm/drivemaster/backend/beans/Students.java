@@ -42,4 +42,7 @@ public class Students {
 
     @OneToMany(mappedBy = "students")
     private Set<Reservations> reservations;
+
+    @OneToMany(mappedBy = "students")
+    private Set<Payments> payments;
 }
