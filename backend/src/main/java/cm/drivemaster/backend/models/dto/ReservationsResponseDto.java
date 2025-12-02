@@ -12,6 +12,6 @@ public record ReservationsResponseDto(
         MonitorResponseDto monitor,
         LocalDateTime dateTime,
         ReservationTypes types,
-        ReservationStatus status
+        ReservationStatus reservationStatus
 ) {
 }

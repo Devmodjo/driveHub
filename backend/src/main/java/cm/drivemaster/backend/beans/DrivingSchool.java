@@ -3,25 +3,20 @@ package cm.drivemaster.backend.beans;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 import java.util.Set;
 
 
-@Data
+@Getter
+@Setter
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "driving_school")
-public class DrivingSchool {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class DrivingSchool extends EntityBase{
 
     @Column(nullable = false)
     private String name;
@@ -36,26 +31,26 @@ public class DrivingSchool {
     @ManyToOne
     @JoinColumn(name = "user_id")
     @JsonIgnore
-    private Users users;
+    private User user;
 
     @CreationTimestamp
     private LocalDate createdAt;
 
     @OneToMany(mappedBy = "drivingSchool", cascade = CascadeType.ALL)
-    private Set<Monitors> monitors;
+    private Set<Monitor> monitors;
 
     @OneToMany(mappedBy = "drivingSchool", cascade = CascadeType.ALL)
-    private Set<Vehicles> vehicles;
+    private Set<Vehicle> vehicles;
 
     @OneToMany(mappedBy = "drivingSchool")
-    private Set<Courses> courses;
+    private Set<Course> courses;
 
     @OneToMany(mappedBy = "drivingSchool", cascade = CascadeType.ALL)
-    private Set<Exams> exams;
+    private Set<Exam> exams;
 
     @OneToMany(mappedBy = "drivingSchool", cascade = CascadeType.ALL)
-    private Set<Reservations> reservations;
+    private Set<Reservation> reservations;
 
     @OneToMany(mappedBy = "drivingSchool", cascade = CascadeType.ALL)
-    private Set<Payments> payments;
+    private Set<Payment> payments;
 }

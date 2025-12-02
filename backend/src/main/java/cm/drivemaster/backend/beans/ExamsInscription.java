@@ -4,36 +4,31 @@ package cm.drivemaster.backend.beans;
 import cm.drivemaster.backend.enums.InscriptionStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 
 
-@Data
+@Getter
+@Setter
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-public class ExamsInscription {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class ExamsInscription extends EntityBase{
 
     @ManyToOne
     @JoinColumn(name = "exams_id")
     @JsonIgnore
-    private Exams exams;
+    private Exam exams;
 
     @ManyToOne
     @JoinColumn(name = "student_id")
     @JsonIgnore
-    private Students students;
+    private Student student;
 
     @Enumerated(EnumType.STRING)
-    private InscriptionStatus status;
+    private InscriptionStatus inscriptionStatus;
 
     @CreationTimestamp
     private LocalDate registeredAt;

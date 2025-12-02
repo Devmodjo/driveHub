@@ -8,7 +8,7 @@ public record ExamsInscriptionResponseDto(
         Long id,
         ExamsResponseDto exams,
         StudentsResponseDto students,
-        InscriptionStatus status,
+        InscriptionStatus inscriptionStatus,
         LocalDate registeredAt
 ) {
 }

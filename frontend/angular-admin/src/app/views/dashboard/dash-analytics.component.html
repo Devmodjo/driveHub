@@ -1,0 +1,88 @@
+<div class="row">
+  <!-- Cartes de statistiques -->
+  @for (card of cards; track card) {
+    <div class="col-md-6 col-xl-4">
+      <app-card [hidHeader]="true" cardClass="{{ card.background }} order-card">
+        <h6 class="text-white">{{ card.title }}</h6>
+        <h2 class="text-end text-white">
+          <i class="feather {{ card.icon }} float-start"></i>
+          <span>{{ card.number }}</span>
+        </h2>
+        <p class="m-b-0">
+          {{ card.text }}
+          <span class="float-end">{{ card.no }}</span>
+        </p>
+      </app-card>
+    </div>
+  }
+
+  <!-- Graphique des visiteurs uniques -->
+  <!-- <div class="col-xl-6 col-md-12">
+    <app-card cardTitle="Visiteurs Uniques" [options]="false">
+      <apx-chart
+        [chart]="chartOptions.chart!"
+        [dataLabels]="chartOptions.dataLabels!"
+        [stroke]="chartOptions.stroke!"
+        [series]="chartOptions.series!"
+        [xaxis]="chartOptions.xaxis!"
+        [colors]="chartOptions.colors!"
+        [fill]="chartOptions.fill!"
+        [markers]="chartOptions.markers!"
+        [yaxis]="chartOptions.yaxis!"
+      ></apx-chart>
+    </app-card>
+  </div> -->
+
+  <!-- Carte de mémoire -->
+  <!-- <div class="col-md-12 col-lg-4">
+    <app-card
+      [hidHeader]="true"
+      cardClass="seo-card"
+      blockClass="seo-statustic"
+      footerClass="seo-chart border border-top-0 p-0 overflow-hidden"
+      [isCardFooter]="true"
+    >
+      <i class="feather icon-save f-20 text-c-red"></i>
+      <h5 class="mb-1">65%</h5>
+      <p>Mémoire</p>
+      <div class="app-card-footer">
+        <apx-chart
+          [series]="chartOptions_3.series!"
+          [chart]="chartOptions_3.chart!"
+          [stroke]="chartOptions_3.stroke!"
+          [dataLabels]="chartOptions_3.dataLabels!"
+          [colors]="chartOptions_3.colors!"
+          [fill]="chartOptions_3.fill!"
+          [tooltip]="chartOptions_3.tooltip!"
+          [yaxis]="chartOptions_3.yaxis!"
+        ></apx-chart>
+      </div>
+    </app-card>
+  </div> -->
+
+  <!-- Cartes d'abonnés et followers -->
+  <div class="col-xl-6 col-md-12">
+    <app-card [hidHeader]="true" blockClass="text-center">
+      <i class="fa fa-envelope-open text-c-blue d-block f-40"></i>
+      <h4 class="m-t-20">
+        <span class="text-c-blue">{{newsLetterNumber}}</span>
+        Abonnés a la Newsletter
+      </h4>
+      <p class="m-b-20">Votre liste principale grandit</p>
+      <button class="btn btn-primary btn-sm btn-round" (click)="router.navigate(['/dashboard/news-letter'])">Gérer la Liste</button>
+    </app-card>
+  </div>
+  <!-- <div class="col-md-6 col-lg-4">
+    <app-card [hidHeader]="true" blockClass="text-center">
+      <i class="fab fa-twitter text-c-green d-block f-40"></i>
+      <h4 class="m-t-20">
+        <span class="text-c-green">+40</span>
+        Followers
+      </h4>
+      <p class="m-b-20">Votre liste principale grandit</p>
+      <button class="btn btn-success btn-sm btn-round">Voir le Thème</button>
+    </app-card>
+  </div> -->
+
+
+</div>
