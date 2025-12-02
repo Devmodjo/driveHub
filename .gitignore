@@ -1,0 +1,43 @@
+## Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+## Node Modules
+node_modules/
+npm_modules/
+.angular/cache/
+
+## Compiled Output
+dist/
+build/
+out-tsc/
+
+## Temporary Files
+.tmp/
+coverage/
+
+## IDE Files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+## Environment Files
+.env
+.env.local
+
+## Angular Specific Files
+.angular/cache/
+.angular/config.json
+
+## Dependency Files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

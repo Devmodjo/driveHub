@@ -24,6 +24,6 @@ public record ReservationsRequestDto(
         ReservationTypes types,
 
         @NotBlank(message = "l'identtifiant de l'auto ecole est obligatoire")
-        ReservationStatus status
+        ReservationStatus reservationStatus
 ) {
 }

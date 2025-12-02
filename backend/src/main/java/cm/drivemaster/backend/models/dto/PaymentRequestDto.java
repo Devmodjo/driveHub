@@ -17,6 +17,6 @@ public record PaymentRequestDto(
         @NotNull
         PaymentMotif motif,
         @NotNull
-        PaymentStatus status
+        PaymentStatus paymentStatus
 ) {
 }

@@ -1,6 +1,6 @@
 package cm.drivemaster.backend.models.mappers;
 
-import cm.drivemaster.backend.beans.Vehicles;
+import cm.drivemaster.backend.beans.Vehicle;
 import cm.drivemaster.backend.models.dto.VehiclesRequestDto;
 import cm.drivemaster.backend.models.dto.VehiclesResponseDto;
 import org.mapstruct.Mapper;
@@ -12,6 +12,6 @@ public interface VehiclesMapper {
     VehiclesMapper INSTANCE = Mappers.getMapper(VehiclesMapper.class);
 
     @Mapping(source = "drivingSchoolId", target = "drivingSchool.id")
-    Vehicles fromRequestToEntity(VehiclesRequestDto vehiclesRequestDto);
-    VehiclesResponseDto fromEntityToResponse(Vehicles vehicles);
+    Vehicle fromRequestToEntity(VehiclesRequestDto vehiclesRequestDto);
+    VehiclesResponseDto fromEntityToResponse(Vehicle vehicles);
 }

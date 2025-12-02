@@ -11,7 +11,7 @@ import org.mapstruct.factory.Mappers;
 public interface MonitorMapper {
     MonitorMapper INSTANCE = Mappers.getMapper(MonitorMapper.class);
 
-    @Mapping(source = "userId", target = "users.id")
+    @Mapping(source = "userId", target = "user.id")
     @Mapping(source = "drivingSchoolId", target = "drivingSchool.id")
     Monitor fromRequestToEntity(MonitorRequestDto monitorRequestDto);
     MonitorResponseDto fromEntityToResponse(Monitor monitor);

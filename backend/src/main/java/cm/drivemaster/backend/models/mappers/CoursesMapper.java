@@ -1,6 +1,6 @@
 package cm.drivemaster.backend.models.mappers;
 
-import cm.drivemaster.backend.beans.Courses;
+import cm.drivemaster.backend.beans.Course;
 import cm.drivemaster.backend.models.dto.CoursesRequestDto;
 import cm.drivemaster.backend.models.dto.CoursesResponseDto;
 import org.mapstruct.Mapper;
@@ -13,6 +13,6 @@ public interface CoursesMapper {
     CoursesMapper INSTANCE = Mappers.getMapper(CoursesMapper.class);
 
     @Mapping(source = "drivingSchoolId", target = "drivingSchool.id")
-    Courses fromRequestToEntity(CoursesRequestDto coursesRequestDto);
-    CoursesResponseDto fromEntityToResponse(Courses courses);
+    Course fromRequestToEntity(CoursesRequestDto coursesRequestDto);
+    CoursesResponseDto fromEntityToResponse(Course courses);
 }

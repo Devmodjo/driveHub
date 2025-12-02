@@ -1,0 +1,24 @@
+<div class="modal-content rounded-4 shadow-lg">
+  <div class="modal-header border-0 pb-0">
+    <h4 class="modal-title fw-bold">{{ title || 'Message' }}</h4>
+    <button type="button" class="btn-close shadow-none" aria-label="Close" (click)="close()"></button>
+  </div>
+
+  <div class="modal-body py-4">
+    <div class="d-flex flex-column align-items-center">
+      <div class="icon-wrapper mb-4">
+        <i class="fa {{ icon || defaultIcon }} zoom" [ngClass]="iconColorClass"></i>
+      </div>
+
+      <div class="message-wrapper text-center">
+        <p class="message-text" [innerHTML]="message"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer border-0 pt-0 d-flex justify-content-center">
+    <button type="button" class="btn btn-lg px-4 rounded-3 shadow-sm" [ngClass]="buttonClass" (click)="close()">
+      {{ buttonText || 'Fermer' }}
+    </button>
+  </div>
+</div>

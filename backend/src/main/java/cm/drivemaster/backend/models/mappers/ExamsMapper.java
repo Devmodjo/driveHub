@@ -1,6 +1,6 @@
 package cm.drivemaster.backend.models.mappers;
 
-import cm.drivemaster.backend.beans.Exams;
+import cm.drivemaster.backend.beans.Exam;
 import cm.drivemaster.backend.models.dto.ExamsRequestDto;
 import cm.drivemaster.backend.models.dto.ExamsResponseDto;
 import org.mapstruct.Mapper;
@@ -12,6 +12,6 @@ public interface ExamsMapper {
     ExamsMapper INSTANCE = Mappers.getMapper(ExamsMapper.class);
 
     @Mapping(source = "drivingSchoolId", target = "drivingSchool.id")
-    Exams fromRequestToEntity(ExamsRequestDto examsRequestDto);
-    ExamsResponseDto fromEntityToResponse(Exams exams);
+    Exam fromRequestToEntity(ExamsRequestDto examsRequestDto);
+    ExamsResponseDto fromEntityToResponse(Exam exams);
 }

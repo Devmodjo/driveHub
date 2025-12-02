@@ -21,7 +21,7 @@ public record PaymentResponseDto(
         @NotNull
         PaymentMotif motif,
         @NotNull
-        PaymentStatus status,
+        PaymentStatus paymentStatus,
         @NotNull
         LocalDate datePayment
 ) {

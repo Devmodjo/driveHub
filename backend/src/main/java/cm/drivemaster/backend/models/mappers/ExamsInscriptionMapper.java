@@ -12,7 +12,7 @@ public interface ExamsInscriptionMapper {
     ExamsInscriptionMapper INSTANCE = Mappers.getMapper(ExamsInscriptionMapper.class);
 
     @Mapping(source = "examId", target = "exams.id")
-    @Mapping(source = "studentId", target = "students.id")
+    @Mapping(source = "studentId", target = "student.id")
     ExamsInscription fromRequestToEntity(ExamsInscriptionRequestDto examsInscriptionRequestDto);
     ExamsInscriptionResponseDto fromEntityToResponse(ExamsInscription examsInscription);
 }

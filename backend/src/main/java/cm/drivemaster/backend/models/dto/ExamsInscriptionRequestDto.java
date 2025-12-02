@@ -15,6 +15,6 @@ public record ExamsInscriptionRequestDto(
         Long studentId,
 
         @NotBlank(message = "le status est l'inscript est obligatoire")
-        InscriptionStatus status
+        InscriptionStatus inscriptionStatus
 ) {
 }
