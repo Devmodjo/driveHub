@@ -1,5 +1,6 @@
 package cm.drivemaster.backend.core;
 
+import cm.drivemaster.backend.services.TenantService;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
