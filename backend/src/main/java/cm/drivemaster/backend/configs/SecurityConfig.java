@@ -15,15 +15,22 @@ public class SecurityConfig {
 
     /**
      *  autorisé toute les requetes en attendant la mise en place du systeme de JWT)
-     * @param https
+     * @param http
      * @return
      * @throws Exception
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity https) throws Exception {
-        return https.csrf(csrf -> csrf.disable())
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.disable())
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
+                        .anyRequest().permitAll()
+                )
                 .build();
     }
 }

@@ -1,0 +1,28 @@
+package cm.drivemaster.backend.configs;
+
+
+import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+
+import javax.sql.DataSource;
+
+@Configuration
+public class DataSourceConfig {
+
+    /**
+     * creation d'un dataSource personalisé
+     * contenant la logique du multitenant
+     * @return DataSourceObject
+     */
+    @Bean
+    @Primary
+    public DataSource dataSource() {
+        HikariDataSource ds = new HikariDataSource();
+        ds.setJdbcUrl("jdbc:postgresql://localhost:5432/ges_auto_ecoles");
+        ds.setUsername("postgres");
+        ds.setPassword("root");
+        return ds;
+    }
+}
