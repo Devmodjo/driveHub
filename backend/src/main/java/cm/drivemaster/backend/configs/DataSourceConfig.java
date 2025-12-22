@@ -20,7 +20,7 @@ public class DataSourceConfig {
     @Primary
     public DataSource dataSource() {
         HikariDataSource ds = new HikariDataSource();
-        ds.setJdbcUrl("jdbc:postgresql://localhost:5432/ges_auto_ecoles");
+        ds.setJdbcUrl("jdbc:postgresql://localhost:5432/driving-school");
         ds.setUsername("postgres");
         ds.setPassword("root");
         return ds;
