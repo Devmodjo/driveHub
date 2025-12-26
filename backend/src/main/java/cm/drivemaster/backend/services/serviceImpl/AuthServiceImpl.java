@@ -74,7 +74,7 @@ public class AuthServiceImpl implements AuthService {
         user.setRoles(request.role());
 
         // État INITIAL (PAS métier)
-        user.setProfileStatus(request.role() == Role.ADMIN ? ProfileStatus.ACTIVE : ProfileStatus.PENDING);
+        user.setProfileStatus(ProfileStatus.REGISTERED);
         user.setFullProfile(false);
 
         userRepository.save(user);

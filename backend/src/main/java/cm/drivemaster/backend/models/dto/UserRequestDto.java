@@ -25,7 +25,9 @@ public record UserRequestDto(
         Role roles,
 
         @Schema(name = "PENDING")
-        ProfileStatus profileStatus
+        ProfileStatus profileStatus,
 
+        @Schema(name = "1")
+        Long userId
 ) {
 }

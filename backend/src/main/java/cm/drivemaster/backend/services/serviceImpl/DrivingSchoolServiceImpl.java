@@ -1,0 +1,80 @@
+package cm.drivemaster.backend.services.serviceImpl;
+
+import cm.drivemaster.backend.beans.DrivingSchool;
+import cm.drivemaster.backend.beans.DrivingSchoolRegistry;
+import cm.drivemaster.backend.beans.User;
+import cm.drivemaster.backend.core.TenantContext;
+import cm.drivemaster.backend.enums.Role;
+import cm.drivemaster.backend.models.dto.DrivingSchoolRequestDto;
+import cm.drivemaster.backend.repositories.DrivingSchoolRegistryRepository;
+import cm.drivemaster.backend.repositories.DrivingSchoolRepository;
+import cm.drivemaster.backend.repositories.UserRepository;
+import cm.drivemaster.backend.services.SchoolService;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+
+@Service
+@RequiredArgsConstructor
+public class DrivingSchoolServiceImpl implements SchoolService {
+
+
+    private final DrivingSchoolRepository drivingSchoolRepository;
+    private final TenantProvisioningService tenantProvisioningService;
+    private final UserRepository userRepository;
+    private final DrivingSchoolRegistryRepository drivingSchoolRegistryRepository;
+
+    @Transactional
+    @Override
+    public void createSchool(DrivingSchoolRequestDto req, long userId) throws IllegalAccessException {
+
+        Optional<User> admin = userRepository.findById(userId);
+
+        if (!admin.isPresent()) {
+            throw new UsernameNotFoundException("cet utilisateur n'existe pas !");
+        }
+
+        if (admin.get().getRoles() != Role.ADMIN) {
+            throw new IllegalAccessException("seul les admin peuvent cree des auto écoles");
+        }
+
+        // generation du nom du schema de base de donnée
+        String schemaName = req.name().toLowerCase().replaceAll("[^a-z0-9]", "_");
+
+        // creation du schema postGres
+        tenantProvisioningService.createTenantSchema(schemaName);
+
+        // creation du tenant(auto-ecole) public
+        DrivingSchoolRegistry dr = new DrivingSchoolRegistry();
+        dr.setSchoolName(req.name());
+        dr.setSchemaName(schemaName);
+        dr.setAdmin(admin.get());
+        drivingSchoolRegistryRepository.save(dr);
+
+        // switch vers le tenant
+        TenantContext.setTenantId(schemaName);
+
+        try {
+
+            // creation de l'auto ecole metier
+            DrivingSchool ds = new DrivingSchool();
+            ds.setName(req.name());
+            ds.setAddress(req.address());
+            ds.setPhoneNumber(req.phoneNumber());
+            ds.setDescription(req.description());
+            ds.setUser(admin.get());
+
+            drivingSchoolRepository.save(ds);
+
+        } finally {
+            TenantContext.clear();
+        }
+
+    }
+
+
+}
