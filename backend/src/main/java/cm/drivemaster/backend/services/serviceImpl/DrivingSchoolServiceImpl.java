@@ -4,6 +4,7 @@ import cm.drivemaster.backend.beans.DrivingSchool;
 import cm.drivemaster.backend.beans.DrivingSchoolRegistry;
 import cm.drivemaster.backend.beans.User;
 import cm.drivemaster.backend.core.TenantContext;
+import cm.drivemaster.backend.enums.ProfileStatus;
 import cm.drivemaster.backend.enums.Role;
 import cm.drivemaster.backend.models.dto.DrivingSchoolRequestDto;
 import cm.drivemaster.backend.repositories.DrivingSchoolRegistryRepository;
@@ -69,6 +70,11 @@ public class DrivingSchoolServiceImpl implements SchoolService {
             ds.setUser(admin.get());
 
             drivingSchoolRepository.save(ds);
+
+            // activation de l'admin apre creation de son établissement
+            admin.get().setProfileStatus(ProfileStatus.ACTIVE);
+            admin.get().setFullProfile(true);
+            userRepository.save(admin.get());
 
         } finally {
             TenantContext.clear();
