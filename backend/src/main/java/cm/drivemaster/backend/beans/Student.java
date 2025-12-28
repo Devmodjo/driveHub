@@ -22,13 +22,13 @@ public class Student extends EntityBase{
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String cniRectoUrl;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String cniVersoUrl;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     @Enumerated(EnumType.STRING)
     private LicenseCategory licenseCategory;
 

@@ -1,14 +1,14 @@
 package cm.drivemaster.backend.services.serviceImpl;
 
 
+import cm.drivemaster.backend.beans.Monitor;
+import cm.drivemaster.backend.beans.Student;
 import cm.drivemaster.backend.beans.User;
-import cm.drivemaster.backend.configs.PasswordEncoderConfig;
-import cm.drivemaster.backend.core.TenantContext;
 import cm.drivemaster.backend.enums.ProfileStatus;
 import cm.drivemaster.backend.enums.Role;
-import cm.drivemaster.backend.models.dto.AuthResponse;
-import cm.drivemaster.backend.models.dto.LoginRequest;
-import cm.drivemaster.backend.models.dto.RegisterRequest;
+import cm.drivemaster.backend.models.dto.*;
+import cm.drivemaster.backend.repositories.MonitorsRepository;
+import cm.drivemaster.backend.repositories.StudentsRepository;
 import cm.drivemaster.backend.repositories.UserRepository;
 import cm.drivemaster.backend.services.AuthService;
 import cm.drivemaster.backend.services.JwtService;
@@ -28,6 +28,8 @@ public class AuthServiceImpl implements AuthService {
 
 
     private final UserRepository userRepository;
+    private final StudentsRepository studentsRepository;
+    private final MonitorsRepository monitorsRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -84,6 +86,52 @@ public class AuthServiceImpl implements AuthService {
         user.setFullProfile(false);
 
         userRepository.save(user);
+    }
+
+    @Override
+    public void registerStudent(StudentRegisterRequest request) {
+
+        if (userRepository.findByEmail(request.email()).isPresent()) {
+            throw new IllegalArgumentException("Email déja utilisé");
+        }
+
+        User user = new User();
+        user.setName(request.name());
+        user.setEmail(request.email());
+        user.setRoles(Role.STUDENT);
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setProfileStatus(ProfileStatus.PENDING);
+
+        userRepository.save(user);
+
+        Student student = new Student();
+        student.setUser(user);
+
+        studentsRepository.save(student);
+
+    }
+
+    @Override
+    public void registerMonitor(MonitorRegisterRequest request) {
+
+        if (userRepository.findByEmail(request.email()).isPresent()) {
+            throw new IllegalArgumentException("Email déja utilisé");
+        }
+
+        User user = new User();
+        user.setName(request.name());
+        user.setEmail(request.email());
+        user.setRoles(Role.MONITOR);
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setProfileStatus(ProfileStatus.PENDING);
+
+        userRepository.save(user);
+
+        Monitor monitor = new Monitor();
+        monitor.setUser(user);
+        monitor.setPhoneNumber(request.phoneNumber());
+
+        monitorsRepository.save(monitor);
     }
 
 }

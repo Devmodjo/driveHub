@@ -2,7 +2,9 @@ package cm.drivemaster.backend.controllers;
 
 
 import cm.drivemaster.backend.models.dto.LoginRequest;
+import cm.drivemaster.backend.models.dto.MonitorRegisterRequest;
 import cm.drivemaster.backend.models.dto.RegisterRequest;
+import cm.drivemaster.backend.models.dto.StudentRegisterRequest;
 import cm.drivemaster.backend.services.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +27,20 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    private ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
+    private ResponseEntity<?> register (@Valid @RequestBody RegisterRequest registerRequest) {
         authService.register(registerRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body("Inscription réussie. En attente de validation.");
+    }
+
+    @PostMapping("/register/student")
+    private ResponseEntity<?> registerStudent(@Valid @RequestBody StudentRegisterRequest registerRequest) {
+        authService.registerStudent(registerRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Inscription de l'étudiant réussie. En attente de validation par l'admin.");
+    }
+
+    @PostMapping("/register/monitor")
+    private ResponseEntity<?> registerMonitor(@Valid @RequestBody MonitorRegisterRequest registerRequest) {
+        authService.registerMonitor(registerRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Inscription de l'encadreur réussie. En attente de validation par l'admin.");
     }
 }
