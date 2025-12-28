@@ -6,19 +6,19 @@ import java.time.LocalDate;
 
 
 public record DrivingSchoolResponseDto(
-        @Schema(name = "1")
+        @Schema(defaultValue = "1")
         Long id,
 
-        @Schema(name = "DRIVING SCHOOL")
+        @Schema(defaultValue = "DRIVING SCHOOL")
         String name,
 
-        @Schema(name = "678901013")
+        @Schema(defaultValue = "678901013")
         String phoneNumber,
 
-        @Schema(name = "Yaoundé, Nkoabang")
+        @Schema(defaultValue = "Yaoundé, Nkoabang")
         String address,
 
-        @Schema(name = "optionel mais essentiel pour attirer plus de prospect")
+        @Schema(defaultValue = "optionel mais essentiel pour attirer plus de prospect")
         String description,
 
         LocalDate createdAt

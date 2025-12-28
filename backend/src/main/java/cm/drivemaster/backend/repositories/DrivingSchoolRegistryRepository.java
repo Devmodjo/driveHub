@@ -14,4 +14,6 @@ public interface DrivingSchoolRegistryRepository
         extends JpaRepository<DrivingSchoolRegistry, Long> {
 
     Optional<DrivingSchoolRegistry> findByAdmin(User admin);
+
+    Optional<DrivingSchoolRegistry> findBySchoolName(String schoolName);
 }

@@ -14,6 +14,7 @@ import cm.drivemaster.backend.services.AuthService;
 import cm.drivemaster.backend.services.JwtService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -34,7 +35,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
 
-        // authentification spring security
+        // Authentification Spring Security
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.email(),
@@ -42,12 +43,17 @@ public class AuthServiceImpl implements AuthService {
                 )
         );
 
-        // récupération de l'utilisateur dans le schéma courant
-        User user = userRepository.findByEmail(request.email()).orElseThrow(
-                () -> new UsernameNotFoundException("Utilisateur introuvable")
-        );
+        // Chargement utilisateur (BON SCHÉMA)
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() ->
+                        new UsernameNotFoundException("Utilisateur introuvable"));
 
-        // génération du token
+        // Vérification métier
+        if (user.getProfileStatus() != ProfileStatus.ACTIVE) {
+            throw new AccessDeniedException("Compte non activé");
+        }
+
+        // Génération JWT tenant-aware
         String token = jwtService.generateToken(user);
 
         return new AuthResponse(

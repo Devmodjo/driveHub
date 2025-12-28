@@ -19,7 +19,8 @@ public class TenantResolutionFilter implements Filter {
     private static final List<String> PUBLIC_PATHS = List.of(
             "/swagger-ui",
             "/v3/api-docs",
-            "/api/auth"
+            "/api/auth",
+            "/api/driving-schools"
     );
 
     @Override

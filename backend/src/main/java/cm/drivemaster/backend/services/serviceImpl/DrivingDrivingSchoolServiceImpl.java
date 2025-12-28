@@ -7,27 +7,33 @@ import cm.drivemaster.backend.core.TenantContext;
 import cm.drivemaster.backend.enums.ProfileStatus;
 import cm.drivemaster.backend.enums.Role;
 import cm.drivemaster.backend.models.dto.DrivingSchoolRequestDto;
+import cm.drivemaster.backend.models.dto.DrivingSchoolResponseDto;
+import cm.drivemaster.backend.models.mappers.DrivingSchoolMapper;
 import cm.drivemaster.backend.repositories.DrivingSchoolRegistryRepository;
 import cm.drivemaster.backend.repositories.DrivingSchoolRepository;
 import cm.drivemaster.backend.repositories.UserRepository;
-import cm.drivemaster.backend.services.SchoolService;
+import cm.drivemaster.backend.services.DrivingSchoolService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 
 @Service
 @RequiredArgsConstructor
-public class DrivingSchoolServiceImpl implements SchoolService {
+public class DrivingDrivingSchoolServiceImpl implements DrivingSchoolService {
 
 
     private final DrivingSchoolRepository drivingSchoolRepository;
     private final TenantProvisioningService tenantProvisioningService;
     private final UserRepository userRepository;
     private final DrivingSchoolRegistryRepository drivingSchoolRegistryRepository;
+    private final DrivingSchoolMapper mapper;
 
     @Transactional
     @Override
@@ -40,7 +46,7 @@ public class DrivingSchoolServiceImpl implements SchoolService {
         }
 
         if (admin.get().getRoles() != Role.ADMIN) {
-            throw new IllegalAccessException("seul les admin peuvent cree des auto écoles");
+            throw new AccessDeniedException("seul les admin peuvent cree des auto écoles");
         }
 
         // generation du nom du schema de base de donnée
@@ -80,6 +86,17 @@ public class DrivingSchoolServiceImpl implements SchoolService {
             TenantContext.clear();
         }
 
+    }
+
+    @Override
+    public List<DrivingSchoolResponseDto> retreiveSchool() {
+
+        List<DrivingSchoolResponseDto> list = new ArrayList<>();
+
+        drivingSchoolRepository.findAll().forEach(
+                (e) -> list.add(mapper.fromEntityToResponse(e))
+        );
+        return list;
     }
 
 

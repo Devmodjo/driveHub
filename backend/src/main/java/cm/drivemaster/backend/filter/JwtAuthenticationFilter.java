@@ -2,6 +2,7 @@ package cm.drivemaster.backend.filter;
 
 
 import cm.drivemaster.backend.beans.User;
+import cm.drivemaster.backend.core.TenantContext;
 import cm.drivemaster.backend.services.CustomUserDetailsService;
 import cm.drivemaster.backend.services.JwtService;
 import jakarta.servlet.FilterChain;
@@ -39,6 +40,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
         String email = jwtService.extractEmail(token);
+        String tenant = jwtService.extractTenant(token);
+        TenantContext.setTenantId(tenant);
+
 
         if (email != null &&
                 SecurityContextHolder.getContext().getAuthentication() == null) {
