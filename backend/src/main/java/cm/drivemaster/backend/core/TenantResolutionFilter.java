@@ -20,7 +20,8 @@ public class TenantResolutionFilter implements Filter {
             "/swagger-ui",
             "/v3/api-docs",
             "/api/auth",
-            "/api/driving-schools"
+            "/api/driving-schools",
+            "/api/join-school/public"
     );
 
     @Override

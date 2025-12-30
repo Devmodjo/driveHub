@@ -43,6 +43,8 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/driving-schools/**"
                         ).permitAll()
+                        .requestMatchers("/api/join-school/admin/**").authenticated()
+                        .requestMatchers("/api/join-school/public").authenticated()
                         .anyRequest().authenticated()
                 );
 

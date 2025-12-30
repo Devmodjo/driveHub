@@ -51,9 +51,9 @@ public class AuthServiceImpl implements AuthService {
                         new UsernameNotFoundException("Utilisateur introuvable"));
 
         // Vérification métier
-        if (user.getProfileStatus() != ProfileStatus.ACTIVE) {
-            throw new AccessDeniedException("Compte non activé");
-        }
+//        if (user.getProfileStatus() != ProfileStatus.ACTIVE) {
+//            throw new AccessDeniedException("Compte non activé");
+//        }
 
         // Génération JWT tenant-aware
         String token = jwtService.generateToken(user);
@@ -100,7 +100,7 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(request.email());
         user.setRoles(Role.STUDENT);
         user.setPassword(passwordEncoder.encode(request.password()));
-        user.setProfileStatus(ProfileStatus.PENDING);
+        user.setProfileStatus(ProfileStatus.REGISTERED);
 
         userRepository.save(user);
 
@@ -123,7 +123,7 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(request.email());
         user.setRoles(Role.MONITOR);
         user.setPassword(passwordEncoder.encode(request.password()));
-        user.setProfileStatus(ProfileStatus.PENDING);
+        user.setProfileStatus(ProfileStatus.REGISTERED);
 
         userRepository.save(user);
 

@@ -10,14 +10,19 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @OpenAPIDefinition(
-        info = @Info(title = "API SAAS gestion des auto-ecoles ", version = "1.0", description = "Documentation de l'API"),
+        info = @Info(
+                title = "API SaaS – Gestion des Auto-Écoles",
+                version = "1.0",
+                description = "API multitenant (PostgreSQL – Separate Schema)"
+        ),
         security = @SecurityRequirement(name = "bearerAuth")
 )
 @SecurityScheme(
         name = "bearerAuth",
         type = SecuritySchemeType.HTTP,
         scheme = "bearer",
-        bearerFormat = "JWT"
+        bearerFormat = "JWT",
+        description = "JWT obtenu via /api/auth/login"
 )
 public class OpenApiConfig {
 }
