@@ -1,10 +1,10 @@
 package cm.drivemaster.backend.filter;
 
 
-import cm.drivemaster.backend.beans.User;
 import cm.drivemaster.backend.core.TenantContext;
 import cm.drivemaster.backend.services.CustomUserDetailsService;
 import cm.drivemaster.backend.services.JwtService;
+import cm.drivemaster.backend.services.serviceImpl.PlatformAdminDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private final PlatformAdminDetailsService platformAdminDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -39,10 +40,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7);
+        String tokenType = jwtService.extractClaim(
+                token,
+                claims -> claims.get("tokenType", String.class)
+        );
+
         String email = jwtService.extractEmail(token);
         String tenant = jwtService.extractTenant(token);
         TenantContext.setTenantId(tenant);
 
+        if (tokenType.equals("PLATFORM_ADMIN")) {
+
+            UserDetails adminDetails =
+                    platformAdminDetailsService.loadUserByUsername(email);
+
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(
+                            adminDetails,
+                            null,
+                            adminDetails.getAuthorities()
+                    );
+
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         if (email != null &&
                 SecurityContextHolder.getContext().getAuthentication() == null) {

@@ -1,5 +1,6 @@
 package cm.drivemaster.backend.services;
 
+import cm.drivemaster.backend.beans.PlatformAdmin;
 import cm.drivemaster.backend.beans.User;
 import cm.drivemaster.backend.core.TenantContext;
 import io.jsonwebtoken.Claims;
@@ -37,7 +38,7 @@ public class JwtService {
                 .getBody();
     }
 
-    private <T> T extractClaim(String token, Function<Claims, T> resolver) {
+    public <T> T extractClaim(String token, Function<Claims, T> resolver) {
         return resolver.apply(extractAllClaims(token));
     }
 
@@ -72,6 +73,7 @@ public class JwtService {
         claims.put("role", user.getRoles().name());
         claims.put("profileStatus", user.getProfileStatus().name());
         claims.put("fullProfile", user.getFullProfile());
+        claims.put("tokenType", "USER");
 
         // CLÉ MULTITENANT
         claims.put("tenant", TenantContext.getTenantId());
@@ -86,6 +88,29 @@ public class JwtService {
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
+
+    /**
+     * JWT pour les admin de la platform
+     * @param admin object
+     * @return jwt token
+     */
+    public String generatePlatformAdminToken(PlatformAdmin admin) {
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", admin.getRole().name());
+        claims.put("tokenType", "PLATFORM_ADMIN");
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(admin.getEmail())
+                .setIssuedAt(new Date())
+                .setExpiration(
+                        new Date(System.currentTimeMillis() + EXPIRATION_TIME)
+                )
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
 
     public boolean isTokenValid(String token, User user) {
         return extractEmail(token).equals(user.getEmail())
