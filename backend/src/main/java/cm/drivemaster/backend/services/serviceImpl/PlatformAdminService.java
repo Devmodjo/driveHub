@@ -59,6 +59,10 @@ public class PlatformAdminService implements AdminerService {
 
     }
 
+    /**
+     * inscription utilisateur
+     * @param adminCreateRequest
+     */
     @Override
     public void adminerResgistry(PlatformAdminCreateRequest adminCreateRequest) {
 
