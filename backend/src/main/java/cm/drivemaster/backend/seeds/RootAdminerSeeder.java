@@ -46,7 +46,7 @@ public class RootAdminerSeeder implements ApplicationRunner {
         root.setEmail(email);
         root.setPassword(passwordEncoder.encode(password));
         root.setRole(AdminRole.ROOT);
-        root.setStatus(AdminStatus.ACTIVE);
+        root.setAdminStatus(AdminStatus.ACTIVE);
         root.setResidence("SYSTEM");
         root.setEnabled(true);
 

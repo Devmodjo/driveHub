@@ -17,5 +17,5 @@ public interface PlatformAdminRepository extends JpaRepository<PlatformAdmin, Lo
 
     Optional<PlatformAdmin> findByEmail(String email);
 
-    List<PlatformAdmin> findByStatus(AdminStatus status);
+    List<PlatformAdmin> findByAdminStatus(AdminStatus adminStatus);
 }

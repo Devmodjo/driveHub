@@ -29,7 +29,7 @@ public class PlatformAdmin extends EntityBase {
     private AdminRole role;
 
     @Enumerated(value = EnumType.STRING)
-    private AdminStatus status;
+    private AdminStatus adminStatus;
 
     @Column(nullable = false)
     private String password;

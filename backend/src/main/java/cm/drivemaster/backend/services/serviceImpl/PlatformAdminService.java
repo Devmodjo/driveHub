@@ -54,7 +54,7 @@ public class PlatformAdminService implements AdminerService {
         return new PlatformAdminAuthResponse(
                 adminToken,
                 admin.getRole(),
-                admin.getStatus()
+                admin.getAdminStatus()
         );
 
     }
@@ -79,7 +79,7 @@ public class PlatformAdminService implements AdminerService {
         admin.setEmail(adminCreateRequest.email());
         admin.setRole(adminCreateRequest.role());
         admin.setPassword(passwordEncoder.encode(adminCreateRequest.password()));
-        admin.setStatus(AdminStatus.PENDING);
+        admin.setAdminStatus(AdminStatus.PENDING);
         admin.setPhoneNumber(adminCreateRequest.phoneNumber());
         admin.setResidence(adminCreateRequest.residence());
 
@@ -96,7 +96,7 @@ public class PlatformAdminService implements AdminerService {
     public List<PlatformAdminResponse> pendingAdminerRequest() {
 
         List<PlatformAdminResponse> list = new ArrayList<>();
-        adminRepository.findByStatus(AdminStatus.PENDING).forEach(
+        adminRepository.findByAdminStatus(AdminStatus.PENDING).forEach(
                 el -> list.add(adminMapper.toResponse(el))
         );
 

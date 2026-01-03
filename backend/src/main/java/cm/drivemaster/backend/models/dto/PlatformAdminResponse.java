@@ -7,6 +7,6 @@ public record PlatformAdminResponse(
         String name,
         String email,
         AdminRole role,
-        AdminStatus status
+        AdminStatus adminStatus
 ) {
 }

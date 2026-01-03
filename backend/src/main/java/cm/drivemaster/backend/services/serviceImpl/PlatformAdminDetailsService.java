@@ -26,7 +26,7 @@ public class PlatformAdminDetailsService
         PlatformAdmin admin = adminRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Admin introuvable"));
 
-        if (admin.getStatus() != AdminStatus.ACTIVE) {
+        if (admin.getAdminStatus() != AdminStatus.ACTIVE) {
             throw new DisabledException("Compte admin en attente");
         }
 
