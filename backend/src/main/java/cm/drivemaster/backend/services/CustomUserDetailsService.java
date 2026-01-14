@@ -1,0 +1,66 @@
+package cm.drivemaster.backend.services;
+
+import cm.drivemaster.backend.beans.User;
+import cm.drivemaster.backend.repositories.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+
+@Service
+@RequiredArgsConstructor
+public class CustomUserDetailsService implements UserDetailsService {
+
+    private final UserRepository userRepository;
+
+    /**     boolean enabled =
+//                user.getProfileStatus() == ProfileStatus.REGISTERED
+//                        || user.getProfileStatus() == ProfileStatus.ACTIVE;
+
+     * IMPORTANT :
+     * - Cette méthode est appelée APRÈS TenantResolutionFilter
+     * - Le schéma PostgreSQL est donc DÉJÀ positionné
+     * - On ne résout PAS le tenant ici
+     */
+    public org.springframework.security.core.userdetails.User loadUserByUsername(String email)
+            throws UsernameNotFoundException {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "Utilisateur introuvable avec l'email : " + email
+                        )
+                );
+
+        /*
+         * RÈGLE D’AUTHENTIFICATION
+         *
+         * - REGISTERED  → peut se connecter (auth partielle)
+         * - ACTIVE      → peut se connecter
+         * - SUSPENDED / BLOCKED / INACTIVE → refus
+         *
+         * Le contrôle métier (fullProfile, etc.)
+         *    se fait PLUS TARD, dans les services
+         */
+//        boolean enabled =
+//                user.getProfileStatus() == ProfileStatus.REGISTERED
+//                        || user.getProfileStatus() == ProfileStatus.ACTIVE;
+
+        return new org.springframework.security.core.userdetails.User(
+                user.getEmail(),                 // username
+                user.getPassword(),              // password (déjà encodé)
+                true,                          // enabled
+                true,                             // accountNonExpired
+                true,                             // credentialsNonExpired
+                true,                             // accountNonLocked
+                Collections.singleton(
+                        new SimpleGrantedAuthority(
+                                "ROLE_" + user.getRoles().name()
+                        )
+                )
+        );
+    }
+}
