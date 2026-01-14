@@ -13,17 +13,19 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    /**
-     *  autorisé toute les requetes en attendant la mise en place du systeme de JWT)
-     * @param https
-     * @return
-     * @throws Exception
-     */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity https) throws Exception {
-        return https.csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.disable())
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .build();
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**"
+                ).permitAll()
+                .anyRequest().permitAll()
+        );
+
+        return http.build();
     }
 }
