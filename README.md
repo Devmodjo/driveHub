@@ -186,11 +186,11 @@ Les choix techniques privilégient :
 ## 👨‍💻 Auteur
 
 **Kamsu Modjo Victor Y**
-Développeur Java / Spring Boot
+*Développeur Java / Spring Boot*
 
 * 🌐 Agence : [https://mv-tech.vercel.app](https://mv-tech.vercel.app)
 * 🌐 Portfolio : [https://modjovictor.vercel.app](https://modjovictor.vercel.app)
-* linkedin : [https://www.linkedin.com/in/victor-modjo-5933162a3/](in/victor-modjo)
+* linkedin : [in/victor-modjo](https://www.linkedin.com/in/victor-modjo-5933162a3/)
 ---
 
 ## ⚠️ Note importante
