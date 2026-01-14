@@ -188,9 +188,9 @@ Les choix techniques privilégient :
 **Kamsu Modjo Victor Y**
 Développeur Java / Spring Boot
 
-🌐 Agence : [https://mv-tech.vercel.app](https://mv-tech.vercel.app)
-🌐 Portfolio : [https://modjovictor.vercel.app](https://modjovictor.vercel.app)
-linkedin : [https://www.linkedin.com/in/victor-modjo-5933162a3/](Victor modjo)
+* 🌐 Agence : [https://mv-tech.vercel.app](https://mv-tech.vercel.app)
+* 🌐 Portfolio : [https://modjovictor.vercel.app](https://modjovictor.vercel.app)
+* linkedin : [https://www.linkedin.com/in/victor-modjo-5933162a3/](in/victor-modjo)
 ---
 
 ## ⚠️ Note importante
