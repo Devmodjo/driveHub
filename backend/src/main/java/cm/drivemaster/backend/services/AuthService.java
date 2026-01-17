@@ -6,8 +6,6 @@ public interface AuthService {
 
     AuthResponse login(LoginRequest request);
 
-    void register(RegisterRequest request);
-
     void registerStudent(StudentRegisterRequest request);
 
     void registerMonitor(MonitorRegisterRequest request);
