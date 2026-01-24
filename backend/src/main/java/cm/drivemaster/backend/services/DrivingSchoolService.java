@@ -11,4 +11,6 @@ public interface DrivingSchoolService {
 
     List<DrivingSchoolResponseDto> retreiveSchool();
 
+    void approveRegistry(long registryId);
+
 }

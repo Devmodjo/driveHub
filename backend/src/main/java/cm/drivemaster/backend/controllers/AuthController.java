@@ -42,7 +42,7 @@ public class AuthController {
 
     @Operation(
             summary = "endpoint d'inscriptions des encadreur",
-            description = "ici seule les utilisateurs avec le rôle MONITOR sont inscrit mais doivent être validé par un Admin de la plateforme"
+            description = "ici seule les utilisateurs avec le rôle MONITOR sont inscrit mais doivent être validé par un Admin de la plateforme. Ce pendant ils sont autorisé a ce connecter et à obtenir un JWT pour emettre une requete de creation d'une auto-école"
     )
     @PostMapping("/register/monitor")
     private ResponseEntity<ApiResponse> registerMonitor(@Valid @RequestBody MonitorRegisterRequest registerRequest) {

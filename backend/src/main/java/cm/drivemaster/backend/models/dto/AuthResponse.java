@@ -9,6 +9,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class AuthResponse {
 
+    private long id;
     private String token;
     private Role role;
     private ProfileStatus profileStatus;

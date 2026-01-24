@@ -89,17 +89,29 @@ public class JwtService {
 
     /**
      * Version avec TenantContext (pour compatibilité)
-     * ATTENTION: À utiliser uniquement quand le tenant est déjà défini
      */
     public String generateToken(User user) {
-        String tenantId = TenantContext.getTenantId();
-        if (tenantId == null || "public".equals(tenantId)) {
-            throw new IllegalStateException(
-                    "Impossible de générer un token user sans tenant valide"
-            );
-        }
-        return generateToken(user, tenantId);
+
+        Map<String, Object> claims = new HashMap<>();
+
+        claims.put("role", user.getRoles().name());
+        claims.put("profileStatus", user.getProfileStatus().name());
+        claims.put("fullProfile", user.getFullProfile());
+
+        // CLÉ MULTITENANT
+        claims.put("tenant", TenantContext.getTenantId());
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(user.getEmail())
+                .setIssuedAt(new Date())
+                .setExpiration(
+                        new Date(System.currentTimeMillis() + EXPIRATION_TIME)
+                )
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
+
 
     /**
      * JWT pour les admins de la plateforme (SANS tenant)

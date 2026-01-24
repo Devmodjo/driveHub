@@ -4,6 +4,7 @@ import cm.drivemaster.backend.beans.DrivingSchool;
 import cm.drivemaster.backend.beans.DrivingSchoolRegistry;
 import cm.drivemaster.backend.beans.User;
 import cm.drivemaster.backend.core.TenantContext;
+import cm.drivemaster.backend.enums.DrivingSchoolStatus;
 import cm.drivemaster.backend.enums.ProfileStatus;
 import cm.drivemaster.backend.enums.Role;
 import cm.drivemaster.backend.models.dto.DrivingSchoolRequestDto;
@@ -41,51 +42,38 @@ public class DrivingDrivingSchoolServiceImpl implements DrivingSchoolService {
 
         Optional<User> admin = userRepository.findById(userId);
 
-        if (!admin.isPresent()) {
+        if (admin.isEmpty()) {
             throw new UsernameNotFoundException("cet utilisateur n'existe pas !");
         }
 
-        if (admin.get().getRoles() != Role.ADMIN) {
-            throw new AccessDeniedException("seul les admin peuvent cree des auto écoles");
+        DrivingSchoolRegistry dr = getDrivingSchoolRegistry(req, admin);
+        drivingSchoolRegistryRepository.save(dr);
+
+    }
+
+    private static DrivingSchoolRegistry getDrivingSchoolRegistry(DrivingSchoolRequestDto req, Optional<User> admin) {
+        if (admin.get().getRoles() != Role.MONITOR) {
+            throw new AccessDeniedException("seul les Encadreur peuvent cree des auto écoles");
         }
 
         // generation du nom du schema de base de donnée
         String schemaName = req.name().toLowerCase().replaceAll("[^a-z0-9]", "_");
-
-        // creation du schema postGres
-        tenantProvisioningService.createTenantSchema(schemaName);
 
         // creation du tenant(auto-ecole) public
         DrivingSchoolRegistry dr = new DrivingSchoolRegistry();
         dr.setSchoolName(req.name());
         dr.setSchemaName(schemaName);
         dr.setAdmin(admin.get());
-        drivingSchoolRegistryRepository.save(dr);
-
-        // switch vers le tenant
-        TenantContext.setTenantId(schemaName);
-
-        try {
-
-            // creation de l'auto ecole metier
-            DrivingSchool ds = new DrivingSchool();
-            ds.setName(req.name());
-            ds.setAddress(req.address());
-            ds.setPhoneNumber(req.phoneNumber());
-            ds.setDescription(req.description());
-            ds.setUser(admin.get());
-
-            drivingSchoolRepository.save(ds);
-
-            // activation de l'admin apre creation de son établissement
-            admin.get().setProfileStatus(ProfileStatus.ACTIVE);
-            admin.get().setFullProfile(true);
-            userRepository.save(admin.get());
-
-        } finally {
-            TenantContext.clear();
-        }
-
+        dr.setAddress(req.address());
+        dr.setPhoneNumber(req.phoneNumber());
+        dr.setDescription(req.description());
+        dr.setEmail(req.email());
+        dr.setCountry(req.country());
+        dr.setDrivingSchoolStatus(DrivingSchoolStatus.PENDING);
+        dr.setCity(req.city());
+        dr.setWebsiteUrl(req.websiteUrl());
+        dr.setWhatsappNumber(req.whatsappNumber());
+        return dr;
     }
 
     @Override
@@ -97,6 +85,59 @@ public class DrivingDrivingSchoolServiceImpl implements DrivingSchoolService {
                 (e) -> list.add(mapper.fromEntityToResponse(e))
         );
         return list;
+    }
+
+    @Override
+    @Transactional
+    public void approveRegistry(long registryId) {
+        Optional<DrivingSchoolRegistry> drivingSchoolRegistry = Optional.ofNullable(drivingSchoolRegistryRepository.findById(registryId).orElseThrow(
+                () -> {
+                    throw new IllegalArgumentException("ce auto-ecole n'existe pas dans les registres");
+                }
+        ));
+        DrivingSchoolRegistry schoolRegistry = drivingSchoolRegistry.get();
+        
+        User monitor = schoolRegistry.getAdmin();
+
+        if (monitor.getRoles() != Role.MONITOR) {
+            throw new AccessDeniedException("cet utilisateur n'est pas un Moniteur");
+        }
+        
+        String schemaName = schoolRegistry.getSchemaName();
+        
+        // creation du schema
+        tenantProvisioningService.createTenantSchema(schemaName);
+        // activation du moniteur
+        monitor.setProfileStatus(ProfileStatus.ACTIVE);
+
+        // switch vers le tenant
+        TenantContext.setTenantId(schemaName);
+
+        try {
+            DrivingSchool ds = getDrivingSchool(schemaName, schoolRegistry, monitor);
+            drivingSchoolRepository.save(ds);
+        } finally {
+            TenantContext.clear();
+        }
+
+        schoolRegistry.setDrivingSchoolStatus(DrivingSchoolStatus.APPROVED);
+        drivingSchoolRegistryRepository.save(schoolRegistry);
+    }
+
+    private static DrivingSchool getDrivingSchool(String schemaName, DrivingSchoolRegistry schoolRegistry, User monitor) {
+        DrivingSchool ds = new DrivingSchool();
+        ds.setName(schemaName);
+        ds.setAddress(schoolRegistry.getAddress());
+        ds.setPhoneNumber(schoolRegistry.getPhoneNumber());
+        ds.setDescription(schoolRegistry.getDescription());
+        ds.setUser(monitor);
+        ds.setEmail(schoolRegistry.getEmail());
+        ds.setCountry(schoolRegistry.getCountry());
+        ds.setCity(schoolRegistry.getCity());
+        ds.setWebsiteUrl(schoolRegistry.getWebsiteUrl());
+        ds.setWhatsappNumber(schoolRegistry.getWhatsappNumber());
+        ds.setDrivingSchoolStatus(DrivingSchoolStatus.ACTIVE);
+        return ds;
     }
 
 
