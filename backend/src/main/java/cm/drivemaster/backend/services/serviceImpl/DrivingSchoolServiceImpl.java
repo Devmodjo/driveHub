@@ -3,10 +3,12 @@ package cm.drivemaster.backend.services.serviceImpl;
 import cm.drivemaster.backend.beans.DrivingSchool;
 import cm.drivemaster.backend.beans.DrivingSchoolRegistry;
 import cm.drivemaster.backend.beans.User;
+import cm.drivemaster.backend.beans.UserPrincipal;
 import cm.drivemaster.backend.core.TenantContext;
 import cm.drivemaster.backend.enums.DrivingSchoolStatus;
 import cm.drivemaster.backend.enums.ProfileStatus;
 import cm.drivemaster.backend.enums.Role;
+import cm.drivemaster.backend.models.dto.DrivingSchoolPendingRequestDTO;
 import cm.drivemaster.backend.models.dto.DrivingSchoolRequestDto;
 import cm.drivemaster.backend.models.dto.DrivingSchoolResponseDto;
 import cm.drivemaster.backend.models.mappers.DrivingSchoolMapper;
@@ -16,6 +18,7 @@ import cm.drivemaster.backend.repositories.UserRepository;
 import cm.drivemaster.backend.services.DrivingSchoolService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -24,10 +27,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
-public class DrivingDrivingSchoolServiceImpl implements DrivingSchoolService {
+public class DrivingSchoolServiceImpl implements DrivingSchoolService {
 
 
     private final DrivingSchoolRepository drivingSchoolRepository;
@@ -38,9 +41,10 @@ public class DrivingDrivingSchoolServiceImpl implements DrivingSchoolService {
 
     @Transactional
     @Override
-    public void createSchool(DrivingSchoolRequestDto req, long userId) throws IllegalAccessException {
+    public void createSchool(DrivingSchoolRequestDto req, UserPrincipal userPrincipal) throws IllegalAccessException {
 
-        Optional<User> admin = userRepository.findById(userId);
+        //UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        Optional<User> admin = userRepository.findById(userPrincipal.getId());
 
         if (admin.isEmpty()) {
             throw new UsernameNotFoundException("cet utilisateur n'existe pas !");
@@ -96,15 +100,15 @@ public class DrivingDrivingSchoolServiceImpl implements DrivingSchoolService {
                 }
         ));
         DrivingSchoolRegistry schoolRegistry = drivingSchoolRegistry.get();
-        
+
         User monitor = schoolRegistry.getAdmin();
 
         if (monitor.getRoles() != Role.MONITOR) {
             throw new AccessDeniedException("cet utilisateur n'est pas un Moniteur");
         }
-        
+
         String schemaName = schoolRegistry.getSchemaName();
-        
+
         // creation du schema
         tenantProvisioningService.createTenantSchema(schemaName);
         // activation du moniteur
@@ -122,6 +126,28 @@ public class DrivingDrivingSchoolServiceImpl implements DrivingSchoolService {
 
         schoolRegistry.setDrivingSchoolStatus(DrivingSchoolStatus.APPROVED);
         drivingSchoolRegistryRepository.save(schoolRegistry);
+    }
+
+    @Override
+    public List<DrivingSchoolPendingRequestDTO> retreivePendingRequest() {
+
+        List<DrivingSchoolPendingRequestDTO> list = new ArrayList<>();
+
+        log.info("current school {}", drivingSchoolRegistryRepository.findByDrivingSchoolStatus(DrivingSchoolStatus.PENDING).getFirst().getSchoolName());
+        log.info("current status {}, current schema {}", DrivingSchoolStatus.PENDING, TenantContext.getTenantId());
+
+        drivingSchoolRegistryRepository.findByDrivingSchoolStatus(DrivingSchoolStatus.PENDING).forEach(
+                registry -> list.add(new DrivingSchoolPendingRequestDTO(
+                        registry.getSchoolName(),
+                        registry.getCountry(),
+                        registry.getCity(),
+                        registry.getAddress(),
+                        registry.getWhatsappNumber(),
+                        "%s %s".formatted(registry.getAdmin().getFirstname(), registry.getAdmin().getLastname()),
+                        null, null,  null)
+                ));
+
+        return list;
     }
 
     private static DrivingSchool getDrivingSchool(String schemaName, DrivingSchoolRegistry schoolRegistry, User monitor) {

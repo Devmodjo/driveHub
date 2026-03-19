@@ -1,20 +1,26 @@
 package cm.drivemaster.backend.controllers;
 
 
+import cm.drivemaster.backend.beans.UserPrincipal;
 import cm.drivemaster.backend.models.dto.ApiResponse;
+import cm.drivemaster.backend.models.dto.DrivingSchoolPendingRequestDTO;
 import cm.drivemaster.backend.models.dto.DrivingSchoolRequestDto;
 import cm.drivemaster.backend.models.dto.DrivingSchoolResponseDto;
 import cm.drivemaster.backend.services.DrivingSchoolService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/driving-schools")
 @CrossOrigin(originPatterns = "*")
@@ -30,9 +36,23 @@ public class DrivingSchoolController {
     )
     @PostMapping("/request")
     @PreAuthorize("hasRole('MONITOR')")
-    public ResponseEntity<ApiResponse> createSchool(@RequestBody DrivingSchoolRequestDto dto, long adminId) throws IllegalAccessException {
-        drivingSchoolService.createSchool(dto, adminId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(true, "Auto ecole enregistrez en attentes de validations par les admin"));
+    public ResponseEntity<ApiResponse> createSchool(
+            @RequestBody DrivingSchoolRequestDto dto,
+            @AuthenticationPrincipal UserPrincipal user) throws IllegalAccessException {
+
+        if (user == null) {
+
+            log.error("UserPrincipal est null dans l'endpoint /request");
+            log.error("SecurityContext Authentication = {}", SecurityContextHolder.getContext().getAuthentication());
+
+            return ResponseEntity.status(403).body(new ApiResponse(false, "Utilisateur principal non trouvé"));
+        }
+
+        log.info("UserPrincipal trouvé : id={}, email={}", user.getId(), user.getUsername());
+        drivingSchoolService.createSchool(dto, user);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse(true, "Auto ecole enregistrée en attente de validation"));
     }
 
     @Operation(
@@ -40,7 +60,7 @@ public class DrivingSchoolController {
             description = "dans ce endpoint, l'on donne la possibilité au administrateur de la plateformes (ROOT/admin) d'approuver les requetes de creations d'une auto-ecole et par la meme occasion d'approuver les moniteurs de celle-ci"
     )
     @GetMapping("{registryId}/approve")
-    @PreAuthorize("hasRole('REVIEWER', 'ROOT')")
+    @PreAuthorize("hasRole('REVIEWER')")
     public ResponseEntity<ApiResponse> approve(@PathVariable long registryId) {
         drivingSchoolService.approveRegistry(registryId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse(true, "requête approuvé avec success"));
@@ -49,5 +69,15 @@ public class DrivingSchoolController {
     @GetMapping("/all")
     public ResponseEntity<List<DrivingSchoolResponseDto>> retreiveSchool() {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(drivingSchoolService.retreiveSchool());
+    }
+
+    @Operation(
+            summary = "requete en attente",
+            description = "dans ce endpoint, l'on donne la possibilité au administrateur de la plateformes (ROOT/admin) de consulter l'ensemble des requetes de creation d'auto école en attentes"
+    )
+    @GetMapping("/request/pending")
+    @PreAuthorize("hasRole('REVIEWER', 'ROOT')")
+    public ResponseEntity<List<DrivingSchoolPendingRequestDTO>> retrievePendingRequest() {
+        return ResponseEntity.status(200).body(drivingSchoolService.retreivePendingRequest());
     }
 }

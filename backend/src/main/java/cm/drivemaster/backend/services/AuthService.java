@@ -1,6 +1,9 @@
 package cm.drivemaster.backend.services;
 
-import cm.drivemaster.backend.models.dto.*;
+import cm.drivemaster.backend.models.dto.AuthResponse;
+import cm.drivemaster.backend.models.dto.LoginRequest;
+import cm.drivemaster.backend.models.dto.MonitorRegisterRequest;
+import cm.drivemaster.backend.models.dto.StudentRegisterRequest;
 
 public interface AuthService {
 

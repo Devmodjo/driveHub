@@ -8,7 +8,7 @@ import lombok.*;
 
 /**
  * table que consulte l'admin afin de savoir quel utilisateur veut s'inscrire
- * dans son auto-ecole (schema public)
+ * dans son auto-ecole (schema public) ancien workflow systeme
  */
 
 

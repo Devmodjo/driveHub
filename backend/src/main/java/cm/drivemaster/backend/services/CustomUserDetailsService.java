@@ -1,14 +1,13 @@
 package cm.drivemaster.backend.services;
 
 import cm.drivemaster.backend.beans.User;
+import cm.drivemaster.backend.beans.UserPrincipal;
 import cm.drivemaster.backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
-import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +24,7 @@ public class CustomUserDetailsService implements UserDetailsService {
      * - Le schéma PostgreSQL est donc DÉJÀ positionné
      * - On ne résout PAS le tenant ici
      */
-    public org.springframework.security.core.userdetails.User loadUserByUsername(String email)
+    public UserDetails loadUserByUsername(String email)
             throws UsernameNotFoundException {
 
         User user = userRepository.findByEmail(email)
@@ -45,22 +44,20 @@ public class CustomUserDetailsService implements UserDetailsService {
          * Le contrôle métier (fullProfile, etc.)
          *    se fait PLUS TARD, dans les services
          */
-//        boolean enabled =
-//                user.getProfileStatus() == ProfileStatus.REGISTERED
-//                        || user.getProfileStatus() == ProfileStatus.ACTIVE;
+        return UserPrincipal.build(user);
 
-        return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),                 // username
-                user.getPassword(),              // password (déjà encodé)
-                true,                          // enabled
-                true,                             // accountNonExpired
-                true,                             // credentialsNonExpired
-                true,                             // accountNonLocked
-                Collections.singleton(
-                        new SimpleGrantedAuthority(
-                                "ROLE_" + user.getRoles().name()
-                        )
-                )
-        );
+//        return new org.springframework.security.core.userdetails.User(
+//                user.getEmail(),                 // username
+//                user.getPassword(),              // password (déjà encodé)
+//                true,                          // enabled
+//                true,                             // accountNonExpired
+//                true,                             // credentialsNonExpired
+//                true,                             // accountNonLocked
+//                Collections.singleton(
+//                        new SimpleGrantedAuthority(
+//                                "ROLE_" + user.getRoles().name()
+//                        )
+//                )
+//        );
     }
 }

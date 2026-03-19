@@ -76,7 +76,7 @@ public class PlatformAdminAuthController {
             summary = "Activation des admins",
             description = "Ce endpoint permet au ROOT d'activer les comptes utilisateurs"
     )
-    @GetMapping("/activate/{adminId}")
+    @GetMapping("{adminId}/activate")
     @PreAuthorize("hasRole('ROOT')")
     public ResponseEntity<ApiResponse> activateAdmin(@PathVariable long adminId) {
         adminerService.activateAdmin(adminId);
