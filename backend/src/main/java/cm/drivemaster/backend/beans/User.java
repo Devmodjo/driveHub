@@ -21,7 +21,9 @@ import java.util.Set;
 public class User extends EntityBase {
 
     @Column(nullable = false)
-    private String name;
+    private String firstname;
+
+    private String lastname;
 
     @Column(nullable = false, unique = true)
     private String email;

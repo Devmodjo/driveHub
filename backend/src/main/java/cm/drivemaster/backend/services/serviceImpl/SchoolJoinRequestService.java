@@ -1,12 +1,12 @@
 package cm.drivemaster.backend.services.serviceImpl;
 
-import cm.drivemaster.backend.beans.DrivingSchoolRegistry;
+
 import cm.drivemaster.backend.beans.SchoolJoinRequest;
 import cm.drivemaster.backend.beans.User;
 import cm.drivemaster.backend.enums.JoinStatus;
 import cm.drivemaster.backend.enums.ProfileStatus;
 import cm.drivemaster.backend.models.dto.JoinSchoolRequestDto;
-import cm.drivemaster.backend.repositories.DrivingSchoolRegistryRepository;
+
 import cm.drivemaster.backend.repositories.SchoolJoinRequestRepository;
 import cm.drivemaster.backend.repositories.UserRepository;
 import jakarta.transaction.Transactional;

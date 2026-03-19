@@ -128,7 +128,7 @@ public class AdminJoinApprovalService {
         return new PendingJoinRequestResponse(
                 request.getId(),
                 user.getId(),
-                user.getName(),
+                user.getFirstname(),
                 user.getEmail(),
                 request.getRequestedRole(),
                 registry.getId(),

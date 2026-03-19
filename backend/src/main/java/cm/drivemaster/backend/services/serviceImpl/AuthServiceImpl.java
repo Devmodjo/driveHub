@@ -14,9 +14,8 @@ import cm.drivemaster.backend.services.AuthService;
 import cm.drivemaster.backend.services.JwtService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,60 +31,36 @@ public class AuthServiceImpl implements AuthService {
     private final MonitorsRepository monitorsRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
+
 
     @Override
     public AuthResponse login(LoginRequest request) {
 
-        // Authentification Spring Security
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.email(),
-                        request.password()
-                )
-        );
+        // Charger l'utilisateur
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable"));
+
+        // Vérifier le mot de passe manuellement
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new AccessDeniedException("Email ou mot de passe incorrect");
+        }
 
         // Chargement utilisateur (BON SCHÉMA)
-        User user = userRepository.findByEmail(request.email())
+        user = userRepository.findByEmail(request.email())
                 .orElseThrow(() ->
                         new UsernameNotFoundException("Utilisateur introuvable"));
 
-        // Vérification métier
-//        if (user.getProfileStatus() != ProfileStatus.ACTIVE) {
-//            throw new AccessDeniedException("Compte non activé");
-//        }
 
         // Génération JWT tenant-aware
         String token = jwtService.generateToken(user);
 
         return new AuthResponse(
+                user.getId(),
                 token,
                 user.getRoles(),
                 user.getProfileStatus(),
                 user.getFullProfile()
         );
-    }
-
-    @Override
-    public void register(RegisterRequest request) {
-
-        // Vérification email unique
-        if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new IllegalArgumentException("Email déjà utilisé");
-        }
-
-        // Création utilisateur technique
-        User user = new User();
-        user.setName(request.name());
-        user.setEmail(request.email());
-        user.setPassword(passwordEncoder.encode(request.password()));
-        user.setRoles(request.role());
-
-        // État INITIAL (PAS métier)
-        user.setProfileStatus(ProfileStatus.REGISTERED);
-        user.setFullProfile(false);
-
-        userRepository.save(user);
     }
 
     @Override
@@ -96,7 +71,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = new User();
-        user.setName(request.name());
+        user.setFirstname(request.firstname());
+        user.setLastname(request.lastname());
         user.setEmail(request.email());
         user.setRoles(Role.STUDENT);
         user.setPassword(passwordEncoder.encode(request.password()));
@@ -106,6 +82,12 @@ public class AuthServiceImpl implements AuthService {
 
         Student student = new Student();
         student.setUser(user);
+        student.setPhoneNumber(request.phoneNumber());
+        student.setGender(request.gender());
+        student.setNationality(request.nationality());
+        student.setResidenceCity(request.residenceCity());
+        student.setDateOfBirth(request.dateOfBirth());
+
 
         studentsRepository.save(student);
 
@@ -119,7 +101,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = new User();
-        user.setName(request.name());
+        user.setFirstname(request.firstname());
+        user.setLastname(request.lastname());
         user.setEmail(request.email());
         user.setRoles(Role.MONITOR);
         user.setPassword(passwordEncoder.encode(request.password()));
@@ -130,7 +113,10 @@ public class AuthServiceImpl implements AuthService {
         Monitor monitor = new Monitor();
         monitor.setUser(user);
         monitor.setPhoneNumber(request.phoneNumber());
-
+        monitor.setGender(request.gender());
+        monitor.setNationality(request.nationality());
+        monitor.setResidenceCity(request.residenceCity());
+        monitor.setDateOfBirth(request.dateOfBirth());
         monitorsRepository.save(monitor);
     }
 

@@ -1,26 +1,22 @@
 package cm.drivemaster.backend.controllers;
 
-import cm.drivemaster.backend.beans.User;
+
 import cm.drivemaster.backend.models.dto.ApiPageResponse;
 import cm.drivemaster.backend.models.dto.ApiResponse;
 import cm.drivemaster.backend.models.dto.JoinSchoolRequestDto;
 import cm.drivemaster.backend.models.dto.PendingJoinRequestResponse;
 import cm.drivemaster.backend.repositories.UserRepository;
-import cm.drivemaster.backend.services.AuthService;
+
 import cm.drivemaster.backend.services.serviceImpl.AdminJoinApprovalService;
 import cm.drivemaster.backend.services.serviceImpl.SchoolJoinRequestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
 
 
 @RestController

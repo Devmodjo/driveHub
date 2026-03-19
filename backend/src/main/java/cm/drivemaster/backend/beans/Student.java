@@ -1,11 +1,13 @@
 package cm.drivemaster.backend.beans;
 
 
+import cm.drivemaster.backend.enums.Gender;
 import cm.drivemaster.backend.enums.LicenseCategory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Date;
 import java.util.Set;
 
 
@@ -21,6 +23,22 @@ public class Student extends EntityBase{
     @JsonIgnore
     @JoinColumn(name = "user_id")
     private User user;
+
+    @Column(nullable = false)
+    private String phoneNumber;
+
+    @Column(nullable = false)
+    private Date dateOfBirth;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+
+    @Column(nullable = false)
+    private String nationality;
+
+    @Column(nullable = false)
+    private String residenceCity;
 
     @Column(nullable = true)
     private String cniRectoUrl;

@@ -1,7 +1,28 @@
 package cm.drivemaster.backend.models.dto;
 
+import cm.drivemaster.backend.enums.Gender;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.sql.Date;
+
 public record StudentRegisterRequest(
-        String name,
+        @Schema(defaultValue = "john")
+        String firstname,
+        @Schema(defaultValue = "Doe")
+        String lastname,
+        @Schema(defaultValue = "john.doe@gmail.com")
         String email,
-        String password
+        @Schema(defaultValue = "pass123")
+        String password,
+        @Schema(defaultValue = "+237689078576")
+        String phoneNumber,
+        @Schema(defaultValue = "MALE")
+        Gender gender,
+        @Schema(defaultValue = "Cameroon")
+        String nationality,
+        @Schema(defaultValue = "Yaoundé, Bastos")
+        String residenceCity,
+        @Schema(defaultValue = "1999-01-01")
+        Date dateOfBirth
+
 ) {}

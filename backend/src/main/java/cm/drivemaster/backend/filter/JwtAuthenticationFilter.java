@@ -1,10 +1,9 @@
 package cm.drivemaster.backend.filter;
 
-
-import cm.drivemaster.backend.beans.User;
 import cm.drivemaster.backend.core.TenantContext;
 import cm.drivemaster.backend.services.CustomUserDetailsService;
 import cm.drivemaster.backend.services.JwtService;
+import cm.drivemaster.backend.services.serviceImpl.PlatformAdminDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private final PlatformAdminDetailsService platformAdminDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -38,33 +38,72 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = authHeader.substring(7);
-        String email = jwtService.extractEmail(token);
-        String tenant = jwtService.extractTenant(token);
-        TenantContext.setTenantId(tenant);
+        try {
+            String token = authHeader.substring(7);
 
+            // Extraire les informations du token
+            String tokenType = jwtService.extractClaim(
+                    token,
+                    claims -> claims.get("tokenType", String.class)
+            );
 
-        if (email != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+            String email = jwtService.extractEmail(token);
 
-            UserDetails userDetails =
-                    userDetailsService.loadUserByUsername(email);
+            // Vérifier si le token est expiré avant tout traitement
+            if (jwtService.isTokenExpired(token)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
-            //  Validation SANS entity User
-            if (!jwtService.isTokenExpired(token)) {
+            // Ne pas modifier le TenantContext ici
+            // Le TenantResolutionFilter s'en charge déjà
+            // On vérifie juste la cohérence pour les users normaux
+            String tokenTenant = jwtService.extractTenant(token);
+            String currentTenant = TenantContext.getTenantId();
 
-                UsernamePasswordAuthenticationToken authentication =
+            if ("PLATFORM_ADMIN".equals(tokenType)) {
+                // Pour les admins platform, pas de vérification de tenant
+                UserDetails adminDetails = platformAdminDetailsService.loadUserByUsername(email);
+
+                UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
-                                userDetails,
+                                adminDetails,
                                 null,
-                                userDetails.getAuthorities()
+                                adminDetails.getAuthorities()
                         );
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
-            }
-        }
+                SecurityContextHolder.getContext().setAuthentication(auth);
 
-        filterChain.doFilter(request, response);
+            } else {
+                // Pour les users normaux, vérifier la cohérence du tenant
+                if (tokenTenant != null && !tokenTenant.equals(currentTenant)
+                        && !"public".equals(currentTenant)) {
+                    // Incohérence entre le tenant du token et le header
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+                            "Tenant mismatch");
+                    return;
+                }
+
+                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
+
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            }
+
+            filterChain.doFilter(request, response);
+
+        } catch (Exception e) {
+            // Log l'erreur mais ne pas bloquer la chaîne
+            logger.error("Erreur dans JwtAuthenticationFilter", e);
+            filterChain.doFilter(request, response);
+        }
     }
 }

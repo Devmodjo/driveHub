@@ -1,5 +1,6 @@
 package cm.drivemaster.backend.services;
 
+import cm.drivemaster.backend.beans.PlatformAdmin;
 import cm.drivemaster.backend.beans.User;
 import cm.drivemaster.backend.core.TenantContext;
 import io.jsonwebtoken.Claims;
@@ -14,7 +15,6 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
 import java.util.function.Function;
 
 @Service
@@ -23,7 +23,7 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String SECRET_KEY;
 
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24;
+    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24h
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
@@ -37,7 +37,7 @@ public class JwtService {
                 .getBody();
     }
 
-    private <T> T extractClaim(String token, Function<Claims, T> resolver) {
+    public <T> T extractClaim(String token, Function<Claims, T> resolver) {
         return resolver.apply(extractAllClaims(token));
     }
 
@@ -54,8 +54,11 @@ public class JwtService {
     }
 
     public boolean isTokenExpired(String token) {
-        return extractClaim(token, Claims::getExpiration)
-                .before(new Date());
+        try {
+            return extractClaim(token, Claims::getExpiration).before(new Date());
+        } catch (Exception e) {
+            return true; // Si erreur de parsing, considérer comme expiré
+        }
     }
 
     /* =========================
@@ -63,7 +66,29 @@ public class JwtService {
        ========================= */
 
     /**
-     * Le tenant est positionné dans TenantContext
+     * Génère un token pour un utilisateur normal (avec tenant)
+     * Le tenant DOIT être passé en paramètre, pas depuis le TenantContext
+     */
+    public String generateToken(User user, String tenantId) {
+        Map<String, Object> claims = new HashMap<>();
+
+        claims.put("role", user.getRoles().name());
+        claims.put("profileStatus", user.getProfileStatus().name());
+        claims.put("fullProfile", user.getFullProfile());
+        claims.put("tokenType", "USER");
+        claims.put("tenant", tenantId); // Passé explicitement
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(user.getEmail())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /**
+     * Version avec TenantContext (pour compatibilité)
      */
     public String generateToken(User user) {
 
@@ -87,8 +112,44 @@ public class JwtService {
                 .compact();
     }
 
+
+    /**
+     * JWT pour les admins de la plateforme (SANS tenant)
+     */
+    public String generatePlatformAdminToken(PlatformAdmin admin) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", admin.getRole().name());
+        claims.put("tokenType", "PLATFORM_ADMIN");
+        // PAS de tenant pour les admins platform
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(admin.getEmail())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /**
+     * Validation du token pour un utilisateur normal
+     */
     public boolean isTokenValid(String token, User user) {
-        return extractEmail(token).equals(user.getEmail())
-                && !isTokenExpired(token);
+        try {
+            return extractEmail(token).equals(user.getEmail()) && !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Validation du token pour un admin platform
+     */
+    public boolean isTokenValid(String token, String email) {
+        try {
+            return extractEmail(token).equals(email) && !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

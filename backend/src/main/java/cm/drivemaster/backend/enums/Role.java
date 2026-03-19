@@ -1,7 +1,7 @@
 package cm.drivemaster.backend.enums;
 
 public enum Role {
-    ADMIN("administrateur"),
+    // ADMIN("administrateur"),
     MONITOR("encadreur"),
     STUDENT("étudiant");
 
