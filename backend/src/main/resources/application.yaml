@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: driveHub
+  datasource:
+    url: jdbc:postgresql://localhost:5432/driving-school
+    username: postgres
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        multiTenancy: SCHEMA
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  devtools:
+    restart:
+      enabled: false
+
+server:
+  port: 8082
+
+cors:
+  allowed-origins: "*"
+  allowed-methods: "*"
+  allowed-headers: "*"
+  exposed-headers: "*"
+  allow-credentials: true
+  max-age: 3600
+
+jwt:
+  secret: 3f8a9b2c7d4e1f6a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2
+app:
+  root-admin:
+    email: root@gmail.com
+    password: root@admin123
