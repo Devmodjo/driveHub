@@ -10,9 +10,12 @@ import cm.mvtech.drivehub.modules.auth.domain.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -32,6 +35,16 @@ public class AuthController {
     @PostMapping("/login")
     private ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(authService.login(loginRequest));
+    }
+
+    @Operation(
+            summary = "afficher l'utilisateur connecter",
+            description = "apres authentification, ce enpoint permet d'afficher les information de l'utilisateur recemment connecter"
+    )
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/me")
+    public ResponseEntity<?> me(Authentication authentication) {
+        return null;
     }
 
     @Operation(

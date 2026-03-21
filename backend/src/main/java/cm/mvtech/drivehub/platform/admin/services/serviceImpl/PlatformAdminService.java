@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -122,11 +123,11 @@ public class PlatformAdminService implements AdminerService {
      * Accessible uniquement par ROOT
      */
     @Override
-    public void activateAdmin(long adminId) {
+    public void activateAdmin(UUID monitorId) {
 
-        log.info("Tentative d'activation de l'admin {}", adminId);
+        log.info("Tentative d'activation de l'admin {}", monitorId);
 
-        PlatformAdmin admin = adminRepository.findById(adminId)
+        PlatformAdmin admin = adminRepository.findById(monitorId)
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "Cet administrateur n'existe pas !"
                 ));

@@ -17,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
 
 
 @RestController
@@ -43,7 +44,7 @@ public class JoinSchoolRequestController {
     @PostMapping("/admin/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> approve(
-            @PathVariable Long id
+            @PathVariable UUID id
     ) {
         adminJoinApprovalService.approve(id);
         return ResponseEntity.ok(new ApiResponse(true, "Demande approuvée"));

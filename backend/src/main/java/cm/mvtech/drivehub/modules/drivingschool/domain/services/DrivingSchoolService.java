@@ -8,6 +8,7 @@ import cm.mvtech.drivehub.modules.drivingschool.application.dto.DrivingSchoolRes
 
 
 import java.util.List;
+import java.util.UUID;
 
 public interface DrivingSchoolService {
 
@@ -15,7 +16,7 @@ public interface DrivingSchoolService {
 
     List<DrivingSchoolResponseDto> retreiveSchool();
 
-    void approveRegistry(long registryId);
+    void approveRegistry(UUID registryId);
 
     List<DrivingSchoolPendingRequestDTO> retreivePendingRequest();
 

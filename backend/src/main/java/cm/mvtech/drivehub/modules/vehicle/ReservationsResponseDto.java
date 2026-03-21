@@ -7,9 +7,10 @@ import cm.mvtech.drivehub.modules.monitor.application.dto.MonitorResponseDto;
 import cm.mvtech.drivehub.modules.student.StudentsResponseDto;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public record ReservationsResponseDto(
-        Long id,
+        UUID id,
         DrivingSchoolResponseDto drivingSchool,
         StudentsResponseDto student,
         MonitorResponseDto monitor,

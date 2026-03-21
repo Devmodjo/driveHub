@@ -4,9 +4,10 @@ import cm.mvtech.drivehub.modules.enums.LicenseCategory;
 import cm.mvtech.drivehub.modules.drivingschool.application.dto.DrivingSchoolResponseDto;
 
 import java.util.Date;
+import java.util.UUID;
 
 public record ExamsResponseDto(
-        Long id,
+        UUID id,
         DrivingSchoolResponseDto drivingSchool,
         Date dateExams,
         LicenseCategory category

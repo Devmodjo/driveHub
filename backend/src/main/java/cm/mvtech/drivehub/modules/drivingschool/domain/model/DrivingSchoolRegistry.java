@@ -1,5 +1,6 @@
 package cm.mvtech.drivehub.modules.drivingschool.domain.model;
 
+import cm.mvtech.drivehub.core.domain.entities.EntityBase;
 import cm.mvtech.drivehub.modules.auth.domain.model.User;
 import cm.mvtech.drivehub.modules.enums.DrivingSchoolStatus;
 import jakarta.persistence.*;
@@ -24,11 +25,7 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class DrivingSchoolRegistry {
-
-    @Id
-    @GeneratedValue
-    private Long id;
+public class DrivingSchoolRegistry extends EntityBase {
 
     @Column(nullable = false, unique = true)
     private String schoolName;

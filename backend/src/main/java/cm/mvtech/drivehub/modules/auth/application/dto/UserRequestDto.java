@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
+import java.util.UUID;
+
 public record UserRequestDto(
 
         @Schema(name = "John")
@@ -28,6 +30,6 @@ public record UserRequestDto(
         ProfileStatus profileStatus,
 
         @Schema(name = "1")
-        Long userId
+        UUID userId
 ) {
 }

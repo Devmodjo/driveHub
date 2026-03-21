@@ -5,11 +5,13 @@ import cm.mvtech.drivehub.modules.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
 @AllArgsConstructor
 public class AuthResponse {
 
-    private long id;
+    private UUID id;
     private String token;
     private Role role;
     private ProfileStatus profileStatus;

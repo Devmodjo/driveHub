@@ -5,11 +5,12 @@ import cm.mvtech.drivehub.modules.enums.ProfileStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 public record UserResponseDto(
 
         @Schema(name = "1")
-        Long id,
+        UUID id,
 
         @Schema(name = "John")
         String name,

@@ -1,8 +1,10 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: driveHub
   datasource:
-    url: jdbc:postgresql://localhost:5432/driving-school
+    url: jdbc:postgresql://localhost:5432/${DBNAME}
     username: postgres
     password: root
   jpa:
@@ -27,9 +29,15 @@ cors:
   allow-credentials: true
   max-age: 3600
 
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springdoc: DEBUG
+    org.springframework.web: DEBUG
 jwt:
   secret: 3f8a9b2c7d4e1f6a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2
 app:
   root-admin:
     email: root@gmail.com
     password: root@admin123
+  dbname: ${DBNAME}
