@@ -40,7 +40,7 @@ public interface AdminerService {
     /**
      * Activer un compte admin
      * Accessible uniquement par ROOT
-     * @param monitorId ID de l'admin à activer
+     * @param adminId ID de l'admin à activer
      */
-    void activateAdmin(UUID monitorId);
+    void activateAdmin(UUID adminId);
 }

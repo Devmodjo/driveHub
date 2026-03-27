@@ -123,11 +123,11 @@ public class PlatformAdminService implements AdminerService {
      * Accessible uniquement par ROOT
      */
     @Override
-    public void activateAdmin(UUID monitorId) {
+    public void activateAdmin(UUID adminId) {
 
-        log.info("Tentative d'activation de l'admin {}", monitorId);
+        log.info("Tentative d'activation de l'admin {}", adminId);
 
-        PlatformAdmin admin = adminRepository.findById(monitorId)
+        PlatformAdmin admin = adminRepository.findById(adminId)
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "Cet administrateur n'existe pas !"
                 ));

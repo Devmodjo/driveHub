@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +34,7 @@ public class AuthController {
             description = "endpoint d'authentification des utilisateur en fonction de leurs roles"
     )
     @PostMapping("/login")
-    private ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(authService.login(loginRequest));
     }
 
@@ -52,7 +53,7 @@ public class AuthController {
             description = "ici seule les utilisateurs avec le rôle STUDENT sont inscrit mais doivent être validé par un moniteur"
     )
     @PostMapping("/register/student")
-    private ResponseEntity<ApiResponse> registerStudent(@Valid @RequestBody StudentRegisterRequest registerRequest) {
+    public ResponseEntity<ApiResponse> registerStudent(@Valid @RequestBody StudentRegisterRequest registerRequest) {
         authService.registerStudent(registerRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(true, "Inscription de l'étudiant réussie. En attente de validation par le moniteur."));
     }
@@ -62,7 +63,7 @@ public class AuthController {
             description = "ici seule les utilisateurs avec le rôle MONITOR sont inscrit mais doivent être validé par un Admin de la plateforme. Ce pendant ils sont autorisé a ce connecter et à obtenir un JWT pour emettre une requete de creation d'une auto-école"
     )
     @PostMapping("/register/monitor")
-    private ResponseEntity<ApiResponse> registerMonitor(@Valid @RequestBody MonitorRegisterRequest registerRequest) {
+    public ResponseEntity<ApiResponse> registerMonitor(@Valid @RequestBody MonitorRegisterRequest registerRequest) {
         authService.registerMonitor(registerRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(true, "Inscription de l'encadreur réussie. En attente de validation par l'admin."));
     }

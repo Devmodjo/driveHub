@@ -82,10 +82,10 @@ public class PlatformAdminAuthController {
             summary = "Activation des admins",
             description = "Ce endpoint permet au ROOT d'activer les comptes utilisateurs (Moniteur)"
     )
-    @GetMapping("{monitorid}/activate")
+    @GetMapping("{adminId}/activate")
     @PreAuthorize("hasRole('ROOT')")
-    public ResponseEntity<ApiResponse> activateAdmin(@PathVariable UUID monitorid) {
-        adminerService.activateAdmin(monitorid);
+    public ResponseEntity<ApiResponse> activateAdmin(@PathVariable UUID adminId) {
+        adminerService.activateAdmin(adminId);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new ApiResponse(true, "Compte activé avec succès"));
     }
