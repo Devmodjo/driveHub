@@ -11,11 +11,12 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 
 @Repository
 public interface DrivingSchoolRegistryRepository
-        extends JpaRepository<DrivingSchoolRegistry, Long> {
+        extends JpaRepository<DrivingSchoolRegistry, UUID> {
 
     //  pour la validation tenant
     boolean existsBySchemaName(String schemaName);

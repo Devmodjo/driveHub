@@ -7,6 +7,7 @@ import cm.mvtech.drivehub.platform.admin.models.dto.PlatformAdminResponse;
 
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Service d'administration de la plateforme
@@ -41,5 +42,5 @@ public interface AdminerService {
      * Accessible uniquement par ROOT
      * @param adminId ID de l'admin à activer
      */
-    void activateAdmin(long adminId);
+    void activateAdmin(UUID adminId);
 }

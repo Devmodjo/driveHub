@@ -4,9 +4,10 @@ import cm.mvtech.drivehub.modules.enums.InscriptionStatus;
 import cm.mvtech.drivehub.modules.student.StudentsResponseDto;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 public record ExamsInscriptionResponseDto(
-        Long id,
+        UUID id,
         ExamsResponseDto exams,
         StudentsResponseDto students,
         InscriptionStatus inscriptionStatus,

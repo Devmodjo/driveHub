@@ -5,11 +5,13 @@ import cm.mvtech.drivehub.modules.enums.PaymentMotif;
 import cm.mvtech.drivehub.modules.enums.PaymentStatus;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.UUID;
+
 public record PaymentRequestDto(
         @NotNull
-        Long drivingSchoolId,
+        UUID drivingSchoolId,
         @NotNull
-        Long studentsId,
+        UUID studentsId,
         @NotNull
         Double amount,
         @NotNull

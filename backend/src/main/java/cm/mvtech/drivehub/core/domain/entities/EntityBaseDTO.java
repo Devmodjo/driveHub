@@ -4,11 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 public class EntityBaseDTO {
-    protected Long id;
+    protected UUID id;
     protected LocalDateTime createdOn;
     protected LocalDateTime lastUpdateOn;
     protected short status;
@@ -24,12 +25,12 @@ public class EntityBaseDTO {
         this.lastUpdateOn = entityBase.getLastUpdateOn();
     }
 
-    public EntityBaseDTO(Long id, LocalDateTime lastUpdateOn) {
+    public EntityBaseDTO(UUID id, LocalDateTime lastUpdateOn) {
         this.id = id;
         this.lastUpdateOn = lastUpdateOn;
     }
 
-    public EntityBaseDTO(Long id) {
+    public EntityBaseDTO(UUID id) {
         this.id = id;
     }
 

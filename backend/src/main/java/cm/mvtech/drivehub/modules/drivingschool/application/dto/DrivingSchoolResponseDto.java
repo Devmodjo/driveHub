@@ -3,11 +3,12 @@ package cm.mvtech.drivehub.modules.drivingschool.application.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 
 public record DrivingSchoolResponseDto(
         @Schema(defaultValue = "1")
-        Long id,
+        UUID id,
 
         @Schema(defaultValue = "DRIVING SCHOOL")
         String name,

@@ -8,6 +8,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @MappedSuperclass
 @Data
@@ -17,10 +18,10 @@ import java.time.LocalDateTime;
 public class EntityBase {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Basic(optional = false)
     @Column(name = "id", nullable = false)
-    protected Long id;
+    protected UUID id;
 
     @Column(name = "created_on")
     @Temporal(TemporalType.TIMESTAMP)
@@ -47,11 +48,11 @@ public class EntityBase {
         this.createdOn = LocalDateTime.now();
     }
 
-    public EntityBase(Long id) {
+    public EntityBase(UUID id) {
         this.id = id;
     }
 
-    public EntityBase(Long id, LocalDateTime createdOn) {
+    public EntityBase(UUID id, LocalDateTime createdOn) {
         this.id = id;
         this.createdOn = createdOn;
     }

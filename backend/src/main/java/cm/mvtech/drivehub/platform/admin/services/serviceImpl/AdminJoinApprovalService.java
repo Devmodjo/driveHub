@@ -31,6 +31,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +45,7 @@ public class AdminJoinApprovalService {
     private final DrivingSchoolRegistryRepository drivingSchoolRegistryRepository;
 
     @Transactional
-    public void approve(Long requestId) {
+    public void approve(UUID requestId) {
 
         // Charger la demande (PUBLIC)
         SchoolJoinRequest request = joinRequestRepository.findById(requestId)

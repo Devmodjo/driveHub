@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -122,7 +123,7 @@ public class PlatformAdminService implements AdminerService {
      * Accessible uniquement par ROOT
      */
     @Override
-    public void activateAdmin(long adminId) {
+    public void activateAdmin(UUID adminId) {
 
         log.info("Tentative d'activation de l'admin {}", adminId);
 

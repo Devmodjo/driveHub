@@ -3,14 +3,15 @@ package cm.mvtech.drivehub.modules.messageapi;
 import cm.mvtech.drivehub.modules.enums.Role;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public record PendingJoinRequestResponse(
-        Long requestId,
-        Long userId,
+        UUID requestId,
+        UUID userId,
         String userName,
         String userEmail,
         Role role,
-        Long drivingSchoolId,
+        UUID drivingSchoolId,
         String drivingSchoolName,
         LocalDateTime requestedAt
 ) {

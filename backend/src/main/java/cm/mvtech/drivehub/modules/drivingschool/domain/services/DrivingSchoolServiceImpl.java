@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -93,7 +94,7 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
 
     @Override
     @Transactional
-    public void approveRegistry(long registryId) {
+    public void approveRegistry(UUID registryId) {
         Optional<DrivingSchoolRegistry> drivingSchoolRegistry = Optional.ofNullable(drivingSchoolRegistryRepository.findById(registryId).orElseThrow(
                 () -> {
                     throw new IllegalArgumentException("ce auto-ecole n'existe pas dans les registres");

@@ -5,10 +5,12 @@ import cm.mvtech.drivehub.modules.enums.LicenseCategory;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
+import java.util.UUID;
+
 public record StudentsRequestDto(
         @Positive
         @NotBlank(message = "l'identifiant de l'utilisateur est obligatoire")
-        Long userId,
+        UUID userId,
 
         @NotBlank(message = "l'url de la CNI (rector) est obligatoire")
         String cniRectoUrl,

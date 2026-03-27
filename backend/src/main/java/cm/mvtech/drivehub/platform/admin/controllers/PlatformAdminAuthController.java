@@ -17,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/platform/admin")
@@ -79,11 +80,11 @@ public class PlatformAdminAuthController {
      */
     @Operation(
             summary = "Activation des admins",
-            description = "Ce endpoint permet au ROOT d'activer les comptes utilisateurs"
+            description = "Ce endpoint permet au ROOT d'activer les comptes utilisateurs (Moniteur)"
     )
     @GetMapping("{adminId}/activate")
     @PreAuthorize("hasRole('ROOT')")
-    public ResponseEntity<ApiResponse> activateAdmin(@PathVariable long adminId) {
+    public ResponseEntity<ApiResponse> activateAdmin(@PathVariable UUID adminId) {
         adminerService.activateAdmin(adminId);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new ApiResponse(true, "Compte activé avec succès"));

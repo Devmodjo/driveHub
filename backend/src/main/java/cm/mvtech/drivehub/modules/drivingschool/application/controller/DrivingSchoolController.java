@@ -19,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -61,7 +62,7 @@ public class DrivingSchoolController {
     )
     @GetMapping("{registryId}/approve")
     @PreAuthorize("hasRole('REVIEWER')")
-    public ResponseEntity<ApiResponse> approve(@PathVariable long registryId) {
+    public ResponseEntity<ApiResponse> approve(@PathVariable UUID registryId) {
         drivingSchoolService.approveRegistry(registryId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse(true, "requête approuvé avec success"));
     }

@@ -5,11 +5,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
 import java.util.Date;
+import java.util.UUID;
 
 public record ExamsRequestDto(
         @Positive
         @NotBlank(message = "l'identifiant de l'exament est obligatoire")
-        Long drivingSchoolId,
+        UUID drivingSchoolId,
 
         @NotBlank(message = "la date de l'examen est obligatoire")
         Date dateExams,

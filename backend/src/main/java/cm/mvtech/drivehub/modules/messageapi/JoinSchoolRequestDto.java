@@ -4,8 +4,10 @@ import cm.mvtech.drivehub.modules.enums.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.UUID;
+
 public record JoinSchoolRequestDto(
-        @NotNull Long drivingSchoolId,
+        UUID drivingSchoolId,
         @Schema(defaultValue = "STUDENT")
         @NotNull Role role
 ) {}
