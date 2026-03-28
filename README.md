@@ -1,8 +1,8 @@
-# 🚗 DrivingMaster – SaaS de gestion d’auto‑écoles (Multi‑tenant)
+# 🚗 DriveHub – SaaS de gestion d’auto‑écoles (Multi‑tenant)
 
 ## 📌 Présentation générale
 
-**DrivingMaster** est une plateforme **SaaS multi‑tenant** de gestion d’auto‑écoles, conçue pour répondre à des exigences **réelles, professionnelles et scalables**.
+**DriveHub** est une plateforme **SaaS multi‑tenant** de gestion d’auto‑écoles, conçue pour répondre à des exigences **réelles, professionnelles et scalables**.
 
 Le projet adopte une architecture **Shared Database / Separate Schemas** afin de garantir :
 
