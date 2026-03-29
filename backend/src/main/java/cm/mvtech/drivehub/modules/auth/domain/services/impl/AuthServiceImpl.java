@@ -1,6 +1,9 @@
 package cm.mvtech.drivehub.modules.auth.domain.services.impl;
 
 
+import cm.mvtech.drivehub.modules.auth.application.dto.CurrentUserResponse;
+import cm.mvtech.drivehub.modules.auth.application.dto.UserResponseDto;
+import cm.mvtech.drivehub.modules.auth.domain.model.UserPrincipal;
 import cm.mvtech.drivehub.modules.auth.domain.services.AuthService;
 import cm.mvtech.drivehub.modules.auth.domain.services.JwtService;
 import cm.mvtech.drivehub.modules.monitor.domain.model.Monitor;
@@ -20,9 +23,13 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.UUID;
 
 
 @Service
@@ -123,6 +130,33 @@ public class AuthServiceImpl implements AuthService {
         monitor.setResidenceCity(request.residenceCity());
         monitor.setDateOfBirth(request.dateOfBirth());
         monitorsRepository.save(monitor);
+    }
+
+    @Override
+    public CurrentUserResponse getCurrentUser(Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("Veuillez vous authentifier");
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof UserPrincipal user) {
+
+            UUID id = user.getId();
+            String firstname = user.getFirstname();
+            String lastname = user.getLastname();
+            String email = user.getEmail();
+            Role role = user.getRole();
+            ProfileStatus profileStatus = user.getProfileStatus();
+            LocalDate createdAt = user.getCreatedAt();
+            Boolean fullprofile = user.getFullProfile();
+
+            return  new CurrentUserResponse(id, firstname, lastname, email, role, profileStatus, createdAt, fullprofile);
+        }
+
+        throw new IllegalArgumentException("Type de principal non supporté : " +
+                principal.getClass().getName());
     }
 
 }

@@ -54,7 +54,7 @@ public class SecurityConfig {
 
                         // Endpoints admin platform (authentifié)
                         .requestMatchers("/api/platform/**").authenticated()
-
+                        .requestMatchers("/api/auth/me").authenticated()
                         // Endpoints tenant-specific (authentifié + tenant requis)
                         .requestMatchers("/api/join-school/admin/**").authenticated()
                         .requestMatchers("/api/join-school/public").authenticated()

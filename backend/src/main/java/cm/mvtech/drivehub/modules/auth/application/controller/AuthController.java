@@ -1,6 +1,7 @@
 package cm.mvtech.drivehub.modules.auth.application.controller;
 
 
+import cm.mvtech.drivehub.modules.auth.application.dto.CurrentUserResponse;
 import cm.mvtech.drivehub.modules.messageapi.ApiResponse;
 import cm.mvtech.drivehub.modules.auth.application.dto.LoginRequest;
 import cm.mvtech.drivehub.modules.monitor.application.dto.MonitorRegisterRequest;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -44,8 +46,13 @@ public class AuthController {
     )
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/me")
-    public ResponseEntity<?> me(Authentication authentication) {
-        return null;
+    public ResponseEntity<CurrentUserResponse> me(Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("veuillez vous authentifié");
+        }
+
+        return ResponseEntity.status(200).body(authService.getCurrentUser(authentication));
     }
 
     @Operation(
