@@ -1,12 +1,15 @@
 package cm.mvtech.drivehub.modules.auth.domain.model;
 
 
+import cm.mvtech.drivehub.modules.enums.ProfileStatus;
+import cm.mvtech.drivehub.modules.enums.Role;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +25,10 @@ public class UserPrincipal implements UserDetails {
     private final String lastname;
     private final String email;
     private final String password;
+    private final Role role;
+    private final ProfileStatus profileStatus;
+    private final boolean fullProfile;
+    private final LocalDate createdAt;
 
     private final boolean enabled;
     private final boolean accountNonExpired;
@@ -46,7 +53,11 @@ public class UserPrincipal implements UserDetails {
                 user.getLastname(),
                 user.getEmail(),
                 user.getPassword(),
+                user.getRoles(),
+                user.getProfileStatus(),
                 true,
+                user.getCreatedAt(),
+                user.getFullProfile(),
                 true,
                 true,
                 true,
@@ -68,6 +79,11 @@ public class UserPrincipal implements UserDetails {
     public String getUsername() {
         return email;
     }
+
+    public boolean getFullProfile() {
+        return fullProfile;
+    }
+
     @Override
     public boolean isAccountNonExpired() {
         return accountNonExpired;
