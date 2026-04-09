@@ -56,29 +56,10 @@ public class DrivingSchoolController {
                 .body(new ApiResponse(true, "Auto ecole enregistrée en attente de validation"));
     }
 
-    @Operation(
-            summary = "endpoint d'approbation des moniteur et auto-ecole",
-            description = "dans ce endpoint, l'on donne la possibilité au administrateur de la plateformes (ROOT/admin) d'approuver les requetes de creations d'une auto-ecole et par la meme occasion d'approuver les moniteurs de celle-ci"
-    )
-    @GetMapping("{registryId}/approve")
-    @PreAuthorize("hasRole('REVIEWER')")
-    public ResponseEntity<ApiResponse> approve(@PathVariable UUID registryId) {
-        drivingSchoolService.approveRegistry(registryId);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse(true, "requête approuvé avec success"));
-    }
 
-    @GetMapping("/all")
+    @GetMapping("/public/all")
     public ResponseEntity<List<DrivingSchoolResponseDto>> retreiveSchool() {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(drivingSchoolService.retreiveSchool());
     }
 
-    @Operation(
-            summary = "requete en attente",
-            description = "dans ce endpoint, l'on donne la possibilité au administrateur de la plateformes (ROOT/admin) de consulter l'ensemble des requetes de creation d'auto école en attentes"
-    )
-    @GetMapping("/request/pending")
-    @PreAuthorize("hasRole('REVIEWER', 'ROOT')")
-    public ResponseEntity<List<DrivingSchoolPendingRequestDTO>> retrievePendingRequest() {
-        return ResponseEntity.status(200).body(drivingSchoolService.retreivePendingRequest());
-    }
 }

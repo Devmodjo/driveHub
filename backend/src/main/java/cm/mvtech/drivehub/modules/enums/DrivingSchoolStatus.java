@@ -4,7 +4,8 @@ public enum DrivingSchoolStatus {
     APPROVED("creation de l'auto-ecole approuver par les admins"),
     ACTIVE("auto-école active et affichier dans la liste des auto école"),
     PENDING("auto-école en attente"),
-    SUSPENDED("auto-école suspendu");
+    SUSPENDED("auto-école suspendu"),
+    REJECTED("Demande de creation d'auto-ecole rejeté");
 
     private String v;
 

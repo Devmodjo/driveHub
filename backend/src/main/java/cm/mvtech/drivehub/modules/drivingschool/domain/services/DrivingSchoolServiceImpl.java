@@ -44,7 +44,7 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
     @Override
     public void createSchool(DrivingSchoolRequestDto req, UserPrincipal userPrincipal) throws IllegalAccessException {
 
-        //UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        // UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         Optional<User> admin = userRepository.findById(userPrincipal.getId());
 
         if (admin.isEmpty()) {
@@ -86,8 +86,11 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
 
         List<DrivingSchoolResponseDto> list = new ArrayList<>();
 
-        drivingSchoolRepository.findAll().forEach(
-                (e) -> list.add(mapper.fromEntityToResponse(e))
+        drivingSchoolRegistryRepository.findByDrivingSchoolStatus(DrivingSchoolStatus.APPROVED).forEach(
+                (DrivingSchoolRegistry e) -> list.add(
+                        new DrivingSchoolResponseDto(e.getId(), e.getSchoolName(),
+                                e.getPhoneNumber(), e.getAddress(), e.getDescription(), e.getCreatedAt())
+                )
         );
         return list;
     }
@@ -145,7 +148,7 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
                         registry.getAddress(),
                         registry.getWhatsappNumber(),
                         "%s %s".formatted(registry.getAdmin().getFirstname(), registry.getAdmin().getLastname()),
-                        null, null,  null)
+                        null, null, null)
                 ));
 
         return list;
