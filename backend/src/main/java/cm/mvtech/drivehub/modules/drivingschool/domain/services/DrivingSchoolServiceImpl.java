@@ -113,6 +113,7 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
         }
 
         String schemaName = schoolRegistry.getSchemaName();
+        String schoolName = schoolRegistry.getSchoolName();
 
         // creation du schema
         tenantProvisioningService.createTenantSchema(schemaName);
@@ -123,7 +124,7 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
         TenantContext.setTenantId(schemaName);
 
         try {
-            DrivingSchool ds = getDrivingSchool(schemaName, schoolRegistry, monitor);
+            DrivingSchool ds = getDrivingSchool(schoolRegistry, monitor);
             drivingSchoolRepository.save(ds);
         } finally {
             TenantContext.clear();
@@ -159,9 +160,9 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
         return list;
     }
 
-    private static DrivingSchool getDrivingSchool(String schemaName, DrivingSchoolRegistry schoolRegistry, User monitor) {
+    private static DrivingSchool getDrivingSchool(DrivingSchoolRegistry schoolRegistry, User monitor) {
         DrivingSchool ds = new DrivingSchool();
-        ds.setName(schemaName);
+        ds.setName(schoolRegistry.getSchoolName());
         ds.setAddress(schoolRegistry.getAddress());
         ds.setPhoneNumber(schoolRegistry.getPhoneNumber());
         ds.setDescription(schoolRegistry.getDescription());
