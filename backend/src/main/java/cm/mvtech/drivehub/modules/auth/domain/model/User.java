@@ -44,7 +44,7 @@ public class User extends EntityBase {
     private ProfileStatus profileStatus;
 
     /**
-     * par defaut on considère que le profile n'est pas complet
+     * Par defaut, on considère que le profile n'est pas complet
      */
     @Column(nullable = false)
     private Boolean fullProfile = false;

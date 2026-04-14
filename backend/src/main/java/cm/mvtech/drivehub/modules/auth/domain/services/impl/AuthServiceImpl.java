@@ -136,7 +136,7 @@ public class AuthServiceImpl implements AuthService {
     public CurrentUserResponse getCurrentUser(Authentication authentication) {
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new AccessDeniedException("Veuillez vous authentifier");
+            throw new AccessDeniedException("Ce endpoint nécessite une authentification");
         }
 
         Object principal = authentication.getPrincipal();

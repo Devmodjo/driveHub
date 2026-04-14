@@ -18,7 +18,7 @@ import java.util.UUID;
 public interface DrivingSchoolRegistryRepository
         extends JpaRepository<DrivingSchoolRegistry, UUID> {
 
-    //  pour la validation tenant
+    //  pour la validation tenante
     boolean existsBySchemaName(String schemaName);
 
     Optional<DrivingSchoolRegistry> findBySchemaName(String schemaName);
@@ -27,6 +27,16 @@ public interface DrivingSchoolRegistryRepository
 
     @Query(value = "SELECT d FROM DrivingSchoolRegistry d WHERE d.drivingSchoolStatus= :status")
     List<DrivingSchoolRegistry> findByDrivingSchoolStatus(@Param("status") DrivingSchoolStatus  status);
+
+    @Query("""
+        SELECT r FROM DrivingSchoolRegistry r
+        LEFT JOIN FETCH r.admin a
+        LEFT JOIN FETCH a.monitors
+        WHERE r.drivingSchoolStatus = :status
+    """)
+    List<DrivingSchoolRegistry> findByDrivingSchoolStatusWithAdmin(
+            @Param("status") DrivingSchoolStatus status
+    );
 
     Optional<DrivingSchoolRegistry> findBySchoolName(String schoolName);
 }

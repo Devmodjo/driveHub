@@ -7,6 +7,7 @@ import cm.mvtech.drivehub.platform.admin.enums.AdminStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -25,6 +26,7 @@ public class PlatformAdmin extends EntityBase {
 
     @Column(nullable = false, unique = true)
     private String email;
+
 
     @Enumerated(value = EnumType.STRING)
     private AdminRole role;

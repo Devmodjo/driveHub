@@ -1,11 +1,12 @@
 package cm.mvtech.drivehub.platform.admin.services.serviceImpl;
 
+import cm.mvtech.drivehub.platform.admin.models.AdminPrincipal;
 import cm.mvtech.drivehub.platform.admin.models.PlatformAdmin;
 import cm.mvtech.drivehub.platform.admin.enums.AdminStatus;
 import cm.mvtech.drivehub.platform.admin.repositories.PlatformAdminRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -30,18 +31,20 @@ public class PlatformAdminDetailsService
             throw new DisabledException("Compte admin en attente");
         }
 
-        return new org.springframework.security.core.userdetails.User(
-                admin.getEmail(),
-                admin.getPassword(),
-                admin.isEnabled(),
-                true,
-                true,
-                true,
-                List.of(
-                        new SimpleGrantedAuthority(
-                                "ROLE_" + admin.getRole().name()
-                        )
-                )
-        );
+        return AdminPrincipal.build(admin);
+
+//        return new org.springframework.security.core.userdetails.User(
+//                admin.getEmail(),
+//                admin.getPassword(),
+//                admin.isEnabled(),
+//                true,
+//                true,
+//                true,
+//                List.of(
+//                        new SimpleGrantedAuthority(
+//                                "ROLE_" + admin.getRole().name()
+//                        )
+//                )
+//        );
     }
 }

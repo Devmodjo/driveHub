@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,6 +46,16 @@ public class PlatformAdminController {
 
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(adminerService.adminerLogin(loginRequest));
+    }
+
+    @Operation(
+            summary = "show admin information",
+            description = "Ce endpoint permet d'afficher les informations de l'admin authentifié"
+    )
+    @GetMapping("/admin/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PlatformAdminResponse> currentAdmin(Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(adminerService.getCurrentAdmin(authentication));
     }
 
     /**
@@ -83,7 +94,7 @@ public class PlatformAdminController {
      */
     @Operation(
             summary = "Activation des admins",
-            description = "Ce endpoint permet au ROOT d'activer les comptes utilisateurs (Moniteur)"
+            description = "Ce endpoint permet au ROOT d'activer les comptes Administrateur (REVIEWER, SUPER_ADMIN)"
     )
     @GetMapping("/admin/{adminId}/activate")
     @PreAuthorize("hasRole('ROOT')")
@@ -98,18 +109,18 @@ public class PlatformAdminController {
             description = "dans ce endpoint, l'on donne la possibilité au administrateur de la plateformes (REVIEWER) d'approuver les requetes de creations d'une auto-ecole et par la meme occasion d'approuver les moniteurs de celle-ci"
     )
     @GetMapping("/registries/{registryId}/approve")
-    @PreAuthorize("hasRole('REVIEWER')")
+    @PreAuthorize("hasRole('REVIEWER') || hasRole('ROOT')")
     public ResponseEntity<ApiResponse> approve(@PathVariable UUID registryId) {
         drivingSchoolService.approveRegistry(registryId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse(true, "requête approuvé avec success"));
     }
 
     @Operation(
-            summary = "requete en attente",
+            summary = "requete de creation d'auto-école en attente",
             description = "dans ce endpoint, l'on donne la possibilité au administrateur de la plateformes (ROOT/admin) de consulter l'ensemble des requetes de creation d'auto école en attentes"
     )
     @GetMapping("/registries/pending")
-    @PreAuthorize("hasRole('REVIEWER', 'ROOT')")
+    @PreAuthorize("hasRole('REVIEWER') || hasRole('ROOT')")
     public ResponseEntity<List<DrivingSchoolPendingRequestDTO>> retrievePendingRequest() {
         return ResponseEntity.status(200).body(drivingSchoolService.retreivePendingRequest());
     }

@@ -1,5 +1,6 @@
 package cm.mvtech.drivehub.platform.admin.services.serviceImpl;
 
+import cm.mvtech.drivehub.platform.admin.models.AdminPrincipal;
 import cm.mvtech.drivehub.platform.admin.models.PlatformAdmin;
 import cm.mvtech.drivehub.platform.admin.enums.AdminRole;
 import cm.mvtech.drivehub.platform.admin.enums.AdminStatus;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -116,6 +118,29 @@ public class PlatformAdminService implements AdminerService {
                 .stream()
                 .map(adminMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public PlatformAdminResponse getCurrentAdmin(Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated())
+            throw new AccessDeniedException("Ce endpoint nécessite une authentification");
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof AdminPrincipal admin) {
+
+            UUID id = admin.getId();
+            String name = admin.getUsername();
+            String email = admin.getEmail();
+            AdminRole adminRole = admin.getRole();
+            AdminStatus adminStatus = admin.getStatus();
+
+            return new PlatformAdminResponse(id, name, email, adminRole, adminStatus);
+        }
+
+        throw new IllegalArgumentException("Type de principal non supporté : " +
+                principal.getClass().getName());
     }
 
     /**

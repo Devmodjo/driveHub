@@ -4,7 +4,7 @@ import cm.mvtech.drivehub.platform.admin.models.dto.PlatformAdminAuthResponse;
 import cm.mvtech.drivehub.platform.admin.models.dto.PlatformAdminCreateRequest;
 import cm.mvtech.drivehub.platform.admin.models.dto.PlatformAdminLoginRequest;
 import cm.mvtech.drivehub.platform.admin.models.dto.PlatformAdminResponse;
-
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,6 +36,13 @@ public interface AdminerService {
      * @return Liste des admins PENDING
      */
     List<PlatformAdminResponse> pendingAdminerRequest();
+
+    /**
+     * afficher l'admin authentifier
+     * @param authentication identifie celui qui s'est connecté
+     * @return l'info de l'admin
+     */
+    PlatformAdminResponse getCurrentAdmin(Authentication authentication);
 
     /**
      * Activer un compte admin
