@@ -113,7 +113,6 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
         }
 
         String schemaName = schoolRegistry.getSchemaName();
-        String schoolName = schoolRegistry.getSchoolName();
 
         // creation du schema
         tenantProvisioningService.createTenantSchema(schemaName);
