@@ -9,14 +9,41 @@ spring:
     password: root
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         multiTenancy: SCHEMA
         dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/public  # migrations schéma public uniquement
+    schemas: public                            # Flyway opère dans public
+    baseline-on-migrate: true                 # important car tables existent déjà
+    baseline-version: 0
+    out-of-order: false
   devtools:
     restart:
       enabled: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: false
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false   # true en production
 
 server:
   port: 8082
@@ -38,6 +65,9 @@ jwt:
   secret: ${JWT_SECRET_KEY}
 app:
   root-admin:
-    email: root@gmail.com
-    password: root@admin123
+    email: ${MOCK_ROOT_USERNAME}
+    password: ${MOCK_ROOT_PASSWORD}
   dbname: ${DBNAME}
+  frontend-url: http://localhost:4200
+  mail:
+    from: ${MAIL_USERNAME}
