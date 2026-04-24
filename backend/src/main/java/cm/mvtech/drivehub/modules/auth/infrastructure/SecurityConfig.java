@@ -51,6 +51,14 @@ public class SecurityConfig {
                                 "/api/platform/admin/login", // Login admin platform
                                 "/api/platform/admin/register" // Register admin platform
                         ).permitAll()
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/register/**",
+                                "/api/auth/verify-email",
+                                "/api/auth/resend-verification",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password"
+                        ).permitAll()
 
                         // Endpoints admin platform (authentifié)
                         .requestMatchers("/api/platform/**").authenticated()

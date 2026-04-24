@@ -2,7 +2,15 @@ package cm.mvtech.drivehub.modules.auth.domain.services.impl;
 
 
 import cm.mvtech.drivehub.modules.auth.application.dto.CurrentUserResponse;
-import cm.mvtech.drivehub.modules.auth.application.dto.UserResponseDto;
+import cm.mvtech.drivehub.modules.auth.application.dto.ForgotPasswordRequest;
+import cm.mvtech.drivehub.modules.auth.application.dto.ResetPasswordRequest;
+import cm.mvtech.drivehub.modules.auth.domain.model.EmailVerificationToken;
+import cm.mvtech.drivehub.modules.auth.domain.model.PasswordResetToken;
+import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
+import cm.mvtech.drivehub.modules.auth.infrastructure.repository.EmailVerificationTokenRepository;
+import cm.mvtech.drivehub.modules.auth.infrastructure.repository.PasswordResetTokenRepository;
+import org.springframework.beans.factory.annotation.Value;
+import java.time.LocalDateTime;
 import cm.mvtech.drivehub.modules.auth.domain.model.UserPrincipal;
 import cm.mvtech.drivehub.modules.auth.domain.services.AuthService;
 import cm.mvtech.drivehub.modules.auth.domain.services.JwtService;
@@ -43,6 +51,13 @@ public class AuthServiceImpl implements AuthService {
     private final MonitorsRepository monitorsRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+
+    private final EmailVerificationTokenRepository emailTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
 
     @Override
@@ -102,6 +117,7 @@ public class AuthServiceImpl implements AuthService {
 
 
         studentsRepository.save(student);
+        sendVerificationEmail(user.getEmail());
 
     }
 
@@ -130,6 +146,8 @@ public class AuthServiceImpl implements AuthService {
         monitor.setResidenceCity(request.residenceCity());
         monitor.setDateOfBirth(request.dateOfBirth());
         monitorsRepository.save(monitor);
+
+        sendVerificationEmail(user.getEmail());
     }
 
     @Override
@@ -158,5 +176,121 @@ public class AuthServiceImpl implements AuthService {
         throw new IllegalArgumentException("Type de principal non supporté : " +
                 principal.getClass().getName());
     }
+
+    @Override
+    public void sendVerificationEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable"));
+
+        // Supprimer les anciens tokens
+        emailTokenRepository.deleteAllByUserId(user.getId());
+
+        // Créer le nouveau token
+        String token = UUID.randomUUID().toString();
+        EmailVerificationToken verificationToken = new EmailVerificationToken();
+        verificationToken.setUser(user);
+        verificationToken.setToken(token);
+        verificationToken.setExpiresAt(LocalDateTime.now().plusHours(24));
+        verificationToken.setUsed(false);
+        emailTokenRepository.save(verificationToken);
+
+        // Envoyer l'email (async)
+        String verificationUrl = frontendUrl + "/verify-email?token=" + token;
+        emailService.sendVerificationEmail(
+                user.getEmail(),
+                user.getFirstname(),
+                verificationUrl
+        );
+    }
+
+    @Override
+    @Transactional
+    public void verifyEmail(String token) {
+        EmailVerificationToken verificationToken = emailTokenRepository
+                .findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Token invalide"));
+
+        if (verificationToken.isExpired()) {
+            throw new IllegalArgumentException("Token expiré — demandez un nouveau lien");
+        }
+
+        if (verificationToken.isUsed()) {
+            throw new IllegalArgumentException("Token déjà utilisé");
+        }
+
+        User user = verificationToken.getUser();
+
+        // Déjà vérifié → succès silencieux
+        if (user.getProfileStatus() == ProfileStatus.EMAIL_VERIFIED
+                || user.getProfileStatus() == ProfileStatus.ACTIVE) {
+            return;
+        }
+
+        // Activer le compte
+        user.setProfileStatus(ProfileStatus.EMAIL_VERIFIED);
+        userRepository.save(user);
+
+        // Invalider le token
+        verificationToken.setUsed(true);
+        emailTokenRepository.save(verificationToken);
+    }
+
+    @Override
+    public void forgotPassword(ForgotPasswordRequest request) {
+        // Comportement identique que l'email existe ou non (anti-énumération)
+        userRepository.findByEmail(request.email()).ifPresent(user -> {
+
+            // Supprimer les anciens tokens
+            passwordResetTokenRepository.deleteAllByUserId(user.getId());
+
+            // Créer le token
+            String token = UUID.randomUUID().toString();
+            PasswordResetToken resetToken = new PasswordResetToken();
+            resetToken.setUser(user);
+            resetToken.setToken(token);
+            resetToken.setExpiresAt(LocalDateTime.now().plusHours(1));
+            resetToken.setUsed(false);
+            passwordResetTokenRepository.save(resetToken);
+
+            // Envoyer l'email (async)
+            String resetUrl = frontendUrl + "/reset-password?token=" + token;
+            emailService.sendPasswordResetEmail(
+                    user.getEmail(),
+                    user.getFirstname(),
+                    resetUrl
+            );
+        });
+        // Pas d'exception si email inconnu → anti-énumération
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        PasswordResetToken resetToken = passwordResetTokenRepository
+                .findByToken(request.token())
+                .orElseThrow(() -> new IllegalArgumentException("Token invalide"));
+
+        if (resetToken.isExpired()) {
+            throw new IllegalArgumentException("Token expiré — refaites la demande");
+        }
+
+        if (resetToken.isUsed()) {
+            throw new IllegalArgumentException("Token déjà utilisé");
+        }
+
+        if (request.newPassword().length() < 8) {
+            throw new IllegalArgumentException(
+                    "Le mot de passe doit contenir au moins 8 caractères");
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+
+        // Invalider le token
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+    }
+
 
 }
