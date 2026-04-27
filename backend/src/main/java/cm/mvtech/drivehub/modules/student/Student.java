@@ -21,7 +21,7 @@ import java.util.Set;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "students")
+@Table(name = "students", schema = "public")
 public class Student extends EntityBase {
 
     @ManyToOne

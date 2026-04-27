@@ -6,6 +6,7 @@ import cm.mvtech.drivehub.platform.admin.enums.AdminStatus;
 import cm.mvtech.drivehub.platform.admin.repositories.PlatformAdminRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.env.Environment;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@DependsOn("flywayInitializer")
 public class RootAdminerSeeder implements ApplicationRunner {
 
     private final PlatformAdminRepository adminRepository;

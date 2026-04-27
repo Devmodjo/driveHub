@@ -21,7 +21,7 @@ import java.util.Set;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "_users")
+@Table(name = "_users", schema = "public")
 public class User extends EntityBase {
 
     @Column(nullable = false)

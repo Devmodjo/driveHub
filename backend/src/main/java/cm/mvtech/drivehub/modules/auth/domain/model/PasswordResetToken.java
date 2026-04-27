@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "password_reset_tokens")
+@Table(name = "password_reset_tokens", schema = "public")
 @Getter
 @Setter
 @NoArgsConstructor
