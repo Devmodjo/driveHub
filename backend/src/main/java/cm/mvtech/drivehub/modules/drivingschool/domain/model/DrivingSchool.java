@@ -25,7 +25,7 @@ import java.util.Set;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "driving_school")
+@Table(name = "driving_school", schema = "public")
 public class DrivingSchool extends EntityBase {
 
     @Column(nullable = false)

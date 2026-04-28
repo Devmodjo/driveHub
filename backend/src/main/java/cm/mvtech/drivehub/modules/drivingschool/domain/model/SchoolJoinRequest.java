@@ -17,7 +17,7 @@ import java.util.UUID;
 
 
 @Entity
-@Table(name = "school_join_request")
+@Table(name = "school_join_request", schema = "public")
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor

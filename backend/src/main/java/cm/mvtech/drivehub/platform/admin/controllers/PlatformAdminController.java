@@ -96,7 +96,7 @@ public class PlatformAdminController {
             summary = "Activation des admins",
             description = "Ce endpoint permet au ROOT d'activer les comptes Administrateur (REVIEWER, SUPER_ADMIN)"
     )
-    @GetMapping("/admin/{adminId}/activate")
+    @PatchMapping("/admin/{adminId}/activate")
     @PreAuthorize("hasRole('ROOT')")
     public ResponseEntity<ApiResponse> activateAdmin(@PathVariable UUID adminId) {
         adminerService.activateAdmin(adminId);
@@ -108,7 +108,7 @@ public class PlatformAdminController {
             summary = "endpoint d'approbation des moniteur et auto-ecole",
             description = "dans ce endpoint, l'on donne la possibilité au administrateur de la plateformes (REVIEWER) d'approuver les requetes de creations d'une auto-ecole et par la meme occasion d'approuver les moniteurs de celle-ci"
     )
-    @GetMapping("/registries/{registryId}/approve")
+    @PatchMapping("/registries/{registryId}/approve")
     @PreAuthorize("hasRole('REVIEWER') || hasRole('ROOT')")
     public ResponseEntity<ApiResponse> approve(@PathVariable UUID registryId) {
         drivingSchoolService.approveRegistry(registryId);

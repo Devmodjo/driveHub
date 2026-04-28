@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "tenants")
+@Table(name = "tenants", schema = "public")
 @NoArgsConstructor
 public class TenantEntity {
 

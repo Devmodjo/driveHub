@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "plateform_admin")
+@Table(name = "platform_admin", schema ="public")
 @NoArgsConstructor
 @AllArgsConstructor
 public class PlatformAdmin extends EntityBase {

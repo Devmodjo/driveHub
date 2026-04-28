@@ -51,8 +51,12 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
             throw new UsernameNotFoundException("cet utilisateur n'existe pas !");
         }
 
-        DrivingSchoolRegistry dr = getDrivingSchoolRegistry(req, admin);
-        drivingSchoolRegistryRepository.save(dr);
+        if (admin.get().getProfileStatus() == ProfileStatus.EMAIL_VERIFIED) {
+            DrivingSchoolRegistry dr = getDrivingSchoolRegistry(req, admin);
+            drivingSchoolRegistryRepository.save(dr);
+        } else {
+            throw new IllegalAccessException("votre email doit être vérifier");
+        }
 
     }
 
@@ -138,7 +142,7 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
 
         List<DrivingSchoolPendingRequestDTO> list = new ArrayList<>();
 
-        for (DrivingSchoolRegistry registry : drivingSchoolRegistryRepository.findByDrivingSchoolStatus(DrivingSchoolStatus.PENDING)) {
+        for (DrivingSchoolRegistry registry : drivingSchoolRegistryRepository.findByDrivingSchoolStatusWithAdmin(DrivingSchoolStatus.PENDING)) {
             list.add(new DrivingSchoolPendingRequestDTO(
                     registry.getId(),
                     registry.getSchoolName(),

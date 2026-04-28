@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "email_verification_tokens")
+@Table(name = "email_verification_tokens", schema = "public")
 @Getter
 @Setter
 @NoArgsConstructor

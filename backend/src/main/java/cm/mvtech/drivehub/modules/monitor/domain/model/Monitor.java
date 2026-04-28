@@ -19,7 +19,7 @@ import java.util.Set;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "monitors")
+@Table(name = "monitors", schema = "public")
 public class Monitor extends EntityBase {
 
     @ManyToOne

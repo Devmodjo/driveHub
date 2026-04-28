@@ -73,11 +73,10 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Chargement utilisateur (BON SCHÉMA)
-        user = userRepository.findByEmail(request.email())
+       /** user = userRepository.findByEmail(request.email())
                 .orElseThrow(() ->
                         new UsernameNotFoundException("Utilisateur introuvable"));
-
-
+        */
         // Génération JWT tenant-aware
         String token = jwtService.generateToken(user);
 
@@ -103,7 +102,7 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(request.email());
         user.setRoles(Role.STUDENT);
         user.setPassword(passwordEncoder.encode(request.password()));
-        user.setProfileStatus(ProfileStatus.REGISTERED);
+        user.setProfileStatus(ProfileStatus.ACTIVE);
 
         userRepository.save(user);
 
@@ -117,7 +116,6 @@ public class AuthServiceImpl implements AuthService {
 
 
         studentsRepository.save(student);
-        sendVerificationEmail(user.getEmail());
 
     }
 
