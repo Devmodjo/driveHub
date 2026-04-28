@@ -9,5 +9,8 @@ export class LoginData implements ILoginData {
     public email?: string,
     public password?: string,
     public rememberMe?: boolean
-  ) { }
+  ) { 
+    this.email = "admin@gmail.com";
+    this.password = "root@admin123";
+  }
 }

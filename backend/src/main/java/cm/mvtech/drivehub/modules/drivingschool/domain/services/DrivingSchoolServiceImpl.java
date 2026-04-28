@@ -16,6 +16,7 @@ import cm.mvtech.drivehub.modules.drivingschool.infrastructure.DrivingSchoolRegi
 import cm.mvtech.drivehub.modules.drivingschool.infrastructure.DrivingSchoolRepository;
 import cm.mvtech.drivehub.modules.auth.infrastructure.repository.UserRepository;
 import cm.mvtech.drivehub.core.domain.service.TenantProvisioningService;
+import cm.mvtech.drivehub.modules.monitor.domain.model.Monitor;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,8 +44,7 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
     @Transactional
     @Override
     public void createSchool(DrivingSchoolRequestDto req, UserPrincipal userPrincipal) throws IllegalAccessException {
-
-        //UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        
         Optional<User> admin = userRepository.findById(userPrincipal.getId());
 
         if (admin.isEmpty()) {
@@ -87,10 +87,14 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
         List<DrivingSchoolResponseDto> list = new ArrayList<>();
 
         drivingSchoolRepository.findAll().forEach(
-                (e) -> list.add(mapper.fromEntityToResponse(e))
+                (DrivingSchool e) -> list.add(
+                        new DrivingSchoolResponseDto(e.getId(), e.getName(),
+                                e.getPhoneNumber(), e.getAddress(), e.getDescription(), e.getCreatedAt())
+                )
         );
         return list;
     }
+
 
     @Override
     @Transactional
@@ -119,7 +123,7 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
         TenantContext.setTenantId(schemaName);
 
         try {
-            DrivingSchool ds = getDrivingSchool(schemaName, schoolRegistry, monitor);
+            DrivingSchool ds = getDrivingSchool(schoolRegistry, monitor);
             drivingSchoolRepository.save(ds);
         } finally {
             TenantContext.clear();
@@ -134,26 +138,30 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
 
         List<DrivingSchoolPendingRequestDTO> list = new ArrayList<>();
 
-        log.info("current school {}", drivingSchoolRegistryRepository.findByDrivingSchoolStatus(DrivingSchoolStatus.PENDING).getFirst().getSchoolName());
-        log.info("current status {}, current schema {}", DrivingSchoolStatus.PENDING, TenantContext.getTenantId());
-
-        drivingSchoolRegistryRepository.findByDrivingSchoolStatus(DrivingSchoolStatus.PENDING).forEach(
-                registry -> list.add(new DrivingSchoolPendingRequestDTO(
-                        registry.getSchoolName(),
-                        registry.getCountry(),
-                        registry.getCity(),
-                        registry.getAddress(),
-                        registry.getWhatsappNumber(),
-                        "%s %s".formatted(registry.getAdmin().getFirstname(), registry.getAdmin().getLastname()),
-                        null, null,  null)
-                ));
+        for (DrivingSchoolRegistry registry : drivingSchoolRegistryRepository.findByDrivingSchoolStatus(DrivingSchoolStatus.PENDING)) {
+            list.add(new DrivingSchoolPendingRequestDTO(
+                    registry.getId(),
+                    registry.getSchoolName(),
+                    registry.getCountry(),
+                    registry.getCity(),
+                    registry.getAddress(),
+                    registry.getWhatsappNumber(),
+                    "%s %s".formatted(registry.getAdmin().getFirstname(), registry.getAdmin().getLastname()),
+                    registry.getAdmin().getMonitors().stream().findFirst()
+                            .map(Monitor::getResidenceCity).orElse(null),
+                    registry.getAdmin().getMonitors().stream().findFirst()
+                            .map(Monitor::getNationality).orElse(null),
+                    registry.getAdmin().getMonitors().stream().findFirst()
+                            .map(Monitor::getGender).orElse(null)
+            ));
+        }
 
         return list;
     }
 
-    private static DrivingSchool getDrivingSchool(String schemaName, DrivingSchoolRegistry schoolRegistry, User monitor) {
+    private static DrivingSchool getDrivingSchool(DrivingSchoolRegistry schoolRegistry, User monitor) {
         DrivingSchool ds = new DrivingSchool();
-        ds.setName(schemaName);
+        ds.setName(schoolRegistry.getSchoolName());
         ds.setAddress(schoolRegistry.getAddress());
         ds.setPhoneNumber(schoolRegistry.getPhoneNumber());
         ds.setDescription(schoolRegistry.getDescription());
