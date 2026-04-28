@@ -3,7 +3,7 @@ package cm.mvtech.drivehub.modules.student;
 import cm.mvtech.drivehub.modules.enums.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.sql.Date;
+import java.util.Date;
 
 public record StudentRegisterRequest(
         @Schema(defaultValue = "john")
