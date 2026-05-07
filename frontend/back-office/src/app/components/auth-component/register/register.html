@@ -1,0 +1,109 @@
+<div class="bo-container">
+  <div class="bo-panel">
+    <div class="bo-header">
+      <h1 class="bo-title">DriveHub Administration</h1>
+      <p class="bo-subtitle">Création d'un compte Back-Office</p>
+    </div>
+
+    <!-- 
+      On garde la même logique Angular : 
+      [formGroup] connecte ce formulaire HTML à l'objet 'registerForm' dans le TS.
+      (ngSubmit) déclenche la méthode 'onSubmit()' quand on clique sur le bouton de validation.
+    -->
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="bo-form" novalidate>
+
+      <div class="form-group">
+        <label for="name">Nom complet</label>
+        <input 
+          type="text" 
+          id="name" 
+          formControlName="name" 
+          placeholder="Entrez votre nom"
+        >
+        <!-- @if est la structure de contrôle Angular 17+ pour afficher un bloc sous condition -->
+        @if (registerForm.get('name')?.invalid && registerForm.get('name')?.touched) {
+          <span class="error-msg">Ce champ est requis.</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="email">Adresse e-mail</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email" 
+          placeholder="nom@entreprise.com"
+        >
+        @if (registerForm.get('email')?.invalid && registerForm.get('email')?.touched) {
+          <span class="error-msg">Un e-mail valide est requis.</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="role">Rôle assigné</label>
+        <select id="role" formControlName="role">
+          <option value="" disabled selected>-- Sélectionnez un rôle --</option>
+          <option value="REVIEWER">Reviewer (Lecture seule)</option>
+          <option value="SUPER_ADMIN">Super Admin (Accès total)</option>
+        </select>
+        @if (registerForm.get('role')?.invalid && registerForm.get('role')?.touched) {
+          <span class="error-msg">Le rôle est requis.</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="phoneNumber">Numéro de téléphone</label>
+        <input 
+          type="tel" 
+          inputmode="numeric" 
+          pattern="[0-9]*" 
+          id="phoneNumber" 
+          formControlName="phoneNumber" 
+          placeholder="Ex: 6XXXXXXXX"
+        >
+        @if (registerForm.get('phoneNumber')?.hasError('required') && registerForm.get('phoneNumber')?.touched) {
+          <span class="error-msg">Un numéro de téléphone est requis.</span>
+        }
+        @if (registerForm.get('phoneNumber')?.hasError('pattern') && registerForm.get('phoneNumber')?.touched) {
+          <span class="error-msg">Ce champ ne doit contenir que des chiffres.</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="residence">Résidence</label>
+        <input 
+          type="text" 
+          id="residence" 
+          formControlName="residence" 
+          placeholder="Ville ou pays de résidence"
+        >
+        @if (registerForm.get('residence')?.invalid && registerForm.get('residence')?.touched) {
+          <span class="error-msg">La résidence est requise.</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mot de passe provisoire</label>
+        <input 
+          type="password" 
+          id="password" 
+          formControlName="password" 
+        >
+        @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
+          <span class="error-msg">Un mot de passe est requis.</span>
+        }
+      </div>
+
+      <div class="form-actions">
+        <!-- 
+          [disabled] désactive le bouton tant que le formulaire est invalide
+          (= tant que Validators.required d'un champ n'est pas rempli)
+        -->
+        <button type="submit" [disabled]="registerForm.invalid" class="btn-primary">
+          Enregistrer l'utilisateur
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

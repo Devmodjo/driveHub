@@ -1,0 +1,139 @@
+/* ========================
+   VARIABLES & FONT
+======================== */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap');
+
+:host {
+  display: block;
+  font-family: 'Outfit', sans-serif;
+  color: #333333;
+  background-color: #f4f6f9; /* Soft grey background for back-office */
+}
+
+/* ========================
+   CONTAINER
+======================== */
+.bo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.bo-panel {
+  width: 100%;
+  max-width: 500px;
+  background: #ffffff;
+  border: 1px solid #dcdcdc; /* Simple sharp border */
+  padding: 40px;
+  /* NO shadows, NO rounded corners */
+}
+
+/* ========================
+   HEADER
+======================== */
+.bo-header {
+  border-bottom: 2px solid #0056b3; /* Corporate blue underline */
+  padding-bottom: 15px;
+  margin-bottom: 30px;
+}
+
+.bo-title {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #2c3e50;
+  margin: 0 0 5px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bo-subtitle {
+  font-size: 0.9rem;
+  color: #666666;
+  margin: 0;
+}
+
+/* ========================
+   FORM
+======================== */
+.bo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #333333;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  border: 1px solid #cccccc;
+  background-color: #fafafa;
+  outline: none;
+  /* Square corners */
+  border-radius: 0;
+  transition: border-color 0.2s ease;
+}
+
+input:focus, select:focus {
+  border-color: #0056b3;
+  background-color: #ffffff;
+}
+
+input::placeholder {
+  color: #bbbbbb;
+}
+
+/* ========================
+   ERRORS
+======================== */
+.error-msg {
+  font-size: 0.75rem;
+  color: #d9534f; /* Corporate red for errors */
+  margin-top: 2px;
+}
+
+/* ========================
+   BUTTON
+======================== */
+.form-actions {
+  margin-top: 10px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background-color: #0056b3;
+  color: #ffffff;
+  border: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 0; /* Square button */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #004494;
+}
+
+.btn-primary:disabled {
+  background-color: #a6c8e6;
+  cursor: not-allowed;
+}
