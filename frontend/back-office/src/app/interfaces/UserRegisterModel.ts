@@ -1,7 +1,9 @@
+import { Role } from "../enums/role.enum";
+
 interface UserRegisterModel {
-    id: string,
+    name: string,
     email:string,
-    role : "REVIEWER" | "SUPER_ADMIN",
+    role : Role,
     password:string,
     residence:string,
     phoneNumber:string

@@ -43,8 +43,8 @@
         <label for="role">Rôle assigné</label>
         <select id="role" formControlName="role">
           <option value="" disabled selected>-- Sélectionnez un rôle --</option>
-          <option value="REVIEWER">Reviewer (Lecture seule)</option>
-          <option value="SUPER_ADMIN">Super Admin (Accès total)</option>
+          <option [value]="role.REVIEWER">Reviewer (Lecture seule)</option>
+          <option [value]="role.SUPER_ADMIN">Super Admin (Accès total)</option>
         </select>
         @if (registerForm.get('role')?.invalid && registerForm.get('role')?.touched) {
           <span class="error-msg">Le rôle est requis.</span>
@@ -92,6 +92,9 @@
         @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
           <span class="error-msg">Un mot de passe est requis.</span>
         }
+        <div class="mt-2 p-3 bg-amber-50 border-l-4 border-amber-500 text-amber-800 text-xs rounded shadow-sm">
+          <strong>⚠️ Attention :</strong> Veuillez noter ce mot de passe quelque part. Après avoir quitté cette page, <strong>il ne pourra plus être récupéré</strong> avant la validation définitive de votre compte par un administrateur.
+        </div>
       </div>
 
       <div class="form-actions">
@@ -99,11 +102,32 @@
           [disabled] désactive le bouton tant que le formulaire est invalide
           (= tant que Validators.required d'un champ n'est pas rempli)
         -->
+
+        <!-- Bannière d'erreur API : affichée seulement si errorMessage() n'est pas vide -->
+        @if (errorMessage()) {
+          <div class="error-banner">
+            ⚠️ {{ errorMessage() }}
+          </div>
+        }
+
         <button type="submit" [disabled]="registerForm.invalid" class="btn-primary">
           Enregistrer l'utilisateur
         </button>
+
+        vous avez deja un compte ? <a class="text-blue-600 " routerLink="/login" routerLinkActive="active">connectez-vous !</a>
       </div>
 
     </form>
   </div>
 </div>
+
+
+@if(handleModal() == true) {
+  <register-modal 
+    [title]="'Enregistrement réussi !'"  
+    [message]="'Votre requête sera validée dans les prochaines 24-48h. Vous serez notifié par e-mail de la décision.'" 
+    [password]="registerForm.value.password || undefined"
+  />
+}
+
+<router-outlet/>

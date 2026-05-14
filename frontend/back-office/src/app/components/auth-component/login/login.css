@@ -106,6 +106,16 @@ input::placeholder {
   margin-top: 2px;
 }
 
+/* Bannière d'erreur globale (retour API) */
+.error-banner {
+  border-left: 3px solid #d9534f;
+  background-color: #fdf2f2;
+  color: #8b1a1a;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  margin-bottom: 12px;
+}
+
 /* ========================
    BUTTON
 ======================== */
