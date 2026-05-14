@@ -1,9 +1,0 @@
-FROM node:18-alpine AS build
-ARG SCRIPT_TO_RUN
-WORKDIR /app
-COPY package*.json /app/
-COPY . /app/
-RUN npm install
-USER node
-EXPOSE 8208
-CMD [ "npm", "run", "start_docker" ]
