@@ -41,16 +41,7 @@ export class RegisterComponent {
   });
 
   onSubmit() {
-    if (this.registerForm.valid){
-
-      console.log(this.registerForm.value);
-      const formData = this.registerForm.value;
-
-      this.authService.register(new UserModel(formData.name!, formData.email!, formData.role! as Role, formData.password!, formData.residence!, formData.phoneNumber!));
-      console.log(this.registerForm.value);
-      this.isSend = true;
-    }
-
+    
     // throw new Error("le formulaire invalide !!!");
       
   }

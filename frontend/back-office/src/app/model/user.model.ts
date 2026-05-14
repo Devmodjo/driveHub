@@ -2,12 +2,12 @@ import { Role } from "../enums/role.enum";
 
 export class UserModel {
 
-  private name?: string;
-  private email?: string;
-  private role?: Role;
-  private password?: string;
-  private residence?: string;
-  private phoneNumber?: string;
+  public  name?: string;
+  public  email?: string;
+  public  role?: Role;
+  public  password?: string;
+  public residence?: string;
+  public  phoneNumber?: string;
 
   constructor(
     name?: string,
