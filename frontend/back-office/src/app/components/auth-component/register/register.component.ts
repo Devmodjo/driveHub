@@ -1,10 +1,11 @@
-import { Component, inject, Input } from '@angular/core';
+import { Component, inject, Input, signal } from '@angular/core';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../../services/auth-service/auth.service';
 import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { UserModel } from '../../../model/user.model';
 import { Role } from '../../../enums/role.enum';
 import { ModalComponent } from '../modal/modal.component';
+import UserRegisterModel from '../../../interfaces/UserRegisterModel';
 
 
 /**
@@ -23,7 +24,7 @@ export class RegisterComponent {
 
   // permet d'injecter un service dans  un composant
   private authService = inject(AuthService);
-  @Input() isSend = false;
+  @Input() isSend = signal<boolean>(false);
   role = Role;
 
   registerForm = new FormGroup({
@@ -41,11 +42,42 @@ export class RegisterComponent {
   });
 
   onSubmit() {
+
+    if (this.registerForm.invalid) {
+      this.isSend.set(false);
+      return;
+    }
     
-    // throw new Error("le formulaire invalide !!!");
+    /**
+     * on construit l'objet qui vas communique avec l'api
+     */
+    const registerCredential : UserRegisterModel = {
+      name: this.registerForm.value.name!,
+      email: this.registerForm.value.email!,
+      role: this.registerForm.value.role! as Role,
+      password: this.registerForm.value.password!,
+      residence: this.registerForm.value.residence!,
+      phoneNumber: this.registerForm.value.phoneNumber!
+    }
+  
+  /**
+   * grace à l'observable, on verifie si l'api repond
+   * et on s'abonne au resultat via subscribe 
+   * celle ci possede deux paramètre next et error
+   * next : si l'api repond avec succes
+   * error : si l'api repond avec une erreur
+   */
+    this.authService.register(registerCredential).subscribe({
+      next : (response) => {
+        this.isSend.set(true);
+      },
+      error : (error) => {
+        this.isSend.set(false);
+      }
+    })
       
   }
 
-  handleModal() { return this.isSend;  }
+  handleModal() { return this.isSend();  }
 
 }

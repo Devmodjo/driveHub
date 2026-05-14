@@ -92,6 +92,9 @@
         @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
           <span class="error-msg">Un mot de passe est requis.</span>
         }
+        <div class="mt-2 p-3 bg-amber-50 border-l-4 border-amber-500 text-amber-800 text-xs rounded shadow-sm">
+          <strong>⚠️ Attention :</strong> Veuillez noter ce mot de passe quelque part. Après avoir quitté cette page, <strong>il ne pourra plus être récupéré</strong> avant la validation définitive de votre compte par un administrateur.
+        </div>
       </div>
 
       <div class="form-actions">
@@ -110,13 +113,13 @@
   </div>
 </div>
 
-<!-- 
-@if(handleModal() == true) {
-  <register-modal [title]="'Enregistrement reussie!'"  [message]="`votre requête seras valide dans les prochaine 24-48h
-        vous seriez notifier par email apres validation ou non de votre requête !`" />
-} -->
 
-<register-modal [title]="'Enregistrement reussie!'"  [message]="`votre requête seras valide dans les prochaine 24-48h
-        vous seriez notifier par email apres validation ou non de votre requête !`" />
+@if(handleModal() == true) {
+  <register-modal 
+    [title]="'Enregistrement réussi !'"  
+    [message]="'Votre requête sera validée dans les prochaines 24-48h. Vous serez notifié par e-mail de la décision.'" 
+    [password]="registerForm.value.password || undefined"
+  />
+}
 
 <router-outlet/>
