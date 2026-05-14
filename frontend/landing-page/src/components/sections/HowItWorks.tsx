@@ -3,34 +3,37 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { UserPlus, Settings, CheckCircle } from 'lucide-react';
-
-const steps = [
-  {
-    title: 'Inscription rapide',
-    description: 'Créez votre profil en quelques minutes, que vous soyez un gérant d\'auto-école ou un étudiant.',
-    icon: UserPlus,
-  },
-  {
-    title: 'Configuration & Choix',
-    description: 'Configurez vos services ou trouvez l\'établissement qui correspond à vos besoins et votre budget.',
-    icon: Settings,
-  },
-  {
-    title: 'Gestion & Réussite',
-    description: 'Suivez vos cours, gérez vos paiements et progressez sereinement jusqu\'à l\'obtention du permis.',
-    icon: CheckCircle,
-  },
-];
+import { useDictionary } from '@/components/DictionaryProvider';
 
 export const HowItWorks = () => {
+  const { dict } = useDictionary();
+
+  const steps = [
+    {
+      title: dict.HowItWorks.step1_title,
+      description: dict.HowItWorks.step1_desc,
+      icon: UserPlus,
+    },
+    {
+      title: dict.HowItWorks.step2_title,
+      description: dict.HowItWorks.step2_desc,
+      icon: Settings,
+    },
+    {
+      title: dict.HowItWorks.step3_title,
+      description: dict.HowItWorks.step3_desc,
+      icon: CheckCircle,
+    },
+  ];
+
   return (
     <section id="how-it-works" className="py-24 bg-white dark:bg-black border-y border-black/5 dark:border-white/5">
       <div className="container mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-sm font-bold text-[#0070f3] uppercase tracking-[0.2em] mb-4">Processus</h2>
-          <h3 className="font-display text-4xl md:text-5xl font-black text-black dark:text-white mb-6">Comment ça marche ?</h3>
+          <h2 className="text-sm font-bold text-[#0070f3] uppercase tracking-[0.2em] mb-4">{dict.HowItWorks.badge}</h2>
+          <h3 className="font-display text-4xl md:text-5xl font-black text-black dark:text-white mb-6">{dict.HowItWorks.title}</h3>
           <p className="text-xl text-black/60 dark:text-white/60 font-light">
-            Un parcours simple et transparent pour digitaliser votre expérience.
+            {dict.HowItWorks.description}
           </p>
         </div>
 

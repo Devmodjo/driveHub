@@ -3,66 +3,69 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
-
-const plans = [
-  {
-    name: 'Essentiel',
-    price: '25.000',
-    currency: 'FCFA',
-    period: '/mois',
-    description: 'Idéal pour les petites auto-écoles.',
-    features: [
-      'Jusqu\'à 50 étudiants',
-      'Gestion des plannings',
-      'Suivi des paiements',
-      'Support par email',
-    ],
-    cta: 'Adopter l\'Essentiel',
-    popular: false,
-  },
-  {
-    name: 'Business',
-    price: '50.000',
-    currency: 'FCFA',
-    period: '/mois',
-    description: 'La solution complète pour votre gestion.',
-    features: [
-      'Étudiants illimités',
-      'Gestion de flotte',
-      'Mobile Money intégré',
-      'SMS de rappel illimités',
-      'Rapports financiers',
-      'Support prioritaire',
-    ],
-    cta: 'Choisir Business',
-    popular: true,
-  },
-  {
-    name: 'Sur Mesure',
-    price: 'Devis',
-    currency: '',
-    period: '',
-    description: 'Pour les réseaux multi-agences.',
-    features: [
-      'Multi-agences centralisées',
-      'API personnalisée',
-      'Formation sur site',
-      'Accompagnement dédié',
-    ],
-    cta: 'Nous contacter',
-    popular: false,
-  },
-];
+import { useDictionary } from '@/components/DictionaryProvider';
 
 export const Pricing = () => {
+  const { dict } = useDictionary();
+
+  const plans = [
+    {
+      name: dict.Pricing.plan1_name,
+      price: '25.000',
+      currency: 'FCFA',
+      period: dict.Pricing.period,
+      description: dict.Pricing.plan1_desc,
+      features: [
+        dict.Pricing.plan1_f1,
+        dict.Pricing.plan1_f2,
+        dict.Pricing.plan1_f3,
+        dict.Pricing.plan1_f4,
+      ],
+      cta: dict.Pricing.plan1_cta,
+      popular: false,
+    },
+    {
+      name: dict.Pricing.plan2_name,
+      price: '50.000',
+      currency: 'FCFA',
+      period: dict.Pricing.period,
+      description: dict.Pricing.plan2_desc,
+      features: [
+        dict.Pricing.plan2_f1,
+        dict.Pricing.plan2_f2,
+        dict.Pricing.plan2_f3,
+        dict.Pricing.plan2_f4,
+        dict.Pricing.plan2_f5,
+        dict.Pricing.plan2_f6,
+      ],
+      cta: dict.Pricing.plan2_cta,
+      popular: true,
+    },
+    {
+      name: dict.Pricing.plan3_name,
+      price: dict.Pricing.plan3_price,
+      currency: '',
+      period: '',
+      description: dict.Pricing.plan3_desc,
+      features: [
+        dict.Pricing.plan3_f1,
+        dict.Pricing.plan3_f2,
+        dict.Pricing.plan3_f3,
+        dict.Pricing.plan3_f4,
+      ],
+      cta: dict.Pricing.plan3_cta,
+      popular: false,
+    },
+  ];
+
   return (
     <section id="pricing" className="py-24 bg-white dark:bg-black border-y border-black/5 dark:border-white/5">
       <div className="container mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-20">
-          <h2 className="text-sm font-bold text-[#0070f3] uppercase tracking-[0.2em] mb-4">Tarification</h2>
-          <h3 className="font-display text-4xl md:text-5xl font-black text-black dark:text-white mb-6">Des tarifs clairs et transparents.</h3>
+          <h2 className="text-sm font-bold text-[#0070f3] uppercase tracking-[0.2em] mb-4">{dict.Pricing.badge}</h2>
+          <h3 className="font-display text-4xl md:text-5xl font-black text-black dark:text-white mb-6">{dict.Pricing.title}</h3>
           <p className="text-xl text-black/60 dark:text-white/60 font-light">
-            Choisissez le forfait adapté à la croissance de votre établissement, sans frais cachés ni complexité technique.
+            {dict.Pricing.description}
           </p>
         </div>
 
@@ -82,7 +85,7 @@ export const Pricing = () => {
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-[#0070f3] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#0070f3]/25">
-                  Plus populaire
+                  {dict.Pricing.popular}
                 </div>
               )}
 

@@ -3,37 +3,39 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-
-const faqs = [
-  {
-    question: 'Est-ce que DriveHub fonctionne sans connexion internet ?',
-    answer: 'DriveHub est une plateforme cloud. Cependant, l\'application est optimisée pour fonctionner avec une très faible bande passante, ce qui est idéal pour les zones avec une couverture réseau instable au Cameroun.',
-  },
-  {
-    question: 'Comment se passe l\'intégration du Mobile Money ?',
-    answer: 'Nous supportons nativement Orange Money et MTN Mobile Money. Vous pouvez configurer vos comptes directement dans votre espace pour recevoir les frais d\'inscription en toute sécurité et fluidité.',
-  },
-  {
-    question: 'Les étudiants peuvent-ils réviser le code en ligne ?',
-    answer: 'Oui, nous proposons une base de tests conformes au code de la route camerounais, avec des explications claires et un suivi des progrès en temps réel pour l\'élève.',
-  },
-  {
-    question: 'Mes données sont-elles vraiment protégées ?',
-    answer: 'Absolument. Nous utilisons des serveurs sécurisés avec des sauvegardes régulières. Vos informations sont chiffrées selon les standards de sécurité modernes.',
-  },
-];
+import { useDictionary } from '@/components/DictionaryProvider';
 
 export const FAQ = () => {
+  const { dict } = useDictionary();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      question: dict.FAQ.q1,
+      answer: dict.FAQ.a1,
+    },
+    {
+      question: dict.FAQ.q2,
+      answer: dict.FAQ.a2,
+    },
+    {
+      question: dict.FAQ.q3,
+      answer: dict.FAQ.a3,
+    },
+    {
+      question: dict.FAQ.q4,
+      answer: dict.FAQ.a4,
+    },
+  ];
 
   return (
     <section id="faq" className="py-24 bg-white dark:bg-black">
       <div className="container mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-sm font-bold text-[#0070f3] uppercase tracking-[0.2em] mb-4">Support</h2>
-          <h3 className="font-display text-4xl md:text-5xl font-black text-black dark:text-white mb-6">Questions Fréquentes</h3>
+          <h2 className="text-sm font-bold text-[#0070f3] uppercase tracking-[0.2em] mb-4">{dict.FAQ.badge}</h2>
+          <h3 className="font-display text-4xl md:text-5xl font-black text-black dark:text-white mb-6">{dict.FAQ.title}</h3>
           <p className="text-xl text-black/60 dark:text-white/60 font-light">
-            Tout ce que vous devez savoir pour démarrer sereinement avec DriveHub.
+            {dict.FAQ.description}
           </p>
         </div>
 

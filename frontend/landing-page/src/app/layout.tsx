@@ -16,29 +16,39 @@ const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
+import { cookies } from 'next/headers';
+import { getDictionary, Locale } from '@/i18n/getDictionary';
+import { DictionaryProvider } from '@/components/DictionaryProvider';
+
 export const metadata: Metadata = {
   title: "DriveHub | Le Hub Digital des Auto-Écoles en Afrique",
-  description: "Simplifiez la gestion de votre auto-école avec DriveHub. Gestion des élèves, planning, paiements et suivi des véhicules en une seule plateforme.",
+  description: "Simplifiez la gestion de votre auto-école avec DriveHub. Gestion des élèves, plannings, paiements et suivi des véhicules en une seule plateforme.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get('NEXT_LOCALE')?.value as Locale) || 'fr';
+  const dict = getDictionary(locale);
+
   return (
     <html
-      lang="fr"
+      lang={locale}
       className={`${lato.variable} ${jakarta.variable} h-full antialiased scroll-smooth`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <Navbar />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <Footer />
+          <DictionaryProvider initialDictionary={dict} initialLocale={locale}>
+            <Navbar />
+            <main className="grow">
+              {children}
+            </main>
+            <Footer />
+          </DictionaryProvider>
         </ThemeProvider>
       </body>
     </html>

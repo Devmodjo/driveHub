@@ -3,15 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Share2, Menu, X, Sun, Moon } from 'lucide-react';
+import { Share2, Menu, X, Sun, Moon, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
+import { useDictionary } from '@/components/DictionaryProvider';
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { theme, setTheme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const { dict, locale, setLocale } = useDictionary();
 
   useEffect(() => {
     setMounted(true);
@@ -23,10 +25,10 @@ export const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { name: 'Fonctionnalités', href: '#features' },
-    { name: 'Tarifs', href: '#pricing' },
-    { name: 'À propos', href: '#about' },
-    { name: 'FAQ', href: '#faq' },
+    { name: dict.Navbar.link_features, href: '#features' },
+    { name: dict.Navbar.link_pricing, href: '#pricing' },
+    { name: dict.Navbar.link_about, href: '#about' },
+    { name: dict.Navbar.link_faq, href: '#faq' },
   ];
 
   const currentTheme = theme === 'system' ? systemTheme : theme;
@@ -59,6 +61,14 @@ export const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
+          <button
+            onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')}
+            className="flex items-center gap-2 p-2 px-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-black dark:text-white font-medium text-sm"
+          >
+            <Globe size={18} />
+            {locale.toUpperCase()}
+          </button>
+          
           {mounted && (
             <button
               onClick={() => setTheme(currentTheme === 'dark' ? 'light' : 'dark')}
@@ -67,8 +77,8 @@ export const Navbar = () => {
               {currentTheme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </button>
           )}
-          <Button variant="ghost" className="text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5">Connexion</Button>
-          <Button className="bg-[#0070f3] hover:bg-[#0070f3]/90 text-white shadow-[0_0_15px_rgba(0,112,243,0.3)] border-none">Démarrer gratuitement</Button>
+          <Button variant="ghost" className="text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 font-medium">{dict.Navbar.btn_login}</Button>
+          <Button className="bg-[#0070f3] hover:bg-[#0070f3]/90 text-white shadow-lg shadow-[#0070f3]/25 border-none font-bold rounded-full px-6">{dict.Navbar.btn_signup}</Button>
         </div>
 
         {/* Mobile Menu Button */}
@@ -108,8 +118,14 @@ export const Navbar = () => {
                 </Link>
               ))}
               <div className="flex flex-col gap-3 mt-4">
-                <Button variant="outline" className="w-full text-black border-black/20 dark:text-white dark:border-white/20">Connexion</Button>
-                <Button className="w-full bg-[#0070f3] text-white">Démarrer gratuitement</Button>
+                <button
+                  onClick={() => { setLocale(locale === 'fr' ? 'en' : 'fr'); setIsOpen(false); }}
+                  className="flex justify-center items-center gap-2 p-3 bg-black/5 dark:bg-white/5 rounded-xl font-bold text-black dark:text-white"
+                >
+                  <Globe size={18} /> {locale.toUpperCase()}
+                </button>
+                <Button variant="outline" className="w-full text-black border-black/20 dark:text-white dark:border-white/20 font-medium">{dict.Navbar.btn_login}</Button>
+                <Button className="w-full bg-[#0070f3] text-white font-bold rounded-full py-6">{dict.Navbar.btn_signup}</Button>
               </div>
             </div>
           </motion.div>
