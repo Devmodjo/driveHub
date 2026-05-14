@@ -2,10 +2,11 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import UserLoginCredentials from '../../interfaces/UserLoginCredentials';
 import { BASE_URL } from '../../utils/UTILS';
-import { Observable, tap } from 'rxjs';
+import { Observable, Observer, tap } from 'rxjs';
 import UserRegisterModel from '../../interfaces/UserRegisterModel';
 import { ApiResponse } from '../../interfaces/ApiResponse';
 import { LoginResponse } from '../../interfaces/LoginResponse';
+import { AdminProfile } from '../../interfaces/AdminProfile';
 
 /**
  * Service AuthService : gère la logique d'authentification
@@ -43,22 +44,60 @@ export class AuthService {
  * atob() est l'inverse de btoa() — il décode le Base64.
  * Retourne null si aucun token n'existe.
  */
-getToken(): string | null {
-  const encodedToken = localStorage.getItem(this.TOKEN_KEY);
-  if (!encodedToken) return null;
-  return atob(encodedToken); // décode le Base64
-}
-/**
- * Vérifie si l'utilisateur est connecté.
- * !! convertit la valeur en boolean (null → false, string → true)
- */
-isLoggedIn(): boolean {
-  return !!this.getToken();
-}
-/**
- * Déconnecte l'utilisateur en supprimant le token du localStorage.
- */
-logout(): void {
-  localStorage.removeItem(this.TOKEN_KEY);
-}
+  getToken(): string | null {
+    const encodedToken = localStorage.getItem(this.TOKEN_KEY);
+    if (!encodedToken) return null;
+    return atob(encodedToken); // décode le Base64
+  }
+  /**
+   * Vérifie si l'utilisateur est connecté.
+   * !! convertit la valeur en boolean (null → false, string → true)
+   */
+  isLoggedIn(): boolean {
+    return !!this.getToken();
+  }
+  /**
+   * Déconnecte l'utilisateur en supprimant le token du localStorage.
+   */
+  logout(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+  }
+
+  /**
+   * Récupère les informations de l'utilisateur connecté.
+   * @returns Observable<AdminProfile>
+   */
+  getCurrentAdmin() : Observable<AdminProfile> {
+    return this.http.get<AdminProfile>(`${BASE_URL}admin/me/`);
+  }
+
+  /**
+   * affiche la liste des admins en attente de validation
+   * @returns Observable<AdminProfile>
+   */
+  getAdminsPendingRequest() : Observable<AdminProfile[]> {
+    return this.http.get<AdminProfile[]>(`${BASE_URL}admin/pending`);
+  }
+  /**
+   * active un admin
+   * @param adminId id de l'admin à activer
+   * @returns Observable<ApiResponse>
+   */
+  activateAdmin(adminId : string) : Observable<ApiResponse> {
+    return this.http.patch<ApiResponse>(`${BASE_URL}admin/${adminId}/activate`, null)
+  }
+
+  /**
+   * active une auto école et son Moniteur
+   * @param registryId id du registry à activer
+   * @returns Observable<ApiResponse>
+   */
+  approveDrivingSchooleRequest(registryId:string) : Observable<ApiResponse> {
+
+    return this.http.patch<ApiResponse>(`${BASE_URL}registries/${registryId}/approve`, null)
+
+  }
+
+  
+  
 }
