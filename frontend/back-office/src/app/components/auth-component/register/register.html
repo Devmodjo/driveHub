@@ -102,6 +102,14 @@
           [disabled] désactive le bouton tant que le formulaire est invalide
           (= tant que Validators.required d'un champ n'est pas rempli)
         -->
+
+        <!-- Bannière d'erreur API : affichée seulement si errorMessage() n'est pas vide -->
+        @if (errorMessage()) {
+          <div class="error-banner">
+            ⚠️ {{ errorMessage() }}
+          </div>
+        }
+
         <button type="submit" [disabled]="registerForm.invalid" class="btn-primary">
           Enregistrer l'utilisateur
         </button>

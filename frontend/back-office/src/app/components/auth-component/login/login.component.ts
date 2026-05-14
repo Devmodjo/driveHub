@@ -49,9 +49,25 @@ export class LoginComponent {
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
-        // 3. Gérer l'erreur
         this.isLoading.set(false);
-        this.errorMessage.set(err.error.message || "Une erreur est survenue");
+
+        // On choisit le message selon le code HTTP retourné par l'API
+        if (err.status === 401) {
+          // 401 = identifiants incorrects
+          this.errorMessage.set("Email ou mot de passe incorrect.");
+        } else if (err.status === 403) {
+          // 403 = compte en attente de validation admin
+          this.errorMessage.set("Votre compte est en attente de validation par un administrateur.");
+        } else if (err.status === 404) {
+          // 404 = aucun compte trouvé avec cet email
+          this.errorMessage.set("Aucun compte associé à cet email.");
+        } else if (err.status === 0) {
+          // 0 = serveur injoignable (pas de connexion ou backend arrêté)
+          this.errorMessage.set("Impossible de contacter le serveur. Vérifiez votre connexion.");
+        } else {
+          // Cas générique : on affiche le message du backend s'il existe
+          this.errorMessage.set(err.error?.message || "Une erreur est survenue. Réessayez.");
+        }
       }
     })
   }

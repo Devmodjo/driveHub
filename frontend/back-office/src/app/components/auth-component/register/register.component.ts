@@ -25,6 +25,7 @@ export class RegisterComponent {
   // permet d'injecter un service dans  un composant
   private authService = inject(AuthService);
   @Input() isSend = signal<boolean>(false);
+  errorMessage = signal<string>(""); // message d'erreur affiché sous le formulaire
   role = Role;
 
   registerForm = new FormGroup({
@@ -69,10 +70,26 @@ export class RegisterComponent {
    */
     this.authService.register(registerCredential).subscribe({
       next : (response) => {
+        this.errorMessage.set(""); // effacer les erreurs précédentes si succès
         this.isSend.set(true);
       },
       error : (error) => {
         this.isSend.set(false);
+
+        // On choisit le message selon le code HTTP retourné par l'API
+        if (error.status === 409) {
+          // 409 = Conflit → email déjà utilisé
+          this.errorMessage.set("Cette adresse e-mail est déjà enregistrée.");
+        } else if (error.status === 400) {
+          // 400 = données invalides côté serveur
+          this.errorMessage.set("Les informations saisies sont incorrectes. Vérifiez le formulaire.");
+        } else if (error.status === 0) {
+          // 0 = serveur injoignable
+          this.errorMessage.set("Serveur injoignable. Réessayez plus tard.");
+        } else {
+          // Cas générique : message du backend s'il existe
+          this.errorMessage.set(error.error?.message || "Une erreur est survenue. Réessayez.");
+        }
       }
     })
       
