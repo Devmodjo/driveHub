@@ -7,7 +7,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'accent';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
 }
@@ -20,16 +20,17 @@ export const Button = ({
   ...props
 }: ButtonProps) => {
   const variants = {
-    primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
-    secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/90',
-    outline: 'border border-primary text-primary hover:bg-primary/5',
-    ghost: 'hover:bg-primary/5 text-primary',
+    primary: 'bg-primary text-primary-foreground hover:opacity-90',
+    secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+    outline: 'border border-border bg-transparent hover:bg-muted text-foreground',
+    ghost: 'hover:bg-muted text-foreground',
+    accent: 'bg-accent text-accent-foreground hover:opacity-90',
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-5 py-2.5 text-base',
-    lg: 'px-8 py-3.5 text-lg font-semibold',
+    sm: 'px-4 py-2 text-sm font-medium',
+    md: 'px-6 py-3 text-base font-medium',
+    lg: 'px-8 py-4 text-lg font-bold',
   };
 
   return (

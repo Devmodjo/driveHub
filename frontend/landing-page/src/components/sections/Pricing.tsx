@@ -2,23 +2,22 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/Button';
 import { Check } from 'lucide-react';
 
 const plans = [
   {
-    name: 'Startup',
+    name: 'Essentiel',
     price: '25.000',
     currency: 'FCFA',
     period: '/mois',
-    description: 'Parfait pour les petites auto-écoles qui débutent.',
+    description: 'Idéal pour les petites auto-écoles.',
     features: [
-      'Jusqu\'à 50 élèves',
-      'Gestion des moniteurs',
-      'Planning de base',
+      'Jusqu\'à 50 étudiants',
+      'Gestion des plannings',
+      'Suivi des paiements',
       'Support par email',
     ],
-    cta: 'Commencer',
+    cta: 'Adopter l\'Essentiel',
     popular: false,
   },
   {
@@ -26,30 +25,29 @@ const plans = [
     price: '50.000',
     currency: 'FCFA',
     period: '/mois',
-    description: 'La solution complète pour une gestion optimale.',
+    description: 'La solution complète pour votre gestion.',
     features: [
-      'Élèves illimités',
-      'Gestion de flotte (véhicules)',
-      'Paiements Mobile Money',
+      'Étudiants illimités',
+      'Gestion de flotte',
+      'Mobile Money intégré',
       'SMS de rappel illimités',
-      'Statistiques avancées',
-      'Support prioritaire 24/7',
+      'Rapports financiers',
+      'Support prioritaire',
     ],
-    cta: 'Essayer gratuitement',
+    cta: 'Choisir Business',
     popular: true,
   },
   {
-    name: 'Enterprise',
-    price: 'Sur devis',
+    name: 'Sur Mesure',
+    price: 'Devis',
     currency: '',
     period: '',
-    description: 'Pour les réseaux d\'auto-écoles multi-agences.',
+    description: 'Pour les réseaux multi-agences.',
     features: [
       'Multi-agences centralisées',
       'API personnalisée',
       'Formation sur site',
-      'Gestionnaire de compte dédié',
-      'Marque blanche',
+      'Accompagnement dédié',
     ],
     cta: 'Nous contacter',
     popular: false,
@@ -58,68 +56,64 @@ const plans = [
 
 export const Pricing = () => {
   return (
-    <section id="pricing" className="py-24 bg-slate-50 relative">
+    <section id="pricing" className="py-24 bg-white dark:bg-black border-y border-black/5 dark:border-white/5">
       <div className="container mx-auto px-6">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-primary font-bold tracking-wider uppercase text-sm mb-3">Tarifs</h2>
-          <h3 className="text-3xl md:text-4xl font-bold mb-6">Un investissement rentable pour votre croissance</h3>
-          <p className="text-muted-foreground text-lg">
-            Choisissez le forfait qui correspond à la taille de votre établissement. Pas de frais cachés.
+        <div className="text-center max-w-3xl mx-auto mb-20">
+          <h2 className="text-sm font-bold text-[#0070f3] uppercase tracking-[0.2em] mb-4">Tarification</h2>
+          <h3 className="font-display text-4xl md:text-5xl font-black text-black dark:text-white mb-6">Des tarifs clairs et transparents.</h3>
+          <p className="text-xl text-black/60 dark:text-white/60 font-light">
+            Choisissez le forfait adapté à la croissance de votre établissement, sans frais cachés ni complexité technique.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan, index) => (
             <motion.div
-              key={index}
+              key={plan.name}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className={`relative bg-white rounded-3xl p-8 border ${
-                plan.popular ? 'border-primary shadow-2xl shadow-primary/10' : 'border-border'
+              className={`relative p-8 rounded-3xl border flex flex-col group transition-all duration-300 ${
+                plan.popular 
+                ? 'border-[#0070f3] bg-white dark:bg-black shadow-[0_0_40px_rgba(0,112,243,0.1)] hover:shadow-[0_0_60px_rgba(0,112,243,0.15)] z-10 scale-100 lg:scale-105' 
+                : 'border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 hover:border-[#0070f3]/50'
               }`}
             >
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-[#0070f3] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#0070f3]/25">
                   Plus populaire
                 </div>
               )}
-              
+
               <div className="mb-8">
-                <h4 className="text-xl font-bold mb-2">{plan.name}</h4>
+                <h4 className="font-display text-2xl font-bold text-black dark:text-white mb-2">{plan.name}</h4>
+                <p className="text-black/60 dark:text-white/60 text-sm mb-6 leading-relaxed font-light">{plan.description}</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold">{plan.price}</span>
-                  <span className="text-muted-foreground font-medium">{plan.currency}{plan.period}</span>
+                  <span className="font-display text-5xl font-black text-black dark:text-white tracking-tighter">{plan.price}</span>
+                  <span className="text-black/50 dark:text-white/50 font-bold text-sm">{plan.currency}{plan.period}</span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-4">{plan.description}</p>
               </div>
 
-              <div className="space-y-4 mb-8">
+              <ul className="space-y-4 mb-10 flex-grow">
                 {plan.features.map((feature, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="mt-1 bg-primary/10 rounded-full p-0.5">
-                       <Check size={16} className="text-primary" />
-                    </div>
-                    <span className="text-sm text-foreground/80">{feature}</span>
-                  </div>
+                  <li key={i} className="flex items-start gap-3 text-sm text-black/80 dark:text-white/80 font-light">
+                    <Check size={18} strokeWidth={2.5} className="text-[#0070f3] shrink-0 mt-0.5" />
+                    <span>{feature}</span>
+                  </li>
                 ))}
-              </div>
+              </ul>
 
-              <Button
-                variant={plan.popular ? 'primary' : 'outline'}
-                className="w-full"
-                size="lg"
-              >
+              <button className={`w-full py-4 rounded-full font-bold transition-all text-sm uppercase tracking-wide flex items-center justify-center ${
+                plan.popular 
+                ? 'bg-[#0070f3] text-white hover:bg-[#0070f3]/90 shadow-lg shadow-[#0070f3]/25' 
+                : 'bg-white dark:bg-black border border-black/10 dark:border-white/10 text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5'
+              }`}>
                 {plan.cta}
-              </Button>
+              </button>
             </motion.div>
           ))}
         </div>
-        
-        <p className="text-center text-muted-foreground mt-12 text-sm">
-          Besoin d'une offre sur mesure ? <a href="#" className="text-primary font-semibold underline">Parlons-en.</a>
-        </p>
       </div>
     </section>
   );
