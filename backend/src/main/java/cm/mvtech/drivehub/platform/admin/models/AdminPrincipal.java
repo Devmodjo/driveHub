@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +24,7 @@ public class AdminPrincipal implements UserDetails {
     private final String password;
     private final AdminRole role;
     private final AdminStatus status;
+    private final LocalDateTime createdAt;
 
     private final boolean enabled;
     private final boolean accountNonExpired;
@@ -43,6 +45,7 @@ public class AdminPrincipal implements UserDetails {
                 admin.getPassword(),
                 admin.getRole(),
                 admin.getAdminStatus(),
+                admin.getCreatedAt(),
                 true,
                 true,
                 true,
