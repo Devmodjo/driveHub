@@ -1,9 +1,10 @@
 package cm.mvtech.drivehub.platform.admin.services;
 
-import cm.mvtech.drivehub.platform.admin.models.dto.PlatformAdminAuthResponse;
-import cm.mvtech.drivehub.platform.admin.models.dto.PlatformAdminCreateRequest;
-import cm.mvtech.drivehub.platform.admin.models.dto.PlatformAdminLoginRequest;
-import cm.mvtech.drivehub.platform.admin.models.dto.PlatformAdminResponse;
+import cm.mvtech.drivehub.platform.admin.enums.AdminRole;
+import cm.mvtech.drivehub.platform.admin.enums.AdminStatus;
+import cm.mvtech.drivehub.platform.admin.models.dto.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 
 import java.util.List;
@@ -50,4 +51,34 @@ public interface AdminerService {
      * @param adminId ID de l'admin à activer
      */
     void activateAdmin(UUID adminId);
+    /** Lister tous les admins avec pagination et filtre optionnel par statut/rôle */
+    Page<PlatformAdminResponse> getAllAdmins(Pageable pageable,
+                                             AdminStatus status,
+                                             AdminRole role);
+
+    /** Détail d'un admin par son ID */
+    PlatformAdminResponse getAdminById(UUID adminId);
+
+    /** Modifier les informations d'un admin */
+    PlatformAdminResponse updateAdmin(UUID adminId, UpdateAdminRequest request);
+
+    /** Désactiver un admin (suspension réversible) */
+    void deactivateAdmin(UUID adminId);
+
+    /** Supprimer définitivement un admin */
+    void deleteAdmin(UUID adminId);
+
+    /** L'admin connecté modifie son propre profil */
+    PlatformAdminResponse updateMyProfile(Authentication authentication,
+                                          UpdateAdminRequest request);
+
+    /** Changer son propre mot de passe */
+    void changeMyPassword(Authentication authentication,
+                          ChangePasswordRequest request);
+
+    /** Stats dashboard admins */
+    AdminStatsResponse getAdminStats();
+
+
+
 }

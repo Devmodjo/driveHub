@@ -4,6 +4,8 @@ package cm.mvtech.drivehub.platform.admin.repositories;
 import cm.mvtech.drivehub.platform.admin.models.PlatformAdmin;
 import cm.mvtech.drivehub.platform.admin.enums.AdminRole;
 import cm.mvtech.drivehub.platform.admin.enums.AdminStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -19,4 +21,14 @@ public interface PlatformAdminRepository extends JpaRepository<PlatformAdmin, UU
     Optional<PlatformAdmin> findByEmail(String email);
 
     List<PlatformAdmin> findByAdminStatus(AdminStatus adminStatus);
+
+    // Pagination avec filtres
+    Page<PlatformAdmin> findByAdminStatus(AdminStatus status, Pageable pageable);
+    Page<PlatformAdmin> findByRole(AdminRole role, Pageable pageable);
+    Page<PlatformAdmin> findByAdminStatusAndRole(AdminStatus status,
+                                                 AdminRole role,
+                                                 Pageable pageable);
+
+    // Counts pour les stats
+    long countByAdminStatus(AdminStatus status);
 }
