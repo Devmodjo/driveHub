@@ -1,1 +1,16 @@
-<p>Welcome User</p>
+<!-- Layout principal du dashboard : sidebar à gauche + contenu à droite -->
+<div class="dashboard-layout">
+
+  <!-- Sidebar de navigation (composant réutilisable) -->
+  <app-dashboard-navigation />
+
+  <!-- Zone de contenu : change selon la route active -->
+  <main class="dashboard-main">
+    <!--
+      router-outlet : Angular remplace cette balise par la page correspondante
+      à l'URL visitée (ex: /dashboard/overview → OverviewComponent)
+    -->
+    <router-outlet />
+  </main>
+
+</div>

@@ -1,0 +1,33 @@
+/* Layout global du dashboard */
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--page-bg);
+  color: var(--text-primary);
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+/* Contenu principal — décalé de la largeur de la sidebar sur desktop */
+.dashboard-main {
+  margin-left: 240px;
+  flex: 1;
+  padding: 36px 40px;
+  min-height: 100vh;
+}
+
+/* ════ RESPONSIVE TABLET ════ */
+@media (max-width: 1024px) {
+  .dashboard-main {
+    padding: 28px 24px;
+  }
+}
+
+/* ════ RESPONSIVE MOBILE ════
+   Sur mobile, la sidebar est un drawer — le contenu prend toute la largeur
+   et on ajoute un padding-top pour la topbar (56px) */
+@media (max-width: 767px) {
+  .dashboard-main {
+    margin-left: 0;
+    padding: 80px 16px 24px; /* 80px = 56px topbar + 24px espace */
+  }
+}
