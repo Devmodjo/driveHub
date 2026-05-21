@@ -49,6 +49,16 @@ export class AuthService {
     if (!encodedToken) return null;
     return atob(encodedToken); // décode le Base64
   }
+
+  /**
+   * Récupère les informations de l'utilisateur connecté.
+   * @returns Observable<AdminProfile>
+   */
+  getCurrentAdmin() : Observable<AdminProfile> {
+    return this.http.get<AdminProfile>(`${BASE_URL}admin/me`);
+  }
+
+
   /**
    * Vérifie si l'utilisateur est connecté.
    * !! convertit la valeur en boolean (null → false, string → true)
@@ -61,41 +71,6 @@ export class AuthService {
    */
   logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
-  }
-
-  /**
-   * Récupère les informations de l'utilisateur connecté.
-   * @returns Observable<AdminProfile>
-   */
-  getCurrentAdmin() : Observable<AdminProfile> {
-    return this.http.get<AdminProfile>(`${BASE_URL}admin/me/`);
-  }
-
-  /**
-   * affiche la liste des admins en attente de validation
-   * @returns Observable<AdminProfile>
-   */
-  getAdminsPendingRequest() : Observable<AdminProfile[]> {
-    return this.http.get<AdminProfile[]>(`${BASE_URL}admin/pending`);
-  }
-  /**
-   * active un admin
-   * @param adminId id de l'admin à activer
-   * @returns Observable<ApiResponse>
-   */
-  activateAdmin(adminId : string) : Observable<ApiResponse> {
-    return this.http.patch<ApiResponse>(`${BASE_URL}admin/${adminId}/activate`, null)
-  }
-
-  /**
-   * active une auto école et son Moniteur
-   * @param registryId id du registry à activer
-   * @returns Observable<ApiResponse>
-   */
-  approveDrivingSchooleRequest(registryId:string) : Observable<ApiResponse> {
-
-    return this.http.patch<ApiResponse>(`${BASE_URL}registries/${registryId}/approve`, null)
-
   }
 
   

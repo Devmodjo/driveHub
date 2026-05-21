@@ -6,5 +6,6 @@ export interface AdminProfile {
     name: string,
     email: string,
     role : Role,
-    adminStatus: AdminStatus
+    adminStatus: AdminStatus,
+    createdAt: Date
 }

@@ -98,6 +98,20 @@
     "q4": "Is my data truly protected?",
     "a4": "Absolutely. We use secure servers with regular backups. Your information is encrypted according to modern security standards."
   },
+  "Testimonials": {
+    "badge": "Testimonials",
+    "title": "Trusted by early adopters.",
+    "description": "Discover feedback from professionals testing DriveHub to simplify their daily management.",
+    "t1_name": "Samuel M.",
+    "t1_role": "La Prudence Driving School",
+    "t1_quote": "The interface is intuitive and promises to save us precious time on daily administrative paperwork.",
+    "t2_name": "Marie-Thérèse E.",
+    "t2_role": "City Drivers Academy",
+    "t2_quote": "Centralizing student files and payment tracking exactly meets the needs of local driving schools.",
+    "t3_name": "Jean-Paul K.",
+    "t3_role": "Excellence Driving School",
+    "t3_quote": "A modern and bilingual solution. This is the kind of digital tool we've been waiting for to further professionalize our sector."
+  },
   "CTA": {
     "title": "Ready to accelerate your driving school?",
     "description": "Join the leaders who already trust DriveHub to simplify their daily management in Cameroon.",

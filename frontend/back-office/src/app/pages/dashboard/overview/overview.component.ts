@@ -1,4 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { AdminService } from '../../../services/admin-service/admin.service';
+import { AdminStats } from '../../../interfaces/AdminStats';
+import { DashboardKpiComponent } from '../../../components/dashboard-component/dashdoard-kpi/dashboard.kpi.component';
+import { DrivingSchoolService } from '../../../services/school-service/driving-school.service';
+import { ActiveDrivingSchool } from '../../../interfaces/ActiveDrivingSchool';
+import { AdminProfile } from '../../../interfaces/AdminProfile';
 
 /**
  * Page "Vue d'ensemble" du dashboard.
@@ -7,28 +13,67 @@ import { Component } from '@angular/core';
  */
 @Component({
   selector: 'app-overview',
-  imports: [],
-  template: `
-    <div class="page-header">
-      <h2 class="page-title">Vue d'ensemble</h2>
-      <p class="page-subtitle">Bienvenue sur le tableau de bord DriveHub</p>
-    </div>
-    <div class="placeholder-content">
-      <p>Les statistiques seront affichées ici.</p>
-    </div>
-  `,
-  styles: [`
-    .page-header { margin-bottom: 28px; }
-    .page-title { font-size: 1.3rem; font-weight: 600; color: var(--text-primary); }
-    .page-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
-    .placeholder-content {
-      background: var(--card-bg);
-      border: 1px dashed var(--border-color);
-      padding: 40px;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.88rem;
-    }
-  `]
+  imports: [DashboardKpiComponent],
+  providers : [AdminService, DrivingSchoolService],
+  templateUrl: './overview.component.html',
+  styleUrl: './overview.component.css',
 })
-export class OverviewComponent {}
+export class OverviewComponent implements OnInit {
+
+  private adminService = inject(AdminService);
+  private drivingSchoolService = inject(DrivingSchoolService);
+  
+  // Rendu public pour y accéder dans le template HTML
+  adminstats = signal<AdminStats | undefined | null>(null);
+
+
+  countActiveSchool = signal<number>(0);
+  activeSchools = signal<ActiveDrivingSchool[] | null>([]);
+
+  pendingSchool = signal<ActiveDrivingSchool[] | null>([]);
+  countPendingSchoolRequest = signal<number>(0);
+
+  ngOnInit(): void {
+   
+    this.loadAdminStats();
+   
+    this.loadActiveAutoSchool();
+
+    this.loadPendingSchoolRequest();
+  }
+
+  loadAdminStats() {
+    this.adminService.getAdminStats().subscribe({
+      next : (response) => {
+        this.adminstats.set(response);
+      },
+      error : (error) => {
+        console.error("Erreur de chargement des stats", error);
+      }
+    });
+  }
+
+  loadPendingSchoolRequest() {
+    this.drivingSchoolService.pendingSchoolRequest().subscribe({
+      next : (response) => {
+        this.pendingSchool.set(response);
+        this.countPendingSchoolRequest.set(response.length);
+      },
+      error : (error) =>{
+        console.error("Erreur de chargement des Admins", error);
+      }
+    })
+  }
+
+  loadActiveAutoSchool() {
+    this.drivingSchoolService.activeDrivingSchool().subscribe({
+      next : (response) =>{
+        this.activeSchools.set(response);
+        this.countActiveSchool.set(response.length);
+      },
+      error : (error) =>{
+        console.error("Erreur de chargement des auto-écoles", error);
+      }
+    });
+  }
+}

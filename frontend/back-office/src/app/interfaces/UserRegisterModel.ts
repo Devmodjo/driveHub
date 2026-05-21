@@ -6,7 +6,7 @@ interface UserRegisterModel {
     role : Role,
     password:string,
     residence:string,
-    phoneNumber:string
+    phoneNumber:string,
 }
 
 export default UserRegisterModel;

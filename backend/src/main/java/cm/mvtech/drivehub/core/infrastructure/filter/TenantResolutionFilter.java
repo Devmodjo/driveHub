@@ -23,7 +23,8 @@ public class TenantResolutionFilter implements Filter {
             "/v3/api-docs",
             "/api/auth",
             "/api/driving-schools",
-            "/api/platform"
+            "/api/platform",
+            "/error"
     );
 
     @Override
@@ -36,8 +37,12 @@ public class TenantResolutionFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        String path = httpRequest.getRequestURI();
+        if ("OPTIONS".equalsIgnoreCase(httpRequest.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
 
+        String path = httpRequest.getRequestURI();
         log.debug("TenantResolutionFilter - Path: {}", path);
 
         // Paths qui ne nécessitent pas de tenant (public, auth, platform admin)

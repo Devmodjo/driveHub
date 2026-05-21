@@ -24,6 +24,8 @@ export class DashboardNavigationComponent implements OnInit {
 
   // Profil de l'admin connecté (null tant que non chargé)
   adminProfile: AdminProfile | null = null;
+  // Les initiales, pré-calculées pour éviter NG0100 (ExpressionChangedAfterItHasBeenCheckedError)
+  userInitials: string = '?';
 
   // État du thème : false = light, true = dark
   isDark = false;
@@ -43,8 +45,14 @@ export class DashboardNavigationComponent implements OnInit {
   ngOnInit(): void {
     // Charger le profil de l'admin connecté dès que la sidebar s'affiche
     this.authService.getCurrentAdmin().subscribe({
-      next: (profile) => { this.adminProfile = profile; },
-      error: ()        => { this.adminProfile = null;    }
+      next: (profile) => { 
+        this.adminProfile = profile; 
+        this.userInitials = this.computeInitials(profile.name);
+      },
+      error: () => { 
+        this.adminProfile = null;    
+        this.userInitials = '?';
+      }
     });
 
     // Restaurer le thème sauvegardé si l'utilisateur l'avait choisi
@@ -57,8 +65,6 @@ export class DashboardNavigationComponent implements OnInit {
 
   /**
    * Bascule entre le mode light et dark.
-   * On ajoute / retire la classe 'dark' sur la balise <html>.
-   * Les variables CSS dans :root et :root.dark gèrent les couleurs.
    */
   toggleTheme(): void {
     this.isDark = !this.isDark;
@@ -80,11 +86,11 @@ export class DashboardNavigationComponent implements OnInit {
   }
 
   /**
-   * Retourne les initiales du nom pour l'avatar (ex: "Jean Dupont" → "JD")
+   * Retourne les initiales calculées à partir du nom
    */
-  getInitials(): string {
-    if (!this.adminProfile?.name) return '?';
-    return this.adminProfile.name
+  private computeInitials(name: string | undefined): string {
+    if (!name) return '?';
+    return name
       .split(' ')
       .map(w => w[0])
       .join('')
@@ -92,3 +98,4 @@ export class DashboardNavigationComponent implements OnInit {
       .slice(0, 2);
   }
 }
+
