@@ -5,6 +5,7 @@ import { HowItWorks } from "@/components/sections/HowItWorks";
 import { Features } from "@/components/sections/Features";
 import { About } from "@/components/sections/About";
 import { Pricing } from "@/components/sections/Pricing";
+import { Testimonials } from "@/components/sections/Testimonials";
 import { FAQ } from "@/components/sections/FAQ";
 import { ArrowRight } from "lucide-react";
 import { useDictionary } from '@/components/DictionaryProvider';
@@ -18,6 +19,7 @@ export default function Home() {
       <Features />
       <About />
       <Pricing />
+      <Testimonials />
       <FAQ />
       
       {/* Call to Action Section */}

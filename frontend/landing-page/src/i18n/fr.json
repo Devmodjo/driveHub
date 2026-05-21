@@ -98,6 +98,20 @@
     "q4": "Mes données sont-elles vraiment protégées ?",
     "a4": "Absolument. Nous utilisons des serveurs sécurisés avec des sauvegardes régulières. Vos informations sont chiffrées selon les standards de sécurité modernes."
   },
+  "Testimonials": {
+    "badge": "Témoignages",
+    "title": "Ils nous font confiance.",
+    "description": "Découvrez les premiers retours des professionnels qui testent DriveHub pour simplifier leur gestion.",
+    "t1_name": "Samuel M.",
+    "t1_role": "Auto-École La Prudence",
+    "t1_quote": "L'interface est intuitive et promet de nous faire gagner un temps précieux sur la paperasse administrative quotidienne.",
+    "t2_name": "Marie-Thérèse E.",
+    "t2_role": "City Drivers Academy",
+    "t2_quote": "La centralisation des dossiers élèves et le suivi des paiements répondent exactement aux besoins des auto-écoles locales.",
+    "t3_name": "Jean-Paul K.",
+    "t3_role": "Excellence Auto-École",
+    "t3_quote": "Une solution moderne et bilingue. C'est le type d'outil digital que nous attendions pour professionnaliser davantage notre secteur."
+  },
   "CTA": {
     "title": "Prêt à accélérer votre auto-école ?",
     "description": "Rejoignez les dirigeants qui font déjà confiance à DriveHub pour simplifier leur gestion quotidienne au Cameroun.",

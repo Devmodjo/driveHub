@@ -1,0 +1,11 @@
+<div class="page-header">
+    <h2 class="page-title">Vue d'ensemble</h2>
+    <p class="page-subtitle">Bienvenue sur le tableau de bord DriveHub</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+   <dashboard-kpi [KpiTitle]="'Auto-écoles actives'" [KpiResult]="countActiveSchool()"></dashboard-kpi>
+   <dashboard-kpi [KpiTitle]="'Total Admins'" [KpiResult]="adminstats()?.totalAdmins"></dashboard-kpi>
+   <dashboard-kpi [KpiTitle]="'Admin en attentes'" [KpiResult]="adminstats()?.pendingAdmins"></dashboard-kpi>
+   <dashboard-kpi [KpiTitle]="'Auto-écoles en attentes'" [KpiResult]="countPendingSchoolRequest()"></dashboard-kpi>
+</div>
+

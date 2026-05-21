@@ -6,6 +6,8 @@ import cm.mvtech.drivehub.core.domain.service.TenantService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -61,6 +63,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // Endpoints admin platform (authentifié)
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/platform/**").authenticated()
                         .requestMatchers("/api/auth/me").authenticated()
                         // Endpoints tenant-specific (authentifié + tenant requis)
@@ -70,7 +73,7 @@ public class SecurityConfig {
                         // Tout le reste nécessite authentification
                         .anyRequest().authenticated()
                 );
-
+        http.cors(Customizer.withDefaults());
         return http.build();
     }
 }

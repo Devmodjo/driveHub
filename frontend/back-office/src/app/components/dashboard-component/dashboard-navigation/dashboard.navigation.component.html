@@ -1,20 +1,134 @@
-<aside>
-    <div class="bo-sidebar">
-        <nav>
-            <ul>
-                <li>
-                    <a href="#">Tableau de bord</a>
-                </li>
-                <li>
-                    <a href="#">Utilisateurs</a>
-                </li>
-                <li>
-                    <a href="#">Rôles</a>
-                </li>
-                <li>
-                    <a href="#">Paramètres</a>
-                </li>
-            </ul>
-        </nav>
+<!-- ════════════════════════════════════════════
+     SIDEBAR — Barre de navigation latérale desktop
+     Sur mobile : barre en haut + menu hamburger
+     ════════════════════════════════════════════ -->
+
+<!-- ── TOPBAR MOBILE ────────────────────────────────────── -->
+<div class="topbar-mobile">
+  <div class="topbar-logo">
+    <span class="logo-mark">D</span>
+    <span class="logo-brand">Drive<strong>Hub</strong></span>
+  </div>
+  <button class="hamburger" (click)="toggleMenu()" aria-label="Menu">
+    @if (!isMenuOpen) {
+      <!-- Icône hamburger -->
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    } @else {
+      <!-- Icône fermer -->
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    }
+  </button>
+</div>
+
+<!-- ── SIDEBAR DESKTOP + DRAWER MOBILE ──────────────────── -->
+<aside class="sidebar" [class.is-open]="isMenuOpen">
+
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <span class="logo-mark">D</span>
+    <span class="logo-brand">Drive<strong>Hub</strong></span>
+  </div>
+
+  <!-- Section label -->
+  <span class="nav-section-label">Navigation</span>
+
+  <!-- Navigation principale -->
+  <nav class="sidebar-nav">
+    <ul>
+      <li>
+        <a [routerLink]="'/dashboard/overview'" routerLinkActive="active"
+           [routerLinkActiveOptions]="{exact:true}" class="nav-link" (click)="isMenuOpen=false">
+          <!-- Icône : grille -->
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+          </svg>
+          <span>Vue d'ensemble</span>
+        </a>
+      </li>
+      <li>
+        <a [routerLink]="'/dashboard/admins'" routerLinkActive="active"
+           class="nav-link" (click)="isMenuOpen=false">
+          <!-- Icône : utilisateurs -->
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span>Admins</span>
+        </a>
+      </li>
+      <li>
+        <a [routerLink]="'/dashboard/pending'" routerLinkActive="active"
+           class="nav-link" (click)="isMenuOpen=false">
+          <!-- Icône : horloge / en attente -->
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>En attente</span>
+        </a>
+      </li>
+      <!--
+        ── Pour ajouter un lien ──
+        Copier le bloc <li> ci-dessus, changer routerLink, l'icône SVG et le label.
+      -->
+    </ul>
+  </nav>
+
+  <!-- Spacer -->
+  <div class="sidebar-spacer"></div>
+
+  <!-- Toggle dark / light mode -->
+  <div class="sidebar-footer-section">
+    <button class="theme-btn" (click)="toggleTheme()">
+      @if (!isDark) {
+        <!-- Icône lune = basculer en dark -->
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <span>Mode sombre</span>
+      } @else {
+        <!-- Icône soleil = basculer en light -->
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <span>Mode clair</span>
+      }
+    </button>
+  </div>
+
+  <!-- Profil utilisateur -->
+  <div class="sidebar-profile">
+    <div class="avatar">{{ userInitials }}</div>
+    <div class="profile-info">
+      @if (adminProfile) {
+        <span class="profile-name">{{ adminProfile.name }}</span>
+        <span class="profile-role">{{ adminProfile.role }}</span>
+      } @else {
+        <span class="profile-name">—</span>
+      }
     </div>
+    <button class="logout-btn" (click)="logout()" title="Se déconnecter">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+    </button>
+  </div>
+
 </aside>
+
+<!-- Overlay semi-transparent pour fermer le menu mobile -->
+@if (isMenuOpen) {
+  <div class="sidebar-overlay" (click)="isMenuOpen=false"></div>
+}

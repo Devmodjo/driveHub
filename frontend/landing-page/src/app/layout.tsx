@@ -21,8 +21,54 @@ import { getDictionary, Locale } from '@/i18n/getDictionary';
 import { DictionaryProvider } from '@/components/DictionaryProvider';
 
 export const metadata: Metadata = {
-  title: "DriveHub | Le Hub Digital des Auto-Écoles en Afrique",
-  description: "Simplifiez la gestion de votre auto-école avec DriveHub. Gestion des élèves, plannings, paiements et suivi des véhicules en une seule plateforme.",
+  metadataBase: new URL("https://drivehub.cm"),
+  title: {
+    default: "DriveHub | Le Hub Digital des Auto-Écoles en Afrique",
+    template: "%s | DriveHub"
+  },
+  description: "Simplifiez la gestion de votre auto-école avec DriveHub. Gestion des élèves, plannings, paiements mobiles et suivi des véhicules en une seule plateforme bilingue adaptée au Cameroun.",
+  keywords: ["auto-école", "Cameroun", "gestion auto-école", "permis de conduire", "DriveHub", "logiciel auto-école", "Afrique", "Orange Money", "MTN MoMo"],
+  authors: [{ name: "DriveHub Team" }],
+  creator: "DriveHub",
+  publisher: "DriveHub",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: "https://drivehub.cm",
+    siteName: "DriveHub",
+    title: "DriveHub | La plateforme de gestion n°1 pour auto-écoles au Cameroun",
+    description: "Digitalisez votre auto-école : inscriptions, plannings, et paiements Mobile Money simplifiés.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "DriveHub Dashboard",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DriveHub | Gestion Digitale pour Auto-Écoles",
+    description: "Gérez votre auto-école en toute simplicité au Cameroun.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default async function RootLayout({

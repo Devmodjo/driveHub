@@ -1,0 +1,285 @@
+/* ════════════════════════════════════════════════
+   SIDEBAR — Navigation latérale
+   Style : Corporate, sobre, Lato
+   ════════════════════════════════════════════════ */
+
+/* ── TOPBAR MOBILE ──────────────────────────────── */
+.topbar-mobile {
+  display: none; /* caché sur desktop */
+}
+
+/* ── SIDEBAR PRINCIPALE ─────────────────────────── */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 240px;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  /* Séparation nette entre sidebar et contenu */
+  border-right: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 2px 0 8px rgba(0,0,0,0.18);
+}
+
+/* ── LOGO ───────────────────────────────────────── */
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+
+.logo-mark {
+  width: 30px;
+  height: 30px;
+  background: #0056b3;
+  color: #fff;
+  font-family: 'Lato', sans-serif;
+  font-weight: 900;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+
+.logo-brand {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 300;
+  letter-spacing: 0.3px;
+}
+.logo-brand strong {
+  font-weight: 700;
+}
+
+/* ── SECTION LABEL ──────────────────────────────── */
+.nav-section-label {
+  display: block;
+  padding: 16px 20px 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: rgba(168,178,200,0.45);
+  flex-shrink: 0;
+}
+
+/* ── NAVIGATION ─────────────────────────────────── */
+.sidebar-nav {
+  flex-shrink: 0;
+  padding: 0 10px;
+}
+
+.sidebar-nav ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  color: var(--sidebar-text);
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0.1px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-link:hover {
+  background: var(--sidebar-hover);
+  color: #ffffff;
+}
+
+/* Classe ajoutée par routerLinkActive="active" */
+.nav-link.active {
+  background: var(--link-active);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.nav-icon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── SPACER ─────────────────────────────────────── */
+.sidebar-spacer { flex: 1; }
+
+/* ── TOGGLE THÈME ───────────────────────────────── */
+.sidebar-footer-section {
+  padding: 0 10px;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 12px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--sidebar-text);
+  font-size: 0.84rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.theme-btn:hover {
+  background: var(--sidebar-hover);
+  color: #ffffff;
+}
+
+/* ── PROFIL UTILISATEUR ─────────────────────────── */
+.sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  background: #0056b3;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-name {
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-role {
+  color: rgba(168,178,200,0.6);
+  font-size: 0.70rem;
+  font-weight: 400;
+  letter-spacing: 0.4px;
+  margin-top: 1px;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(168,178,200,0.5);
+  padding: 5px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.logout-btn:hover {
+  color: #f87171;
+  background: rgba(248,113,113,0.1);
+}
+
+/* ════════════════════════════════════════════════
+   RESPONSIVE — Mobile (< 768px)
+   La sidebar se transforme en drawer latéral
+   ════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+
+  /* Topbar visible sur mobile */
+  .topbar-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--sidebar-bg);
+    padding: 0 16px;
+    z-index: 300;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hamburger {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Sidebar cachée par défaut, glisse depuis la gauche */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    top: 56px; /* sous la topbar */
+    box-shadow: none;
+  }
+
+  /* Sidebar ouverte */
+  .sidebar.is-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 20px rgba(0,0,0,0.35);
+  }
+
+  /* Overlay pour fermer le drawer en cliquant à côté */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 56px 0 0 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 199;
+  }
+}
+
+/* ════════════════════════════════════════════════
+   DARK MODE — ajustements spécifiques sidebar
+   (les variables --sidebar-bg/text changent déjà)
+   ════════════════════════════════════════════════ */
+:root.dark .sidebar {
+  border-right-color: rgba(255,255,255,0.03);
+}

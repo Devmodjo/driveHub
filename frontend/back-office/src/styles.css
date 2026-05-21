@@ -1,3 +1,52 @@
-/* You can add global styles to this file, and also import other style files */
+/* ============================================================
+   STYLES GLOBAUX — DriveHub Back-Office
+   Police : Lato (corporate, clean, lisible)
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap');
+
+/* ══ THÈME LIGHT (par défaut) ══════════════════════════════ */
+:root {
+  --page-bg:      #f0f2f5;
+  --card-bg:      #ffffff;
+  --text-primary: #1a1f36;
+  --text-muted:   #6b7280;
+  --border-color: #e5e7eb;
+  --accent:       #0056b3;
+  --accent-hover: #004494;
+  --sidebar-bg:   #1a1f36;
+  --sidebar-text: #a8b2c8;
+  --sidebar-hover:rgba(255,255,255,0.07);
+  --link-active:  #0056b3;
+}
+
+/* ══ THÈME DARK ════════════════════════════════════════════ */
+:root.dark {
+  --page-bg:      #0d1117;
+  --card-bg:      #161b22;
+  --text-primary: #e6edf3;
+  --text-muted:   #7d8590;
+  --border-color: #30363d;
+  --accent:       #58a6ff;
+  --accent-hover: #79b8ff;
+  --sidebar-bg:   #010409;
+  --sidebar-text: #7d8590;
+  --sidebar-hover:rgba(255,255,255,0.05);
+  --link-active:  #1f6feb;
+}
+
+/* ══ RESET ══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Lato', sans-serif;
+  background: var(--page-bg);
+  color: var(--text-primary);
+  transition: background 0.25s ease, color 0.25s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; }
+button { font-family: inherit; }
 
 @import "tailwindcss";

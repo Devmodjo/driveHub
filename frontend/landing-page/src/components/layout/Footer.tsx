@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Share2, Mail, Phone, MapPin } from 'lucide-react';
+import Image from 'next/image';
+import { Mail, Phone, MapPin } from 'lucide-react';
 import { useDictionary } from '@/components/DictionaryProvider';
 
 const LinkedinIcon = ({ size = 20 }: { size?: number }) => (
@@ -28,11 +29,22 @@ export const Footer = () => {
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           <div className="space-y-6">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 bg-[#0070f3] rounded-xl flex items-center justify-center text-white">
-                <Share2 size={24} />
+            <Link href="/" className="flex items-center gap-3 group transition-transform hover:scale-[1.02] active:scale-95">
+              <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-lg shadow-[#0070f3]/20 border border-white/10 bg-black">
+                <Image
+                  src="/dh_icon.png"
+                  alt="DH Icon"
+                  fill
+                  className="object-cover"
+                />
               </div>
-              <span className="font-display text-2xl font-black tracking-tight text-white">DriveHub</span>
+              <div className="flex flex-col -gap-1">
+                <span className="text-2xl font-black italic tracking-tighter leading-none">
+                  <span className="text-[#0070f3]">Drive</span>
+                  <span className="text-white" style={{ WebkitTextStroke: '1px white', color: 'transparent' }}>Hub</span>
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0070f3]/80 leading-none">Management Hub</span>
+              </div>
             </Link>
             <p className="text-slate-400 leading-relaxed font-light">
               {dict.Footer.description}

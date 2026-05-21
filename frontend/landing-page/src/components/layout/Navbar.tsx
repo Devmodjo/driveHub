@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
-import { Share2, Menu, X, Sun, Moon, Globe } from 'lucide-react';
+import { Menu, X, Sun, Moon, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import { useDictionary } from '@/components/DictionaryProvider';
@@ -40,11 +41,23 @@ export const Navbar = () => {
       }`}
     >
       <div className="container mx-auto px-6 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 bg-[#0070f3] rounded-xl flex items-center justify-center text-white transition-transform group-hover:rotate-12">
-            <Share2 size={24} />
+        <Link href="/" className="flex items-center gap-3 group transition-transform hover:scale-[1.02] active:scale-95">
+          <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-lg shadow-[#0070f3]/20 border border-black/5 dark:border-white/10 bg-black">
+            <Image
+              src="/dh_icon.png"
+              alt="DH Icon"
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
-          <span className="text-2xl font-bold tracking-tight text-black dark:text-white">DriveHub</span>
+          <div className="flex flex-col -gap-1">
+            <span className="text-2xl font-black italic tracking-tighter leading-none">
+              <span className="text-[#0070f3]">Drive</span>
+              <span className="text-black dark:text-white" style={{ WebkitTextStroke: '1px currentColor', color: 'transparent' }}>Hub</span>
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0070f3]/80 leading-none">Management Hub</span>
+          </div>
         </Link>
 
         {/* Desktop Nav */}
