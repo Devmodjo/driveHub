@@ -29,13 +29,18 @@ export const HowItWorks = () => {
   return (
     <section id="how-it-works" className="py-24 bg-white dark:bg-black border-y border-black/5 dark:border-white/5">
       <div className="container mx-auto px-6">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-sm font-bold text-[#0070f3] uppercase tracking-[0.2em] mb-4">{dict.HowItWorks.badge}</h2>
-          <h3 className="font-display text-4xl md:text-5xl font-black text-black dark:text-white mb-6">{dict.HowItWorks.title}</h3>
-          <p className="text-xl text-black/60 dark:text-white/60 font-light">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center max-w-3xl mx-auto mb-16"
+        >
+          <h2 className="text-[10px] font-black text-[#0070f3] uppercase tracking-[0.3em] mb-4">{dict.HowItWorks.badge}</h2>
+          <h3 className="font-display text-4xl md:text-5xl lg:text-6xl font-black text-black dark:text-white mb-6 tracking-tight leading-[1.1]">{dict.HowItWorks.title}</h3>
+          <p className="text-xl md:text-2xl text-black/60 dark:text-white/60 font-light leading-relaxed">
             {dict.HowItWorks.description}
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-5xl mx-auto">
           {steps.map((step, index) => (

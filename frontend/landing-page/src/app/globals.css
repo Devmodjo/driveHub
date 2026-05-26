@@ -14,32 +14,38 @@
   --accent: #0070f3;
   --accent-foreground: #ffffff;
   
-  --muted: #f5f5f5;
-  --muted-foreground: #666666;
+  --warm: #0070f3; /* Reverting to blue for now, or a very subtle amber #D97706 */
+  --warm-foreground: #ffffff;
   
-  --border: #eaeaea;
+  --muted: #f8f8f8;
+  --muted-foreground: #737373;
+  
+  --border: #e5e5e5;
   --card: #ffffff;
   --card-foreground: #000000;
 }
 
 .dark {
-  --background: #000000; /* Pure black */
-  --foreground: #ffffff; /* Pure white */
+  --background: #000000;
+  --foreground: #ffffff;
   
   --primary: #0070f3;
   --primary-foreground: #ffffff;
   
-  --secondary: #111111;
+  --secondary: #0a0a0a;
   --secondary-foreground: #ffffff;
   
   --accent: #0070f3;
   --accent-foreground: #ffffff;
+
+  --warm: #0070f3;
+  --warm-foreground: #ffffff;
   
-  --muted: #1a1a1a;
-  --muted-foreground: #a0a0a0;
+  --muted: #0a0a0a;
+  --muted-foreground: #a3a3a3;
   
-  --border: #333333;
-  --card: #0a0a0a;
+  --border: #1a1a1a;
+  --card: #050505;
   --card-foreground: #ffffff;
 }
 
@@ -61,26 +67,57 @@
   --font-sans: var(--font-lato), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 
-  --radius-lg: 0.5rem;   /* Sharper modern corners */
-  --radius-md: 0.375rem;
-  --radius-sm: 0.25rem;
+  --radius-xl: 1.5rem;
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-lato), ui-sans-serif, system-ui, sans-serif;
   overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 10px;
+  border: 2px solid var(--background); /* Adds breathing room from the track border */
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #0051af; /* Darker blue on hover */
 }
 
 /* Hub Connectivity Decorative Elements */
 .hub-grid {
   background-image: radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
-  background-size: 40px 40px;
+  background-size: 32px 32px;
 }
 
-.hub-gradient {
-  background: radial-gradient(circle at center, rgba(37, 99, 235, 0.05) 0%, transparent 70%);
+.hub-gradient-orb {
+  background: radial-gradient(circle at center, var(--primary) 0%, transparent 75%);
+  filter: blur(80px);
+  opacity: 0.15;
+}
+
+.premium-card {
+  @apply bg-white dark:bg-[#050505] border border-black/[0.03] dark:border-white/[0.03] shadow-[0_0_1px_rgba(0,0,0,0.1),0_2px_4px_rgba(0,0,0,0.02)] transition-all duration-500;
+}
+
+.premium-card:hover {
+  @apply border-primary/20 shadow-[0_20px_40px_rgba(0,0,0,0.04)] -translate-y-1;
 }
 
 .hub-line {
