@@ -31,15 +31,26 @@ export const FAQ = () => {
   return (
     <section id="faq" className="py-24 bg-white dark:bg-black">
       <div className="container mx-auto px-6">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-sm font-bold text-[#0070f3] uppercase tracking-[0.2em] mb-4">{dict.FAQ.badge}</h2>
-          <h3 className="font-display text-4xl md:text-5xl font-black text-black dark:text-white mb-6">{dict.FAQ.title}</h3>
-          <p className="text-xl text-black/60 dark:text-white/60 font-light">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center max-w-3xl mx-auto mb-16"
+        >
+          <h2 className="text-[10px] font-black text-[#0070f3] uppercase tracking-[0.3em] mb-4">{dict.FAQ.badge}</h2>
+          <h3 className="font-display text-4xl md:text-5xl lg:text-6xl font-black text-black dark:text-white mb-6 tracking-tight leading-[1.1]">{dict.FAQ.title}</h3>
+          <p className="text-xl md:text-2xl text-black/60 dark:text-white/60 font-light leading-relaxed">
             {dict.FAQ.description}
           </p>
-        </div>
+        </motion.div>
 
-        <div className="max-w-3xl mx-auto space-y-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="max-w-3xl mx-auto space-y-4"
+        >
           {faqs.map((faq, index) => (
             <div
               key={index}
@@ -70,7 +81,7 @@ export const FAQ = () => {
               </AnimatePresence>
             </div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

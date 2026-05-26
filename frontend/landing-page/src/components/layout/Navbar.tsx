@@ -37,7 +37,7 @@ export const Navbar = () => {
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-black/10 dark:border-white/10 py-3' : 'bg-transparent py-5'
+        scrolled ? 'bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-black/10 dark:border-white/10 py-2' : 'bg-transparent py-4'
       }`}
     >
       <div className="container mx-auto px-6 flex items-center justify-between">
@@ -138,7 +138,7 @@ export const Navbar = () => {
                   <Globe size={18} /> {locale.toUpperCase()}
                 </button>
                 <Button variant="outline" className="w-full text-black border-black/20 dark:text-white dark:border-white/20 font-medium">{dict.Navbar.btn_login}</Button>
-                <Button className="w-full bg-[#0070f3] text-white font-bold rounded-full py-6">{dict.Navbar.btn_signup}</Button>
+                <Button className="w-full bg-[#0070f3] text-white font-bold rounded-full py-3 shadow-lg shadow-[#0070f3]/25">{dict.Navbar.btn_signup}</Button>
               </div>
             </div>
           </motion.div>
