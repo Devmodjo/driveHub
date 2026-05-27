@@ -1,7 +1,212 @@
+<!-- ================================================ -->
+<!-- Toast : message de retour après une action       -->
+<!-- ================================================ -->
+@if (actionMessage()) {
+  <div class="toast-wrap">
+    <div class="toast" [class.toast--error]="actionMessage()!.type === 'error'">
+      {{ actionMessage()!.text }}
+    </div>
+  </div>
+}
+
+<!-- ================================================ -->
+<!-- En-tête de la page                               -->
+<!-- ================================================ -->
 <div class="page-header">
+  <div>
     <h2 class="page-title">Gestion des Admins</h2>
-    <p class="page-subtitle">Liste et gestion de tous les administrateurs</p>
+    <p class="page-subtitle">Liste et gestion de tous les administrateurs de la plateforme</p>
+  </div>
+  <!-- Compteur total d'admins -->
+  <span class="total-count">{{ totalElements() }} administrateur(s)</span>
 </div>
-<div class="placeholder-content">
-    <p>Le tableau des admins sera affiché ici.</p>
+
+<!-- ================================================ -->
+<!-- Filtres : statut et rôle                         -->
+<!-- ================================================ -->
+<div class="toolbar">
+
+  <!-- Onglets de filtre par statut -->
+  <div class="filter-tabs">
+
+    <!-- Tous les statuts -->
+    <button
+      class="filter-tab"
+      [class.filter-tab--active]="statusFilter() === undefined"
+      (click)="applyStatusFilter(undefined)">
+      Tous
+    </button>
+
+    <!-- Admins actifs -->
+    <button
+      class="filter-tab"
+      [class.filter-tab--active]="statusFilter() === 'ACTIVE'"
+      (click)="applyStatusFilter('ACTIVE')">
+      <span class="filter-dot filter-dot--green"></span>
+      Actifs
+    </button>
+
+    <!-- Admins en attente -->
+    <button
+      class="filter-tab"
+      [class.filter-tab--active]="statusFilter() === 'PENDING'"
+      (click)="applyStatusFilter('PENDING')">
+      <span class="filter-dot filter-dot--amber"></span>
+      En attente
+    </button>
+
+    <!-- Admins inactifs -->
+    <button
+      class="filter-tab"
+      [class.filter-tab--active]="statusFilter() === 'INACTIVE'"
+      (click)="applyStatusFilter('INACTIVE')">
+      <span class="filter-dot filter-dot--gray"></span>
+      Inactifs
+    </button>
+
+  </div>
+
+  <!-- Filtre par rôle (menu déroulant) -->
+  <div class="role-filter">
+    <select
+      class="select-input"
+      [value]="roleFilter() ?? ''"
+      (change)="applyRoleFilter($any($event.target).value || undefined)">
+      <option value="">Tous les rôles</option>
+      <option value="REVIEWER">Reviewer</option>
+      <option value="ROOT">Root</option>
+      <option value="SUPER_ADMIN">Super Admin</option>
+    </select>
+  </div>
+
+</div>
+
+<!-- ================================================ -->
+<!-- Tableau principal des administrateurs             -->
+<!-- ================================================ -->
+<div class="panel">
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Administrateur</th>
+          <th>Rôle</th>
+          <th>Statut</th>
+          <th>Inscrit le</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- Chargement en cours -->
+        @if (isLoading()) {
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">Chargement...</div>
+            </td>
+          </tr>
+        }
+
+        <!-- Aucun admin trouvé pour les filtres actifs -->
+        @else if (admins().length === 0) {
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">Aucun administrateur trouvé.</div>
+            </td>
+          </tr>
+        }
+
+        <!-- Liste des admins de la page courante -->
+        @else {
+          @for (admin of admins(); track admin.id) {
+            <tr>
+
+              <!-- Avatar + nom + email -->
+              <td>
+                <div class="admin-cell">
+                  <div class="avatar">{{ getInitials(admin.name) }}</div>
+                  <div class="row-text">
+                    <span class="row-name">{{ admin.name }}</span>
+                    <span class="row-meta">{{ admin.email }}</span>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Rôle -->
+              <td class="cell-muted">{{ admin.role }}</td>
+
+              <!-- Badge de statut coloré -->
+              <td>
+                <span [class]="getStatusClass(admin.adminStatus)">
+                  {{ getStatusLabel(admin.adminStatus) }}
+                </span>
+              </td>
+
+              <!-- Date d'inscription -->
+              <td class="cell-muted">{{ admin.createdAt | date:'dd/MM/yyyy' }}</td>
+
+              <!-- Boutons d'action -->
+              <td>
+                <div class="action-group">
+
+                  <!-- Bouton "Activer" : visible uniquement pour les admins en attente -->
+                  @if (admin.adminStatus === 'PENDING') {
+                    <button
+                      class="btn btn-green"
+                      [disabled]="isLoading()"
+                      (click)="activateAdmin(admin.id)">
+                      Activer
+                    </button>
+                  }
+
+                  <!-- Bouton "Supprimer" : toujours disponible -->
+                  <button
+                    class="btn btn-danger"
+                    [disabled]="isLoading()"
+                    (click)="deleteAdmin(admin.id)">
+                    Supprimer
+                  </button>
+
+                </div>
+              </td>
+
+            </tr>
+          }
+        }
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- Barre de pagination                            -->
+  <!-- Affichée uniquement s'il y a plus d'une page   -->
+  <!-- ============================================== -->
+  @if (totalPages() > 1) {
+    <div class="pagination">
+
+      <!-- Bouton "Précédent" : désactivé sur la première page -->
+      <button
+        class="page-btn"
+        [disabled]="isFirstPage()"
+        (click)="previousPage()">
+        Précédent
+      </button>
+
+      <!-- Indicateur de position : "Page X / Y" -->
+      <span class="page-info">
+        Page {{ displayedPage() }} / {{ totalPages() }}
+      </span>
+
+      <!-- Bouton "Suivant" : désactivé sur la dernière page -->
+      <button
+        class="page-btn"
+        [disabled]="isLastPage()"
+        (click)="nextPage()">
+        Suivant
+      </button>
+
+    </div>
+  }
+
 </div>

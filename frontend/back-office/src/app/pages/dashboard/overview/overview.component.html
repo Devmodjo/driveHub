@@ -1,11 +1,183 @@
+<!-- ================================ -->
+<!-- Toast : message de retour action -->
+<!-- Affiché uniquement si un message existe (succès ou erreur) -->
+<!-- ================================ -->
+@if (actionMessage()) {
+  <div class="toast-wrap">
+    <div class="toast" [class.toast--error]="actionMessage()!.type === 'error'">
+      {{ actionMessage()!.text }}
+    </div>
+  </div>
+}
+
 <div class="page-header">
-    <h2 class="page-title">Vue d'ensemble</h2>
-    <p class="page-subtitle">Bienvenue sur le tableau de bord DriveHub</p>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-   <dashboard-kpi [KpiTitle]="'Auto-écoles actives'" [KpiResult]="countActiveSchool()"></dashboard-kpi>
-   <dashboard-kpi [KpiTitle]="'Total Admins'" [KpiResult]="adminstats()?.totalAdmins"></dashboard-kpi>
-   <dashboard-kpi [KpiTitle]="'Admin en attentes'" [KpiResult]="adminstats()?.pendingAdmins"></dashboard-kpi>
-   <dashboard-kpi [KpiTitle]="'Auto-écoles en attentes'" [KpiResult]="countPendingSchoolRequest()"></dashboard-kpi>
+  <h2 class="page-title">Vue d'ensemble</h2>
+  <p class="page-subtitle">Pilotez votre activité DriveHub en temps réel</p>
 </div>
 
+<div class="kpi-grid">
+
+  <!-- Nombre d'auto-écoles actives -->
+  <dashboard-kpi
+    [KpiTitle]="'Auto-écoles actives'"
+    [KpiResult]="countActiveSchool()"
+    [KpiColor]="'#10b981'"
+    [KpiBgColor]="'rgba(16,185,129,0.08)'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    </svg>
+  </dashboard-kpi>
+
+  <!-- Nombre total d'admins -->
+  <dashboard-kpi
+    [KpiTitle]="'Total Admins'"
+    [KpiResult]="adminstats()?.totalAdmins"
+    [KpiColor]="'#3b82f6'"
+    [KpiBgColor]="'rgba(59,130,246,0.08)'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+    </svg>
+  </dashboard-kpi>
+
+  <!-- Nombre d'admins en attente d'activation -->
+  <dashboard-kpi
+    [KpiTitle]="'Admins en attente'"
+    [KpiResult]="adminstats()?.pendingAdmins"
+    [KpiColor]="'#f59e0b'"
+    [KpiBgColor]="'rgba(245,158,11,0.08)'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </svg>
+  </dashboard-kpi>
+
+  <!-- Nombre d'auto-écoles en attente d'approbation -->
+  <dashboard-kpi
+    [KpiTitle]="'Écoles en attente'"
+    [KpiResult]="countPendingSchoolRequest()"
+    [KpiColor]="'#6366f1'"
+    [KpiBgColor]="'rgba(99,102,241,0.08)'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+    </svg>
+  </dashboard-kpi>
+
+</div>
+
+
+<div class="panels-grid">
+
+  <!-- Panneau 1 : Admins en attente d'activation -->
+  <div class="panel">
+    <div class="panel-header">
+      <h3 class="panel-title">Admins en attente d'activation</h3>
+      <a routerLink="/dashboard/admins" class="panel-link">Voir tout</a>
+    </div>
+    <div class="panel-body">
+
+      <!-- Cas vide : aucun admin en attente -->
+      @if (pendingAdmins().length === 0) {
+        <div class="empty-state">Aucune inscription en attente.</div>
+      }
+
+      <!-- Cas normal : on affiche les 5 premiers admins en attente -->
+      @else {
+        @for (admin of pendingAdmins().slice(0, 5); track admin.id) {
+          <div class="list-row">
+            <!-- Avatar avec les initiales du nom -->
+            <div class="avatar">{{ getInitials(admin.name) }}</div>
+            <!-- Nom et email de l'admin -->
+            <div class="row-text">
+              <span class="row-name">{{ admin.name }}</span>
+              <span class="row-meta">{{ admin.email }}</span>
+            </div>
+            <!-- Bouton pour activer l'admin -->
+            <button class="btn btn-green" (click)="activateAdmin(admin.id)">Activer</button>
+          </div>
+        }
+      }
+
+    </div>
+  </div>
+
+  <!-- Panneau 2 : Auto-écoles en attente d'approbation -->
+  <div class="panel">
+    <div class="panel-header">
+      <h3 class="panel-title">Auto-écoles à approuver</h3>
+      <a routerLink="/dashboard/schools" class="panel-link">Voir tout</a>
+    </div>
+    <div class="panel-body">
+
+      <!-- Cas vide : toutes les demandes ont été traitées -->
+      @if (pendingSchools().length === 0) {
+        <div class="empty-state">Toutes les demandes sont traitées.</div>
+      }
+
+      <!-- Cas normal : on affiche les 5 premières auto-écoles en attente -->
+      @else {
+        @for (school of pendingSchools().slice(0, 5); track school.id) {
+          <div class="list-row">
+            <!-- Icône représentant une auto-école (voiture) -->
+            <div class="school-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="3" width="15" height="13"/>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                <circle cx="5.5" cy="18.5" r="2.5"/>
+                <circle cx="18.5" cy="18.5" r="2.5"/>
+              </svg>
+            </div>
+            <!-- Nom et date de création de l'auto-école -->
+            <div class="row-text">
+              <span class="row-name">{{ school.name }}</span>
+              <span class="row-meta">Créé le {{ school.createdAt | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <!-- Bouton pour examiner la demande -->
+            <button class="btn btn-outline" (click)="approveSchool(school.id)">Examiner</button>
+          </div>
+        }
+      }
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ================================================ -->
+<!-- Tableau des auto-écoles actives                  -->
+<!-- Affiché uniquement s'il y a au moins une école   -->
+<!-- ================================================ -->
+@if (activeSchools().length > 0) {
+  <div class="panel section-gap">
+    <div class="panel-header">
+      <h3 class="panel-title">Auto-écoles actives</h3>
+      <a routerLink="/dashboard/schools" class="panel-link">Tout voir</a>
+    </div>
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Adresse</th>
+            <th>Téléphone</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- On affiche les 6 premières auto-écoles actives -->
+          @for (school of activeSchools().slice(0, 6); track school.id) {
+            <tr>
+              <td class="cell-name">{{ school.name }}</td>
+              <!-- '—' affiché si l'adresse est absente -->
+              <td class="cell-muted">{{ school.address || '—' }}</td>
+              <!-- '—' affiché si le téléphone est absent -->
+              <td class="cell-muted">{{ school.phoneNumber || '—' }}</td>
+              <td><span class="badge badge-green">Actif</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
