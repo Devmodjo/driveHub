@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.UnsupportedEncodingException;
+
 
 @Service
 @Slf4j
@@ -25,6 +27,9 @@ public class EmailService {
 
     @Value("${app.mail.from}")
     private String fromEmail;
+
+    @Value("${app.mail.from-name}")
+    private String fromName;
 
     @Async
     public void sendVerificationEmail(String toEmail, String name,
@@ -82,10 +87,10 @@ public class EmailService {
     }
 
     private void sendHtmlEmail(String to, String subject,
-                               String html) throws MessagingException {
+                               String html) throws MessagingException, UnsupportedEncodingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper( message, true, "UTF-8");
-        helper.setFrom(fromEmail);
+        helper.setFrom(fromEmail, fromName);
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(html, true);
