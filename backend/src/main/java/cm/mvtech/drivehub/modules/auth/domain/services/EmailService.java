@@ -1,5 +1,6 @@
 package cm.mvtech.drivehub.modules.auth.domain.services;
 
+import cm.mvtech.drivehub.platform.admin.enums.AdminStatus;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+
+import java.io.UnsupportedEncodingException;
 
 
 @Service
@@ -24,6 +27,9 @@ public class EmailService {
 
     @Value("${app.mail.from}")
     private String fromEmail;
+
+    @Value("${app.mail.from-name}")
+    private String fromName;
 
     @Async
     public void sendVerificationEmail(String toEmail, String name,
@@ -64,11 +70,27 @@ public class EmailService {
         }
     }
 
+    @Async
+    public void sendAdminWelcomeMail(String toEmail, String name) {
+
+        try {
+            Context context = new Context();
+            context.setVariable("name", name);
+
+            String html = templateEngine.process("emails/admin-registry", context);
+
+            sendHtmlEmail(toEmail, "Bienvenu sur le Back-office — Drivehub", html);
+
+        } catch (Exception e) {
+            log.error("Échec envoi email reset à {} : {}", toEmail, e.getMessage());
+        }
+    }
+
     private void sendHtmlEmail(String to, String subject,
-                               String html) throws MessagingException {
+                               String html) throws MessagingException, UnsupportedEncodingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper( message, true, "UTF-8");
-        helper.setFrom(fromEmail);
+        helper.setFrom(fromEmail, fromName);
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(html, true);

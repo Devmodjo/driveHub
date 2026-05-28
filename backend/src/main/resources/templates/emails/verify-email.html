@@ -1,24 +1,129 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Vérifiez votre email — DriveHub</title>
     <style>
-        body { font-family: Arial, sans-serif; background:#f4f4f4; margin:0; padding:0; }
-        .container { max-width:600px; margin:40px auto; background:#fff; border-radius:8px; padding:40px; }
-        .btn { display:inline-block; padding:14px 28px; background:#1a56db; color:white;
-               text-decoration:none; border-radius:6px; font-weight:bold; margin:24px 0; }
-        .footer { color:#9ca3af; font-size:12px; margin-top:32px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif;
+               background-color: #F3F4F6; color: #111827; }
+        .wrapper { max-width: 600px; margin: 40px auto;
+                   background: #ffffff; border-radius: 16px;
+                   overflow: hidden;
+                   box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        .header { background: linear-gradient(135deg, #1A56DB 0%, #1044B2 100%);
+                  padding: 40px 48px; text-align: center; }
+        .logo-text { font-size: 28px; font-weight: 700; color: #ffffff;
+                     letter-spacing: -0.5px; }
+        .logo-text span { font-weight: 300; opacity: 0.85; }
+        .logo-tagline { margin-top: 8px; font-size: 12px;
+                        color: rgba(255,255,255,0.6);
+                        text-transform: uppercase; letter-spacing: 1px; }
+        .icon-circle { width: 72px; height: 72px; background: rgba(255,255,255,0.15);
+                       border-radius: 50%; margin: 24px auto 0;
+                       display: flex; align-items: center;
+                       justify-content: center; font-size: 32px; }
+        .body { padding: 48px; }
+        .greeting { font-size: 22px; font-weight: 700;
+                    color: #111827; margin-bottom: 16px; }
+        .greeting span { color: #1A56DB; }
+        .text { font-size: 15px; color: #4B5563;
+                line-height: 1.7; margin-bottom: 32px; }
+        .cta-section { text-align: center; margin-bottom: 36px; }
+        .cta-button { display: inline-block;
+                      background: linear-gradient(135deg, #1A56DB, #1044B2);
+                      color: #ffffff; text-decoration: none;
+                      font-size: 15px; font-weight: 600;
+                      padding: 16px 40px; border-radius: 10px;
+                      letter-spacing: 0.2px; }
+        .expiry-box { background: #F9FAFB; border: 1px solid #E5E7EB;
+                      border-radius: 10px; padding: 16px 20px;
+                      display: flex; align-items: center; gap: 12px;
+                      margin-bottom: 32px; }
+        .expiry-icon { font-size: 20px; flex-shrink: 0; }
+        .expiry-text { font-size: 13px; color: #6B7280; line-height: 1.5; }
+        .expiry-text strong { color: #374151; }
+        .divider { height: 1px; background: #F3F4F6; margin: 0 0 32px; }
+        .security-note { background: #FFF7ED; border-left: 3px solid #F59E0B;
+                         border-radius: 0 8px 8px 0; padding: 14px 18px;
+                         margin-bottom: 32px; }
+        .security-note p { font-size: 13px; color: #92400E; line-height: 1.6; }
+        .footer { background: #F9FAFB; border-top: 1px solid #E5E7EB;
+                  padding: 28px 48px; text-align: center; }
+        .footer-logo { font-size: 15px; font-weight: 700;
+                       color: #1A56DB; margin-bottom: 10px; }
+        .footer-logo span { font-weight: 300; color: #6B7280; }
+        .footer-text { font-size: 12px; color: #9CA3AF; line-height: 1.7; }
+        .footer-links { margin-top: 12px; display: flex;
+                        justify-content: center; gap: 16px; }
+        .footer-link { font-size: 12px; color: #6B7280; text-decoration: none; }
     </style>
 </head>
 <body>
-<div class="container">
-    <h2>Bienvenue sur DriveHub 👋</h2>
-    <p>Bonjour <strong th:text="${name}">Utilisateur</strong>,</p>
-    <p>Merci de vous être inscrit. Cliquez sur le bouton ci-dessous pour vérifier votre adresse email :</p>
-    <a th:href="${verificationUrl}" class="btn">Vérifier mon email</a>
-    <p>Ce lien expire dans <strong>24 heures</strong>.</p>
-    <p>Si vous n'avez pas créé de compte, ignorez cet email.</p>
-    <div class="footer">© 2026 DriveHub — Tous droits réservés</div>
+<div class="wrapper">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="logo-text">Drive<span>Hub</span></div>
+        <div class="logo-tagline">Plateforme de gestion d'auto-école</div>
+        <div class="icon-circle">✉️</div>
+    </div>
+
+    <!-- BODY -->
+    <div class="body">
+
+        <p class="greeting">
+            Bonjour, <span th:text="${name}">Utilisateur</span> 👋
+        </p>
+
+        <p class="text">
+            Merci de vous être inscrit sur <strong>DriveHub</strong>.
+            Pour finaliser la création de votre compte et accéder à la plateforme,
+            veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous.
+        </p>
+
+        <div class="cta-section">
+            <a th:href="${verificationUrl}" class="cta-button">
+                ✓ &nbsp; Vérifier mon adresse email
+            </a>
+        </div>
+
+        <div class="expiry-box">
+            <div class="expiry-icon">🕐</div>
+            <div class="expiry-text">
+                Ce lien est valable <strong>24 heures</strong> à compter
+                de la réception de cet email. Passé ce délai, vous devrez
+                en demander un nouveau.
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="security-note">
+            <p>
+                🔒 &nbsp; Si vous n'avez pas créé de compte sur DriveHub,
+                ignorez simplement cet email. Votre adresse ne sera pas utilisée.
+            </p>
+        </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <div class="footer-logo">Drive<span>Hub</span></div>
+        <p class="footer-text">
+            Vous recevez cet email car une inscription a été effectuée
+            avec cette adresse sur DriveHub.<br/>
+            © 2026 DriveHub · Tous droits réservés
+        </p>
+        <div class="footer-links">
+            <a href="#" class="footer-link">Confidentialité</a>
+            <a href="#" class="footer-link">Conditions</a>
+            <a href="mailto:support@drivehub.cm" class="footer-link">Contact</a>
+        </div>
+    </div>
+
 </div>
 </body>
 </html>

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Bienvenue sur DriveHub</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+          font-family: 'Segoe UI', Arial, sans-serif;
+          background-color: #F3F4F6;
+          color: #111827;
+        }
+
+        .wrapper {
+          max-width: 600px;
+          margin: 40px auto;
+          background-color: #ffffff;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+
+        /* ── HEADER ── */
+        .header {
+          background: linear-gradient(135deg, #1A56DB 0%, #1044B2 100%);
+          padding: 40px 48px;
+          text-align: center;
+        }
+
+        .logo-container {
+          display: inline-flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .logo-icon {
+          width: 48px;
+          height: 48px;
+          background-color: rgba(255,255,255,0.15);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          font-weight: 800;
+          color: #ffffff;
+          letter-spacing: -1px;
+        }
+
+        .logo-text {
+          font-size: 28px;
+          font-weight: 700;
+          color: #ffffff;
+          letter-spacing: -0.5px;
+        }
+
+        .logo-text span {
+          font-weight: 300;
+          opacity: 0.85;
+        }
+
+        .header-tagline {
+          margin-top: 8px;
+          font-size: 13px;
+          color: rgba(255,255,255,0.65);
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+        }
+
+        /* ── STATUS BADGE ── */
+        .status-banner {
+          background-color: #FEF3C7;
+          border-left: 4px solid #F59E0B;
+          padding: 14px 48px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 13px;
+          color: #92400E;
+          font-weight: 500;
+        }
+
+        .status-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: #F59E0B;
+          flex-shrink: 0;
+          animation: pulse 2s infinite;
+        }
+
+        /* ── BODY ── */
+        .body {
+          padding: 48px;
+        }
+
+        .greeting {
+          font-size: 22px;
+          font-weight: 700;
+          color: #111827;
+          margin-bottom: 16px;
+        }
+
+        .greeting span {
+          color: #1A56DB;
+        }
+
+        .intro-text {
+          font-size: 15px;
+          color: #4B5563;
+          line-height: 1.7;
+          margin-bottom: 32px;
+        }
+
+        /* ── CARD STATUS ── */
+        .status-card {
+          background-color: #F9FAFB;
+          border: 1px solid #E5E7EB;
+          border-radius: 12px;
+          padding: 24px 28px;
+          margin-bottom: 32px;
+        }
+
+        .status-card-title {
+          font-size: 13px;
+          font-weight: 600;
+          color: #6B7280;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          margin-bottom: 16px;
+        }
+
+        .status-row {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 10px 0;
+          border-bottom: 1px solid #F3F4F6;
+        }
+
+        .status-row:last-child {
+          border-bottom: none;
+          padding-bottom: 0;
+        }
+
+        .status-row:first-of-type {
+          padding-top: 0;
+        }
+
+        .status-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          flex-shrink: 0;
+        }
+
+        .status-icon.done {
+          background-color: #D1FAE5;
+        }
+
+        .status-icon.pending {
+          background-color: #FEF3C7;
+        }
+
+        .status-icon.waiting {
+          background-color: #EFF6FF;
+        }
+
+        .status-info {
+          flex: 1;
+        }
+
+        .status-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: #111827;
+        }
+
+        .status-sublabel {
+          font-size: 12px;
+          color: #9CA3AF;
+          margin-top: 2px;
+        }
+
+        .status-badge {
+          font-size: 11px;
+          font-weight: 600;
+          padding: 3px 10px;
+          border-radius: 20px;
+        }
+
+        .badge-done {
+          background-color: #D1FAE5;
+          color: #065F46;
+        }
+
+        .badge-pending {
+          background-color: #FEF3C7;
+          color: #92400E;
+        }
+
+        .badge-waiting {
+          background-color: #EFF6FF;
+          color: #1E40AF;
+        }
+
+        /* ── DÉLAI ── */
+        .delay-box {
+          background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+          border: 1px solid #BFDBFE;
+          border-radius: 12px;
+          padding: 20px 24px;
+          margin-bottom: 32px;
+          display: flex;
+          align-items: flex-start;
+          gap: 14px;
+        }
+
+        .delay-icon {
+          font-size: 22px;
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .delay-text {
+          flex: 1;
+        }
+
+        .delay-title {
+          font-size: 14px;
+          font-weight: 700;
+          color: #1E40AF;
+          margin-bottom: 4px;
+        }
+
+        .delay-desc {
+          font-size: 13px;
+          color: #3B82F6;
+          line-height: 1.6;
+        }
+
+        /* ── WHAT'S NEXT ── */
+        .next-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: #111827;
+          margin-bottom: 16px;
+        }
+
+        .next-list {
+          list-style: none;
+          margin-bottom: 32px;
+        }
+
+        .next-list li {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 10px 0;
+          font-size: 14px;
+          color: #4B5563;
+          line-height: 1.6;
+          border-bottom: 1px solid #F9FAFB;
+        }
+
+        .next-list li:last-child {
+          border-bottom: none;
+        }
+
+        .next-list .check {
+          color: #1A56DB;
+          font-weight: 700;
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        /* ── CTA ── */
+        .cta-section {
+          text-align: center;
+          margin-bottom: 40px;
+        }
+
+        .cta-text {
+          font-size: 14px;
+          color: #6B7280;
+          margin-bottom: 16px;
+          line-height: 1.6;
+        }
+
+        .cta-button {
+          display: inline-block;
+          background: linear-gradient(135deg, #1A56DB 0%, #1044B2 100%);
+          color: #ffffff;
+          text-decoration: none;
+          font-size: 15px;
+          font-weight: 600;
+          padding: 14px 36px;
+          border-radius: 10px;
+          letter-spacing: 0.2px;
+        }
+
+        /* ── DIVIDER ── */
+        .divider {
+          height: 1px;
+          background-color: #F3F4F6;
+          margin: 0 48px 32px;
+        }
+
+        /* ── CONTACT ── */
+        .contact-section {
+          padding: 0 48px 32px;
+          text-align: center;
+        }
+
+        .contact-text {
+          font-size: 13px;
+          color: #9CA3AF;
+          line-height: 1.7;
+          margin-bottom: 12px;
+        }
+
+        .contact-link {
+          color: #1A56DB;
+          text-decoration: none;
+          font-weight: 600;
+          font-size: 13px;
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+          background-color: #F9FAFB;
+          border-top: 1px solid #E5E7EB;
+          padding: 24px 48px;
+          text-align: center;
+        }
+
+        .footer-logo {
+          font-size: 16px;
+          font-weight: 700;
+          color: #1A56DB;
+          margin-bottom: 8px;
+        }
+
+        .footer-logo span {
+          font-weight: 300;
+          color: #6B7280;
+        }
+
+        .footer-text {
+          font-size: 12px;
+          color: #9CA3AF;
+          line-height: 1.6;
+        }
+
+        .footer-links {
+          margin-top: 12px;
+          display: flex;
+          justify-content: center;
+          gap: 16px;
+        }
+
+        .footer-link {
+          font-size: 12px;
+          color: #6B7280;
+          text-decoration: none;
+        }
+
+        .footer-link:hover {
+          color: #1A56DB;
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="logo-container">
+            <div class="logo-icon">D</div>
+            <div>
+                <div class="logo-text">Drive<span>Hub</span></div>
+                <div class="header-tagline">Plateforme de gestion d'auto-école</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATUS BANNER -->
+    <div class="status-banner">
+        <div class="status-dot"></div>
+        Votre compte est en cours de validation — délai estimé : 24 à 48 heures
+    </div>
+
+    <!-- BODY -->
+    <div class="body">
+
+        <p class="greeting">
+            Bienvenue, <span th:text="${name}">user</span> 👋
+        </p>
+
+        <p class="intro-text">
+            Nous avons bien reçu votre demande d'accès à <strong>DriveHub</strong>.
+            Votre compte administrateur est actuellement en cours d'examen par notre équipe.
+            Vous recevrez une notification dès que votre accès sera confirmé.
+        </p>
+
+        <!-- STATUT DU COMPTE -->
+        <div class="status-card">
+            <div class="status-card-title">Statut de votre demande</div>
+
+            <div class="status-row">
+                <div class="status-icon done">✓</div>
+                <div class="status-info">
+                    <div class="status-label">Inscription reçue</div>
+                    <div class="status-sublabel">Vos informations ont été enregistrées</div>
+                </div>
+                <span class="status-badge badge-done">Effectué</span>
+            </div>
+
+            <div class="status-row">
+                <div class="status-icon pending">⏳</div>
+                <div class="status-info">
+                    <div class="status-label">Vérification en cours</div>
+                    <div class="status-sublabel">Examen de votre dossier par notre équipe</div>
+                </div>
+                <span class="status-badge badge-pending">En attente</span>
+            </div>
+
+            <div class="status-row">
+                <div class="status-icon waiting">🔓</div>
+                <div class="status-info">
+                    <div class="status-label">Activation du compte</div>
+                    <div class="status-sublabel">Accès complet à DriveHub</div>
+                </div>
+                <span class="status-badge badge-waiting">À venir</span>
+            </div>
+
+        </div>
+
+        <!-- DÉLAI -->
+        <div class="delay-box">
+            <div class="delay-icon">🕐</div>
+            <div class="delay-text">
+                <div class="delay-title">Délai de traitement : 24 à 48 heures</div>
+                <div class="delay-desc">
+                    Notre équipe examine chaque demande manuellement afin de garantir
+                    la qualité et la sécurité de la plateforme.
+                    Vous serez notifié par email dès qu'une décision sera prise.
+                </div>
+            </div>
+        </div>
+
+        <!-- WHAT'S NEXT -->
+        <p class="next-title">Ce qui vous attend une fois validé</p>
+        <ul class="next-list">
+            <li>
+                <span class="check">→</span>
+                Accès complet au tableau de bord DriveHub pour gérer
+                les auto-écoles et les administrateurs de la plateforme.
+            </li>
+            <li>
+                <span class="check">→</span>
+                Possibilité d'approuver ou rejeter les demandes de création
+                d'auto-école soumises par les moniteurs.
+            </li>
+            <li>
+                <span class="check">→</span>
+                Suivi des statistiques en temps réel : auto-écoles actives,
+                élèves inscrits, paiements et examens.
+            </li>
+            <li>
+                <span class="check">→</span>
+                Gestion complète des comptes administrateurs de la plateforme.
+            </li>
+        </ul>
+
+        <!-- CTA -->
+        <div class="cta-section">
+            <p class="cta-text">
+                En attendant, vous pouvez en apprendre plus sur DriveHub
+                et découvrir tout ce que la plateforme vous permet de faire.
+            </p>
+            <a href="https://cmdrivehub.vercel.app" class="cta-button">
+                Découvrir DriveHub →
+            </a>
+        </div>
+
+    </div>
+
+    <!-- DIVIDER -->
+    <div class="divider"></div>
+
+    <!-- CONTACT -->
+    <div class="contact-section">
+        <p class="contact-text">
+            Une question ? Notre équipe est disponible sur WhatsApp
+            ou par email pour vous accompagner.
+        </p>
+        <a href="mailto:support@drivehub.cm" class="contact-link">
+            support@drivehub.cm
+        </a>
+        &nbsp;&nbsp;·&nbsp;&nbsp;
+        <a href="https://wa.me/237XXXXXXXXX" class="contact-link">
+            WhatsApp Support
+        </a>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <div class="footer-logo">Drive<span>Hub</span></div>
+        <p class="footer-text">
+            Vous recevez cet email car vous avez soumis une demande d'accès
+            administrateur sur DriveHub.<br/>
+            Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.
+        </p>
+        <div class="footer-links">
+            <a href="#" class="footer-link">Politique de confidentialité</a>
+            <a href="#" class="footer-link">Conditions d'utilisation</a>
+            <a href="#" class="footer-link">Contact</a>
+        </div>
+        <p class="footer-text" style="margin-top: 12px;">
+            © 2026 DriveHub · Tous droits réservés
+        </p>
+    </div>
+
+</div>
+
+</body>
+</html>
