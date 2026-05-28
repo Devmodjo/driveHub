@@ -1,5 +1,6 @@
 package cm.mvtech.drivehub.platform.admin.services.serviceImpl;
 
+import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
 import cm.mvtech.drivehub.platform.admin.models.AdminPrincipal;
 import cm.mvtech.drivehub.platform.admin.models.PlatformAdmin;
 import cm.mvtech.drivehub.platform.admin.enums.AdminRole;
@@ -14,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -34,9 +37,11 @@ public class PlatformAdminService implements AdminerService {
 
     private final PlatformAdminRepository adminRepository;
     private final AuthenticationManager authenticationManager;
+    private final JavaMailSender javaMailSender;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final PlatformAdminMapper adminMapper;
+    private final EmailService emailService;
 
     /**
      * Login pour les admins de la plateforme (ROOT, SUPER_ADMIN, ADMIN)
@@ -101,6 +106,7 @@ public class PlatformAdminService implements AdminerService {
         admin.setResidence(adminCreateRequest.residence());
 
         adminRepository.save(admin);
+        emailService.sendAdminWelcomeMail(admin.getEmail(), admin.getName());
 
         log.info("Admin plateforme {} créé avec succès (PENDING)", adminCreateRequest.email());
     }
@@ -309,6 +315,12 @@ public class PlatformAdminService implements AdminerService {
             throw new IllegalArgumentException("Type de principal non supporté");
         }
         return principal;
+    }
+
+    private void sendEmail(String to, String subject, String text) {
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(to);
+        mailMessage.setSubject(subject);
     }
 
 }

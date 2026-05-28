@@ -1,5 +1,6 @@
 package cm.mvtech.drivehub.modules.auth.domain.services;
 
+import cm.mvtech.drivehub.platform.admin.enums.AdminStatus;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +59,22 @@ public class EmailService {
 
             sendHtmlEmail(toEmail, "Réinitialisation de mot de passe — DriveHub", html);
             log.info("Email reset password envoyé à {}", toEmail);
+
+        } catch (Exception e) {
+            log.error("Échec envoi email reset à {} : {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendAdminWelcomeMail(String toEmail, String name) {
+
+        try {
+            Context context = new Context();
+            context.setVariable("name", name);
+
+            String html = templateEngine.process("emails/admin-registry", context);
+
+            sendHtmlEmail(toEmail, "Bienvenu sur le Back-office — Drivehub", html);
 
         } catch (Exception e) {
             log.error("Échec envoi email reset à {} : {}", toEmail, e.getMessage());
