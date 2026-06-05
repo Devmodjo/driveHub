@@ -61,6 +61,14 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password"
                         ).permitAll()
+                        .requestMatchers(
+                                "/api/platform/admin/login",
+                                "/api/platform/admin/register",
+                                "/api/platform/admin/verify-email",
+                                "/api/platform/admin/resend-verification",
+                                "/api/platform/admin/forgot-password",
+                                "/api/platform/admin/reset-password"
+                        ).permitAll()
 
                         // Endpoints admin platform (authentifié)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

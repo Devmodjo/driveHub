@@ -1,6 +1,8 @@
 package cm.mvtech.drivehub.platform.admin.controllers;
 
 
+import cm.mvtech.drivehub.modules.auth.application.dto.ForgotPasswordRequest;
+import cm.mvtech.drivehub.modules.auth.application.dto.ResetPasswordRequest;
 import cm.mvtech.drivehub.modules.drivingschool.application.dto.DrivingSchoolPendingRequestDTO;
 import cm.mvtech.drivehub.modules.drivingschool.domain.services.DrivingSchoolService;
 import cm.mvtech.drivehub.modules.messageapi.ApiResponse;
@@ -224,6 +226,42 @@ public class PlatformAdminController {
     @PreAuthorize("hasRole('ROOT') || hasRole('SUPER_ADMIN')")
     public ResponseEntity<AdminStatsResponse> getAdminStats() {
         return ResponseEntity.ok(adminerService.getAdminStats());
+    }
+
+    @Operation(summary = "Vérifier l'email d'un admin plateforme")
+    @GetMapping("/admin/verify-email")
+    public ResponseEntity<ApiResponse> verifyAdminEmail(
+            @RequestParam String token) {
+        adminerService.verifyAdminEmail(token);
+        return ResponseEntity.ok(new ApiResponse(true,
+                "Email vérifié. Votre compte est en attente de validation."));
+    }
+
+    @Operation(summary = "Renvoyer l'email de vérification admin")
+    @PostMapping("/admin/resend-verification")
+    public ResponseEntity<ApiResponse> resendAdminVerification(
+            @RequestParam String email) {
+        adminerService.sendAdminVerificationEmail(email);
+        return ResponseEntity.ok(new ApiResponse(true,
+                "Email de vérification renvoyé."));
+    }
+
+    @Operation(summary = "Mot de passe oublié admin plateforme")
+    @PostMapping("/admin/forgot-password")
+    public ResponseEntity<ApiResponse> adminForgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+        adminerService.adminForgotPassword(request);
+        return ResponseEntity.ok(new ApiResponse(true,
+                "Si un compte existe avec cet email, vous recevrez un lien."));
+    }
+
+    @Operation(summary = "Réinitialiser le mot de passe admin")
+    @PostMapping("/admin/reset-password")
+    public ResponseEntity<ApiResponse> adminResetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        adminerService.adminResetPassword(request);
+        return ResponseEntity.ok(new ApiResponse(true,
+                "Mot de passe réinitialisé avec succès."));
     }
 
 }

@@ -1,5 +1,7 @@
 package cm.mvtech.drivehub.platform.admin.services;
 
+import cm.mvtech.drivehub.modules.auth.application.dto.ForgotPasswordRequest;
+import cm.mvtech.drivehub.modules.auth.application.dto.ResetPasswordRequest;
 import cm.mvtech.drivehub.platform.admin.enums.AdminRole;
 import cm.mvtech.drivehub.platform.admin.enums.AdminStatus;
 import cm.mvtech.drivehub.platform.admin.models.dto.*;
@@ -80,5 +82,9 @@ public interface AdminerService {
     AdminStatsResponse getAdminStats();
 
 
+    void sendAdminVerificationEmail(String email);
+    void verifyAdminEmail(String token);
+    void adminForgotPassword(ForgotPasswordRequest request);
+    void adminResetPassword(ResetPasswordRequest request);
 
 }

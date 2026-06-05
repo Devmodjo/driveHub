@@ -29,6 +29,7 @@ public interface PlatformAdminRepository extends JpaRepository<PlatformAdmin, UU
                                                  AdminRole role,
                                                  Pageable pageable);
 
+    List<PlatformAdmin> findByRole(AdminRole role);
     // Counts pour les stats
     long countByAdminStatus(AdminStatus status);
 }
