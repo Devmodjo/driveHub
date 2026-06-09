@@ -10,7 +10,7 @@
 ---
 
 ## Présentation
-
+ 
 **DriveHub** est une plateforme SaaS B2B permettant aux auto-écoles de gérer l'ensemble de leurs opérations : élèves, moniteurs, véhicules, cours, examens, réservations et paiements.
 
 L'architecture repose sur le modèle **Shared Database / Separate Schema** : une seule base PostgreSQL avec un schéma dédié par auto-école, garantissant une isolation stricte des données tout en mutualisant l'infrastructure.
