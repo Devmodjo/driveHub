@@ -28,12 +28,15 @@ export const routes: Routes = [
                     .then(m => m.AdminsComponent)
             },
             {
+                path: 'schools',
+                loadComponent : () =>  import('./pages/dashboard/autoschool/school.component')
+                    .then(m => m.SchoolComponent)
+            },
+            {
                 path: 'pending',
                 loadComponent: () => import('./pages/dashboard/pending/pending.component')
                     .then(m => m.PendingComponent)
-            },
-            // ── Pour ajouter une page : copier le bloc ci-dessus ──
-            // { path: 'ma-page', loadComponent: () => import('./pages/dashboard/ma-page/ma-page.component').then(m => m.MaPageComponent) },
+            }
         ]
     }
 ];

@@ -134,6 +134,8 @@ public class PlatformAdminService implements AdminerService {
                 principal.getEmail(),
                 principal.getRole(),
                 principal.getStatus(),
+                principal.getResidence(),
+                principal.getPhoneNumber(),
                 principal.getCreatedAt()
         );
     }

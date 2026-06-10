@@ -83,6 +83,21 @@
       </div>
 
       <div class="form-group">
+        <label for="reason">Raison de la demande</label>
+        <textarea 
+          id="reason"
+          formControlName="reason"
+          placeholder="raison de votre demande"
+          rows="4"
+          cols="50"
+          class="resize-none border border-gray-300 rounded-md p-2"
+        ></textarea>
+        @if (registerForm.get('reason')?.invalid && registerForm.get('reason')?.touched) {
+          <span class="error-msg">La raison est requise.</span>
+        }
+      </div>
+
+      <div class="form-group">
         <label for="password">Mot de passe provisoire</label>
         <input 
           type="password" 

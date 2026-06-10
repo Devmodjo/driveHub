@@ -8,6 +8,7 @@ import { BASE_URL } from '../../utils/UTILS';
 import { AdminUpdate } from '../../interfaces/AdminUpdate';
 import { AdminStats } from '../../interfaces/AdminStats';
 import { ChangePassword } from '../../interfaces/ChangePassword';
+import UserRegisterModel from '../../interfaces/UserRegisterModel';
 
 @Injectable({
   providedIn: 'root',
@@ -128,6 +129,8 @@ export class AdminService {
     return this.http.delete<ApiResponse>(`${BASE_URL}admin/${adminId}`);
   }
 
-  
-  
+  createAdmin(admin: UserRegisterModel): Observable<ApiResponse> {
+    return this.http.post<ApiResponse>(`${BASE_URL}admin/register`, admin);
+  }
+
 }

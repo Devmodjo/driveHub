@@ -24,6 +24,8 @@ public class AdminPrincipal implements UserDetails {
     private final String password;
     private final AdminRole role;
     private final AdminStatus status;
+    private final String residence;
+    private final String phoneNumber;
     private final LocalDateTime createdAt;
 
     private final boolean enabled;
@@ -45,6 +47,8 @@ public class AdminPrincipal implements UserDetails {
                 admin.getPassword(),
                 admin.getRole(),
                 admin.getAdminStatus(),
+                admin.getResidence(),
+                admin.getPhoneNumber(),
                 admin.getCreatedAt(),
                 true,
                 true,

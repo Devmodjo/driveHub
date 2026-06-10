@@ -7,6 +7,7 @@ interface UserRegisterModel {
     password:string,
     residence:string,
     phoneNumber:string,
+    reason:string
 }
 
 export default UserRegisterModel;
