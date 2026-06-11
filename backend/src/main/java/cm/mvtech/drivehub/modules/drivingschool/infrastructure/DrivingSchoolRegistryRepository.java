@@ -63,11 +63,8 @@ public interface DrivingSchoolRegistryRepository
 
 
     @Query("""
-               SELECT COUNT(a)
-                   FROM DrivingSchoolRegistry r
-                   JOIN r.admin a
-                   JOIN a.roles role
-                   WHERE role = :adminRoles
+            SELECT COUNT(r) FROM DrivingSchoolRegistry r
+            WHERE r.admin.roles = :adminRoles
         """)
     long countByAdminRole(@Param("adminRoles") Role adminRole);
 
