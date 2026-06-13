@@ -1,0 +1,177 @@
+<div class="table-section">
+  <div class="table-header">
+    <h3 class="table-title">Liste des Auto-ecoles</h3>
+
+    <div class="table-toolbar">
+      <div class="filter-tabs">
+        <button
+          class="filter-tab"
+          [class.filter-tab--active]="activeFilter === undefined"
+          (click)="applyFilter(undefined)">
+          Tous
+        </button>
+        <button
+          class="filter-tab"
+          [class.filter-tab--active]="activeFilter === 'ACTIVE'"
+          (click)="applyFilter('ACTIVE')">
+          Actives
+        </button>
+        <button
+          class="filter-tab filter-tab--badge"
+          [class.filter-tab--active]="activeFilter === 'PENDING'"
+          (click)="applyFilter('PENDING')">
+          En attente
+          @if (pendingCount > 0) {
+            <span class="tab-badge">{{ pendingCount }}</span>
+          }
+        </button>
+        <button
+          class="filter-tab"
+          [class.filter-tab--active]="activeFilter === 'REJECTED'"
+          (click)="applyFilter('REJECTED')">
+          Rejetees
+        </button>
+      </div>
+
+      <div class="search-area">
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Rechercher..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="onSearch($event)" />
+      </div>
+    </div>
+  </div>
+
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Ref.</th>
+          <th>Auto-ecole</th>
+          <th>Ville</th>
+          <th>Responsable</th>
+          <th>Statut</th>
+          <th>Enregistre le</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (isLoading) {
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">Chargement...</div>
+            </td>
+          </tr>
+        }
+
+        @else if (filteredSchools().length === 0) {
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">Aucune auto-ecole trouvee.</div>
+            </td>
+          </tr>
+        }
+
+        @else {
+          @for (school of filteredSchools(); track school.id) {
+            <tr>
+              <td class="cell-muted detail-value--mono">{{ school.id.substring(0, 8) | uppercase }}</td>
+              <td>
+                <div class="school-cell">
+                  <span class="school-name">{{ school.schoolName }}</span>
+                  @if (school.description) {
+                    <span class="school-desc">{{ school.description }}</span>
+                  }
+                </div>
+              </td>
+
+              <td class="cell-muted">{{ school.city || '—' }}</td>
+
+              <td class="cell-muted">{{ school.monitorName || '—' }}</td>
+
+              <td>
+                <span [class]="getStatusClass(school.drivingSchoolStatus)">
+                  {{ getStatusLabel(school.drivingSchoolStatus) }}
+                </span>
+              </td>
+
+              <td class="cell-muted">{{ school.createdAt | date:'dd/MM/yyyy' }}</td>
+
+              <td>
+                <div class="action-group">
+                  <button
+                    class="btn btn-outline"
+                    title="Voir les details"
+                    (click)="viewDetail.emit(school.id)">
+                    Voir
+                  </button>
+                  <button
+                    class="btn btn-green"
+                    title="Approuver l'inscription"
+                    (click)="approve.emit(school.id)">
+                    Approuver
+                  </button>
+                  <button
+                    class="btn btn-danger"
+                    title="Rejeter l'inscription"
+                    (click)="reject.emit(school.id)">
+                    Rejeter
+                  </button>
+                  <button
+                    class="btn btn-icon"
+                    title="Supprimer"
+                    (click)="deleteSchool.emit(school.id)">
+                    X
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages > 1) {
+    <div class="pagination">
+      <span class="page-info">
+        {{ startIndex }} a {{ endIndex }} sur {{ totalElements }} auto-ecoles
+      </span>
+      <div class="page-controls">
+        <button
+          class="page-btn"
+          [disabled]="currentPage === 0"
+          (click)="goToPage(currentPage - 1)">
+          &lt;
+        </button>
+
+        @for (p of pageNumbers; track p) {
+          <button
+            class="page-btn"
+            [class.page-btn--active]="p === currentPage"
+            (click)="goToPage(p)">
+            {{ p + 1 }}
+          </button>
+        }
+
+        @if (totalPages > 5 && pageNumbers[pageNumbers.length - 1] < totalPages - 1) {
+          <span class="page-ellipsis">...</span>
+          <button
+            class="page-btn"
+            (click)="goToPage(totalPages - 1)">
+            {{ totalPages }}
+          </button>
+        }
+
+        <button
+          class="page-btn"
+          [disabled]="currentPage >= totalPages - 1"
+          (click)="goToPage(currentPage + 1)">
+          &gt;
+        </button>
+      </div>
+    </div>
+  }
+</div>

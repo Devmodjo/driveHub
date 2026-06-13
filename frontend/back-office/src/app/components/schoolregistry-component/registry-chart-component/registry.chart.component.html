@@ -1,0 +1,41 @@
+<div class="charts-wrapper">
+
+  <div class="chart-panel chart-panel--bar">
+    <h3 class="chart-title">Inscriptions mensuelles (12 derniers mois)</h3>
+    <div class="chart-container">
+      <canvas #barChart
+        baseChart
+        type="bar"
+        [data]="barChartData"
+        [options]="barChartOptions">
+      </canvas>
+    </div>
+  </div>
+
+  <div class="chart-panel chart-panel--doughnut">
+    <h3 class="chart-title">Repartition par statut</h3>
+    <div class="doughnut-content">
+      <div class="doughnut-canvas-wrap">
+        <canvas #doughnutChart
+          baseChart
+          type="doughnut"
+          [data]="doughnutChartData"
+          [options]="doughnutChartOptions">
+        </canvas>
+        @if (stats) {
+          <div class="doughnut-center">{{ stats.totalRegistries }}</div>
+        }
+      </div>
+      <ul class="legend-list">
+        @for (item of legendItems; track item.label) {
+          <li class="legend-item">
+            <span class="legend-dot" [style.backgroundColor]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.value }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+  </div>
+
+</div>
