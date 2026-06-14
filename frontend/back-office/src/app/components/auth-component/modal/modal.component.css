@@ -1,30 +1,52 @@
-/* Arrière-plan flouté qui couvre tout l'écran */
+/* ── Overlay ── */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(15, 23, 42, 0.6); /* slate-900 très transparent */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  backdrop-filter: blur(6px);
+    animation: fadeIn 0.3s ease-out forwards;
 }
 
-/* Animation douce d'apparition (effet "pop") */
-.corporate-modal {
-  animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+/* ── Modal box ── */
+.modal-box {
+    animation: slideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-@keyframes modalPop {
-  0% {
-    transform: scale(0.85) translateY(20px);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
+
+@keyframes slideUp {
+    from { transform: translateY(24px) scale(0.98); opacity: 0; }
+    to   { transform: translateY(0)    scale(1);    opacity: 1; }
+}
+
+/* ── Tooltip "Copié !" ── */
+.tooltip-anim {
+    animation: popIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes popIn {
+    from { transform: translateX(-50%) translateY(6px) scale(0.94); opacity: 0; }
+    to   { transform: translateX(-50%) translateY(0)   scale(1);    opacity: 1; }
+}
+
+/* ── Password blur transition ── */
+.password-text {
+    transition: filter 0.2s ease;
+}
+
+/* ── Hide scrollbar ── */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Icon buttons ── */
+.btn-icon {
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+.btn-icon:hover  { transform: scale(1.06); }
+.btn-icon:active { transform: scale(0.97); }
+
+/* ── CTA button ── */
+.btn-cta {
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.btn-cta:hover  { transform: translateY(-1px); box-shadow: 0 8px 24px -4px rgba(17,24,39,0.35); }
+.btn-cta:active { transform: translateY(0); }

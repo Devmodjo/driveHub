@@ -1,8 +1,13 @@
 package cm.mvtech.drivehub.platform.admin.controllers;
 
 
+import cm.mvtech.drivehub.modules.auth.application.dto.ForgotPasswordRequest;
+import cm.mvtech.drivehub.modules.auth.application.dto.ResetPasswordRequest;
 import cm.mvtech.drivehub.modules.drivingschool.application.dto.DrivingSchoolPendingRequestDTO;
+import cm.mvtech.drivehub.modules.drivingschool.application.dto.DrivingSchoolRegistryPageDTO;
+import cm.mvtech.drivehub.modules.drivingschool.application.dto.SchoolRegistryStatsResponse;
 import cm.mvtech.drivehub.modules.drivingschool.domain.services.DrivingSchoolService;
+import cm.mvtech.drivehub.modules.enums.DrivingSchoolStatus;
 import cm.mvtech.drivehub.modules.messageapi.ApiResponse;
 import cm.mvtech.drivehub.platform.admin.enums.AdminRole;
 import cm.mvtech.drivehub.platform.admin.enums.AdminStatus;
@@ -224,6 +229,98 @@ public class PlatformAdminController {
     @PreAuthorize("hasRole('ROOT') || hasRole('SUPER_ADMIN')")
     public ResponseEntity<AdminStatsResponse> getAdminStats() {
         return ResponseEntity.ok(adminerService.getAdminStats());
+    }
+
+    @Operation(summary = "Statistiques des auto-écoles")
+    @GetMapping("/registries/stats")
+    @PreAuthorize("hasRole('ROOT') || hasRole('SUPER_ADMIN') || hasRole('REVIEWER')")
+    public ResponseEntity<SchoolRegistryStatsResponse> getRegistryStats() {
+        return ResponseEntity.ok(drivingSchoolService.getRegistryStats());
+    }
+
+    @Operation(summary = "Liste toutes les auto-écoles avec pagination et filtre")
+    @GetMapping("/registries")
+    @PreAuthorize("hasRole('ROOT') || hasRole('SUPER_ADMIN') || hasRole('REVIEWER')")
+    public ResponseEntity<Page<DrivingSchoolRegistryPageDTO>> getAllRegistries(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size,
+            @RequestParam(required = false) DrivingSchoolStatus status) {
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        return ResponseEntity.ok(
+                drivingSchoolService.getAllRegistries(pageable, status));
+    }
+
+    @Operation(summary = "Détail d'une auto-école")
+    @GetMapping("/registries/{registryId}")
+    @PreAuthorize("hasRole('ROOT') || hasRole('SUPER_ADMIN') || hasRole('REVIEWER')")
+    public ResponseEntity<DrivingSchoolRegistryPageDTO> getRegistryById(
+            @PathVariable UUID registryId) {
+        return ResponseEntity.ok(drivingSchoolService.getRegistryById(registryId));
+    }
+
+    @Operation(summary = "Rejeter une auto-école")
+    @PatchMapping("/registries/{registryId}/reject")
+    @PreAuthorize("hasRole('REVIEWER') || hasRole('ROOT')")
+    public ResponseEntity<ApiResponse> rejectRegistry(
+            @PathVariable UUID registryId) {
+        drivingSchoolService.rejectRegistry(registryId);
+        return ResponseEntity.ok(new ApiResponse(true, "Auto-école rejetée"));
+    }
+
+    @Operation(summary = "Suspendre une auto-école active")
+    @PatchMapping("/registries/{registryId}/suspend")
+    @PreAuthorize("hasRole('ROOT') || hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse> suspendRegistry(
+            @PathVariable UUID registryId) {
+        drivingSchoolService.suspendRegistry(registryId);
+        return ResponseEntity.ok(new ApiResponse(true, "Auto-école suspendue"));
+    }
+
+    @Operation(summary = "Supprimer définitivement une auto-école")
+    @DeleteMapping("/registries/{registryId}")
+    @PreAuthorize("hasRole('ROOT')")
+    public ResponseEntity<ApiResponse> deleteRegistry(
+            @PathVariable UUID registryId) {
+        drivingSchoolService.deleteRegistry(registryId);
+        return ResponseEntity.ok(
+                new ApiResponse(true, "Auto-école supprimée définitivement"));
+    }
+
+    @Operation(summary = "Vérifier l'email d'un admin plateforme")
+    @GetMapping("/admin/verify-email")
+    public ResponseEntity<ApiResponse> verifyAdminEmail(
+            @RequestParam String token) {
+        adminerService.verifyAdminEmail(token);
+        return ResponseEntity.ok(new ApiResponse(true,
+                "Email vérifié. Votre compte est en attente de validation."));
+    }
+
+    @Operation(summary = "Renvoyer l'email de vérification admin")
+    @PostMapping("/admin/resend-verification")
+    public ResponseEntity<ApiResponse> resendAdminVerification(
+            @RequestParam String email) {
+        adminerService.sendAdminVerificationEmail(email);
+        return ResponseEntity.ok(new ApiResponse(true,
+                "Email de vérification renvoyé."));
+    }
+
+    @Operation(summary = "Mot de passe oublié admin plateforme")
+    @PostMapping("/admin/forgot-password")
+    public ResponseEntity<ApiResponse> adminForgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+        adminerService.adminForgotPassword(request);
+        return ResponseEntity.ok(new ApiResponse(true,
+                "Si un compte existe avec cet email, vous recevrez un lien."));
+    }
+
+    @Operation(summary = "Réinitialiser le mot de passe admin")
+    @PostMapping("/admin/reset-password")
+    public ResponseEntity<ApiResponse> adminResetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        adminerService.adminResetPassword(request);
+        return ResponseEntity.ok(new ApiResponse(true,
+                "Mot de passe réinitialisé avec succès."));
     }
 
 }

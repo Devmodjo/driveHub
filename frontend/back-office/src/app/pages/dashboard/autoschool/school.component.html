@@ -1,0 +1,172 @@
+@if (actionMessage()) {
+  <div class="toast-wrap">
+    <div class="toast" [class.toast--error]="actionMessage()!.type === 'error'">
+      {{ actionMessage()!.text }}
+    </div>
+  </div>
+}
+
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Dashboard > Auto-ecoles</h2>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <registry-kpi
+    KpiTitle="Total Auto-ecoles"
+    [KpiResult]="stats()?.totalRegistries ?? 0"
+    KpiColor="#0056b3"
+    [KpiSubtext]="'+' + (stats()?.newThisMonth ?? 0) + ' ce mois'"
+    KpiSubtextColor="#10b981">
+  </registry-kpi>
+
+  <registry-kpi
+    KpiTitle="Actives"
+    [KpiResult]="stats()?.activeRegistries ?? 0"
+    KpiColor="#10b981"
+    [KpiSubtext]="activePercent()">
+  </registry-kpi>
+
+  <registry-kpi
+    KpiTitle="En attente d'approbation"
+    [KpiResult]="stats()?.pendingRegistries ?? 0"
+    KpiColor="#f59e0b"
+    KpiSubtext="Action requise"
+    KpiSubtextColor="#f59e0b">
+  </registry-kpi>
+
+  <registry-kpi
+    KpiTitle="Rejetees"
+    [KpiResult]="stats()?.rejectedRegistries ?? 0"
+    KpiColor="#ef4444"
+    KpiSubtext="Dossiers incomplets">
+  </registry-kpi>
+
+  <registry-kpi
+    KpiTitle="Moniteurs enregistres"
+    [KpiResult]="stats()?.totalMonitors ?? 0"
+    KpiColor="#6366f1"
+    KpiSubtext="Toutes ecoles">
+  </registry-kpi>
+</div>
+
+<registry-chart [stats]="stats()"></registry-chart>
+
+<registry-table
+  [schools]="schools()"
+  [isLoading]="isLoading()"
+  [currentPage]="currentPage()"
+  [totalPages]="totalPages()"
+  [totalElements]="totalElements()"
+  [pageSize]="pageSize()"
+  [activeFilter]="statusFilter()"
+  [pendingCount]="stats()?.pendingRegistries ?? 0"
+  (filterChange)="onFilterChange($event)"
+  (pageChange)="onPageChange($event)"
+  (approve)="onApprove($event)"
+  (reject)="onReject($event)"
+  (viewDetail)="onViewDetail($event)"
+  (deleteSchool)="onDelete($event)">
+</registry-table>
+
+@if (showDetailDrawer()) {
+  <div class="drawer-overlay" (click)="closeDrawer()"></div>
+
+  <aside class="drawer">
+    <div class="drawer-header">
+      <h3 class="drawer-title">Details de l'auto-ecole</h3>
+      <button class="drawer-close" (click)="closeDrawer()">X</button>
+    </div>
+
+    <div class="drawer-body">
+      @if (isLoadingDetail()) {
+        <div class="drawer-loading">Chargement des details...</div>
+      }
+
+      @else if (selectedSchool()) {
+        <div class="detail-top">
+          <h4 class="detail-school-name">{{ selectedSchool()!.schoolName }}</h4>
+          <span [class]="getStatusClass(selectedSchool()!.drivingSchoolStatus)">
+            {{ getStatusLabel(selectedSchool()!.drivingSchoolStatus) }}
+          </span>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Ville</span>
+            <span class="detail-value">{{ selectedSchool()!.city || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Pays</span>
+            <span class="detail-value">{{ selectedSchool()!.country || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Adresse</span>
+            <span class="detail-value">{{ selectedSchool()!.address || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Email</span>
+            <span class="detail-value">{{ selectedSchool()!.email || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Telephone</span>
+            <span class="detail-value">{{ selectedSchool()!.phoneNumber || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">WhatsApp</span>
+            <span class="detail-value">{{ selectedSchool()!.whatsappNumber || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Site web</span>
+            <span class="detail-value">{{ selectedSchool()!.websiteUrl || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Date d'inscription</span>
+            <span class="detail-value">{{ selectedSchool()!.createdAt | date:'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+
+        @if (selectedSchool()!.description) {
+          <div class="detail-section">
+            <span class="detail-label">Description</span>
+            <p class="detail-description">{{ selectedSchool()!.description }}</p>
+          </div>
+        }
+
+        <div class="detail-section">
+          <span class="detail-section-title">Moniteur principal</span>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Nom</span>
+              <span class="detail-value">{{ selectedSchool()!.monitorName || '—' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Telephone</span>
+              <span class="detail-value">{{ selectedSchool()!.monitorPhone || '—' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <span class="detail-label">Identifiant</span>
+          <span class="detail-value detail-value--mono">{{ selectedSchool()!.id }}</span>
+        </div>
+
+        <div class="detail-actions">
+          @if (selectedSchool()!.drivingSchoolStatus === 'PENDING') {
+            <button class="btn btn-green btn-full" (click)="onApprove(selectedSchool()!.id)">
+              Approuver cette auto-ecole
+            </button>
+          }
+          <button class="btn btn-danger btn-full" (click)="onReject(selectedSchool()!.id)">
+            Rejeter cette auto-ecole
+          </button>
+          <button class="btn btn-outline btn-full" (click)="onDelete(selectedSchool()!.id)">
+            Supprimer
+          </button>
+        </div>
+      }
+    </div>
+  </aside>
+}

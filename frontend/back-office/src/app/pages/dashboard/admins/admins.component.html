@@ -1,6 +1,3 @@
-<!-- ================================================ -->
-<!-- Toast : message de retour après une action       -->
-<!-- ================================================ -->
 @if (actionMessage()) {
   <div class="toast-wrap">
     <div class="toast" [class.toast--error]="actionMessage()!.type === 'error'">
@@ -9,35 +6,29 @@
   </div>
 }
 
-<!-- ================================================ -->
-<!-- En-tête de la page                               -->
-<!-- ================================================ -->
 <div class="page-header">
   <div>
     <h2 class="page-title">Gestion des Admins</h2>
     <p class="page-subtitle">Liste et gestion de tous les administrateurs de la plateforme</p>
   </div>
-  <!-- Compteur total d'admins -->
-  <span class="total-count">{{ totalElements() }} administrateur(s)</span>
+  <div class="header-actions">
+    <span class="total-count">{{ totalElements() }} administrateur(s)</span>
+    @if (isRoot()) {
+      <button class="btn btn-primary" (click)="openCreateDrawer()">
+        + Ajouter un admin
+      </button>
+    }
+  </div>
 </div>
 
-<!-- ================================================ -->
-<!-- Filtres : statut et rôle                         -->
-<!-- ================================================ -->
 <div class="toolbar">
-
-  <!-- Onglets de filtre par statut -->
   <div class="filter-tabs">
-
-    <!-- Tous les statuts -->
     <button
       class="filter-tab"
       [class.filter-tab--active]="statusFilter() === undefined"
       (click)="applyStatusFilter(undefined)">
       Tous
     </button>
-
-    <!-- Admins actifs -->
     <button
       class="filter-tab"
       [class.filter-tab--active]="statusFilter() === 'ACTIVE'"
@@ -45,8 +36,6 @@
       <span class="filter-dot filter-dot--green"></span>
       Actifs
     </button>
-
-    <!-- Admins en attente -->
     <button
       class="filter-tab"
       [class.filter-tab--active]="statusFilter() === 'PENDING'"
@@ -54,8 +43,6 @@
       <span class="filter-dot filter-dot--amber"></span>
       En attente
     </button>
-
-    <!-- Admins inactifs -->
     <button
       class="filter-tab"
       [class.filter-tab--active]="statusFilter() === 'INACTIVE'"
@@ -63,42 +50,41 @@
       <span class="filter-dot filter-dot--gray"></span>
       Inactifs
     </button>
-
+    <button
+      class="filter-tab"
+      [class.filter-tab--active]="statusFilter() === 'EMAIL_PENDING'"
+      (click)="applyStatusFilter('EMAIL_PENDING')">
+      <span class="filter-dot filter-dot--blue"></span>
+      Email en attente
+    </button>
   </div>
 
-  <!-- Filtre par rôle (menu déroulant) -->
   <div class="role-filter">
     <select
       class="select-input"
       [value]="roleFilter() ?? ''"
       (change)="applyRoleFilter($any($event.target).value || undefined)">
-      <option value="">Tous les rôles</option>
+      <option value="">Tous les roles</option>
       <option value="REVIEWER">Reviewer</option>
       <option value="ROOT">Root</option>
       <option value="SUPER_ADMIN">Super Admin</option>
     </select>
   </div>
-
 </div>
 
-<!-- ================================================ -->
-<!-- Tableau principal des administrateurs             -->
-<!-- ================================================ -->
 <div class="panel">
   <div class="table-scroll">
     <table class="table">
       <thead>
         <tr>
           <th>Administrateur</th>
-          <th>Rôle</th>
+          <th>Role</th>
           <th>Statut</th>
           <th>Inscrit le</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-
-        <!-- Chargement en cours -->
         @if (isLoading()) {
           <tr>
             <td colspan="5">
@@ -107,21 +93,17 @@
           </tr>
         }
 
-        <!-- Aucun admin trouvé pour les filtres actifs -->
         @else if (admins().length === 0) {
           <tr>
             <td colspan="5">
-              <div class="empty-state">Aucun administrateur trouvé.</div>
+              <div class="empty-state">Aucun administrateur trouve.</div>
             </td>
           </tr>
         }
 
-        <!-- Liste des admins de la page courante -->
         @else {
           @for (admin of admins(); track admin.id) {
             <tr>
-
-              <!-- Avatar + nom + email -->
               <td>
                 <div class="admin-cell">
                   <div class="avatar">{{ getInitials(admin.name) }}</div>
@@ -132,25 +114,25 @@
                 </div>
               </td>
 
-              <!-- Rôle -->
               <td class="cell-muted">{{ admin.role }}</td>
 
-              <!-- Badge de statut coloré -->
               <td>
                 <span [class]="getStatusClass(admin.adminStatus)">
                   {{ getStatusLabel(admin.adminStatus) }}
                 </span>
               </td>
 
-              <!-- Date d'inscription -->
               <td class="cell-muted">{{ admin.createdAt | date:'dd/MM/yyyy' }}</td>
 
-              <!-- Boutons d'action -->
               <td>
                 <div class="action-group">
+                  <button
+                    class="btn btn-outline"
+                    (click)="openDetail(admin)">
+                    Voir
+                  </button>
 
-                  <!-- Bouton "Activer" : visible uniquement pour les admins en attente -->
-                  @if (admin.adminStatus === 'PENDING') {
+                  @if (admin.adminStatus === 'PENDING' && canActivate()) {
                     <button
                       class="btn btn-green"
                       [disabled]="isLoading()"
@@ -159,54 +141,221 @@
                     </button>
                   }
 
-                  <!-- Bouton "Supprimer" : toujours disponible -->
-                  <button
-                    class="btn btn-danger"
-                    [disabled]="isLoading()"
-                    (click)="deleteAdmin(admin.id)">
-                    Supprimer
-                  </button>
-
+                  @if (isRoot()) {
+                    <button
+                      class="btn btn-danger"
+                      [disabled]="isLoading()"
+                      (click)="deleteAdmin(admin.id)">
+                      Supprimer
+                    </button>
+                  }
                 </div>
               </td>
-
             </tr>
           }
         }
-
       </tbody>
     </table>
   </div>
 
-  <!-- ============================================== -->
-  <!-- Barre de pagination                            -->
-  <!-- Affichée uniquement s'il y a plus d'une page   -->
-  <!-- ============================================== -->
   @if (totalPages() > 1) {
     <div class="pagination">
-
-      <!-- Bouton "Précédent" : désactivé sur la première page -->
       <button
         class="page-btn"
         [disabled]="isFirstPage()"
         (click)="previousPage()">
-        Précédent
+        Precedent
       </button>
-
-      <!-- Indicateur de position : "Page X / Y" -->
       <span class="page-info">
         Page {{ displayedPage() }} / {{ totalPages() }}
       </span>
-
-      <!-- Bouton "Suivant" : désactivé sur la dernière page -->
       <button
         class="page-btn"
         [disabled]="isLastPage()"
         (click)="nextPage()">
         Suivant
       </button>
-
     </div>
   }
-
 </div>
+
+@if (showDetailDrawer() || showCreateDrawer()) {
+  <div class="drawer-overlay" (click)="closeDrawers()"></div>
+}
+
+@if (showDetailDrawer() && selectedAdmin()) {
+  <aside class="drawer">
+    <div class="drawer-header">
+      <h3 class="drawer-title">Details de l'administrateur</h3>
+      <button class="drawer-close" (click)="closeDrawers()">X</button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="detail-avatar-section">
+        <div class="detail-avatar">{{ getInitials(selectedAdmin()!.name) }}</div>
+        <h4 class="detail-name">{{ selectedAdmin()!.name }}</h4>
+        <span class="detail-email">{{ selectedAdmin()!.email }}</span>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Role</span>
+          <span class="detail-value">{{ getRoleLabel(selectedAdmin()!.role) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Statut</span>
+          <span [class]="getStatusClass(selectedAdmin()!.adminStatus)">
+            {{ getStatusLabel(selectedAdmin()!.adminStatus) }}
+          </span> 
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Date d'inscription</span>
+          <span class="detail-value">{{ selectedAdmin()!.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Residence</span>
+          <span class="detail-value">{{ selectedAdmin()!.residence || 'Non renseignee' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Telephone</span>
+          <span class="detail-value">{{ selectedAdmin()!.phoneNumber || 'Non renseigne' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Identifiant</span>
+          <span class="detail-value detail-value--mono">{{ selectedAdmin()!.id }}</span>
+        </div>
+      </div>
+
+      <div class="detail-actions">
+        @if (selectedAdmin()!.adminStatus === 'PENDING' && canActivate()) {
+          <button
+            class="btn btn-green btn-full"
+            [disabled]="isLoading()"
+            (click)="activateAdmin(selectedAdmin()!.id)">
+            Activer cet administrateur
+          </button>
+        }
+
+        @if (isRoot()) {
+          <button
+            class="btn btn-danger btn-full"
+            [disabled]="isLoading()"
+            (click)="deleteAdmin(selectedAdmin()!.id)">
+            Supprimer cet administrateur
+          </button>
+        }
+      </div>
+    </div>
+  </aside>
+}
+
+@if (showCreateDrawer()) {
+  <aside class="drawer">
+    <div class="drawer-header">
+      <h3 class="drawer-title">Nouvel administrateur</h3>
+      <button class="drawer-close" (click)="closeDrawers()">X</button>
+    </div>
+
+    <div class="drawer-body">
+      <form class="create-form" (ngSubmit)="createAdmin()">
+        <div class="form-group">
+          <label class="form-label" for="admin-name">Nom complet</label>
+          <input
+            class="form-input"
+            id="admin-name"
+            type="text"
+            placeholder="Jean Dupont"
+            [ngModel]="createFormData().name"
+            (ngModelChange)="updateCreateField('name', $event)"
+            name="name"
+            required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-email">Adresse email</label>
+          <input
+            class="form-input"
+            id="admin-email"
+            type="email"
+            placeholder="jean.dupont@exemple.com"
+            [ngModel]="createFormData().email"
+            (ngModelChange)="updateCreateField('email', $event)"
+            name="email"
+            required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-password">Mot de passe</label>
+          <input
+            class="form-input"
+            id="admin-password"
+            type="password"
+            placeholder="Minimum 8 caracteres"
+            [ngModel]="createFormData().password"
+            (ngModelChange)="updateCreateField('password', $event)"
+            name="password"
+            required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-role">Role</label>
+          <select
+            class="form-input"
+            id="admin-role"
+            [ngModel]="createFormData().role"
+            (ngModelChange)="updateCreateField('role', $event)"
+            name="role">
+            <option value="REVIEWER">Reviewer</option>
+            <option value="SUPER_ADMIN">Super Admin</option>
+            <option value="ROOT">Root</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-residence">Residence</label>
+          <input
+            class="form-input"
+            id="admin-residence"
+            type="text"
+            placeholder="Douala, Cameroun"
+            [ngModel]="createFormData().residence"
+            (ngModelChange)="updateCreateField('residence', $event)"
+            name="residence"
+            required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-phone">Telephone</label>
+          <input
+            class="form-input"
+            id="admin-phone"
+            type="tel"
+            placeholder="+237 6XX XXX XXX"
+            [ngModel]="createFormData().phoneNumber"
+            (ngModelChange)="updateCreateField('phoneNumber', $event)"
+            name="phoneNumber"
+            required />
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="button"
+            class="btn btn-outline btn-full"
+            (click)="closeDrawers()">
+            Annuler
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary btn-full"
+            [disabled]="isSubmitting()">
+            @if (isSubmitting()) {
+              Creation en cours...
+            } @else {
+              Creer l'administrateur
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </aside>
+}

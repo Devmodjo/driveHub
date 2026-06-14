@@ -39,6 +39,8 @@ public class PlatformAdmin extends EntityBase {
 
     private boolean enabled;
 
+    private String reason;
+
     @Column(nullable = false)
     private String residence; // ville, lieu
     private String phoneNumber;

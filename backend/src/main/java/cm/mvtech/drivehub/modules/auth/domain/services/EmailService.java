@@ -1,6 +1,5 @@
 package cm.mvtech.drivehub.modules.auth.domain.services;
 
-import cm.mvtech.drivehub.platform.admin.enums.AdminStatus;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +13,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.io.UnsupportedEncodingException;
+import java.util.UUID;
 
 
 @Service
@@ -30,6 +30,8 @@ public class EmailService {
 
     @Value("${app.mail.from-name}")
     private String fromName;
+
+    private String frontendUrl = "https://localhost:4200";
 
     @Async
     public void sendVerificationEmail(String toEmail, String name,
@@ -71,19 +73,106 @@ public class EmailService {
     }
 
     @Async
-    public void sendAdminWelcomeMail(String toEmail, String name) {
+    public void sendAdminWelcomeMail(String toEmail,
+                                      String name,
+                                      String status,
+                                      String role,
+                                      String temporaryPassword) {
+        try {
+            Context context = new Context();
+            context.setVariable("name", name);
+            context.setVariable("email", toEmail);
+            context.setVariable("status", status);
+            context.setVariable("role", role);
+            // null si inscription normale, mot de passe si créé par ROOT
+            context.setVariable("temporaryPassword", temporaryPassword);
+
+            String html = templateEngine.process("emails/admin-welcome", context);
+            sendHtmlEmail(toEmail, "Bienvenue sur DriveHub — Votre compte administrateur", html);
+            log.info("Email de bienvenue envoyé à {}", toEmail);
+        } catch (Exception e) {
+            log.error("Échec envoi email bienvenue à {} : {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendNewAdminRegistrationNotification(
+            String rootEmail,
+            String candidateName,
+            String candidateEmail,
+            String role,
+            String residence,
+            String phone,
+            String reason,
+            String registeredAt,
+            UUID adminId) {
+        try {
+            Context context = new Context();
+            context.setVariable("name", candidateName);
+            context.setVariable("email", candidateEmail);
+            context.setVariable("role", role);
+            context.setVariable("residence", residence);
+            context.setVariable("phone", phone);
+            context.setVariable("reason", reason);
+            context.setVariable("registeredAt", registeredAt);
+            context.setVariable("activateUrl",
+                    frontendUrl + "/backoffice/admin/" + adminId + "/activate");
+            context.setVariable("backofficeUrl",
+                    frontendUrl + "/backoffice/admins/pending");
+
+            String html = templateEngine.process(
+                    "emails/admin-new-registration", context);
+            sendHtmlEmail(rootEmail,
+                    "🔔 Nouvelle demande d'accès back-office — " + candidateName,
+                    html);
+            log.info("Notification ROOT envoyée pour la demande de {}",
+                    candidateEmail);
+        } catch (Exception e) {
+            log.error("Échec notification ROOT : {}", e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendAdminEmailVerification(String toEmail,
+                                           String name,
+                                           String email,
+                                           String role,
+                                           String verificationUrl) {
+        try {
+            Context context = new Context();
+            context.setVariable("name", name);
+            context.setVariable("email", email);
+            context.setVariable("role", role);
+            context.setVariable("verificationUrl", verificationUrl);
+
+            String html = templateEngine.process(
+                    "emails/admin-verify-email", context);
+            sendHtmlEmail(toEmail,
+                    "🔐 Confirmez votre email — DriveHub Back-Office",
+                    html);
+            log.info("Email vérification admin envoyé à {}", toEmail);
+        } catch (Exception e) {
+            log.error("Échec email vérification admin {} : {}",
+                    toEmail, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendAdminActivatedEmail(String toEmail, String name) {
 
         try {
             Context context = new Context();
             context.setVariable("name", name);
+            context.setVariable("email", toEmail);
 
-            String html = templateEngine.process("emails/admin-registry", context);
-
-            sendHtmlEmail(toEmail, "Bienvenu sur le Back-office — Drivehub", html);
+            String html = templateEngine.process("emails/admin-activated", context);
+            sendHtmlEmail(toEmail, "Bienvenue sur DriveHub — Activation du Compte Admin", html);
+            log.info("Email dd'activation de compte envoyé à {}", toEmail);
 
         } catch (Exception e) {
-            log.error("Échec envoi email reset à {} : {}", toEmail, e.getMessage());
+            log.error("Échec envoi email d'activation à {} : {}", toEmail, e.getMessage());
         }
+
     }
 
     private void sendHtmlEmail(String to, String subject,

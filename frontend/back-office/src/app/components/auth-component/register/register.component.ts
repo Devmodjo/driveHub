@@ -38,7 +38,8 @@ export class RegisterComponent {
     phoneNumber : new FormControl("", [
       Validators.required, 
       Validators.pattern("^[0-9]+$")
-    ])
+    ]),
+    reason : new FormControl("", [Validators.required])
     
   });
 
@@ -58,7 +59,8 @@ export class RegisterComponent {
       role: this.registerForm.value.role! as Role,
       password: this.registerForm.value.password!,
       residence: this.registerForm.value.residence!,
-      phoneNumber: this.registerForm.value.phoneNumber!
+      phoneNumber: this.registerForm.value.phoneNumber!,
+      reason: this.registerForm.value.reason!
     }
   
   /**

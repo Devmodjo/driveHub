@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Bienvenue sur DriveHub</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif;
+               background-color: #F3F4F6; color: #111827; }
+        .wrapper { max-width: 600px; margin: 40px auto;
+                   background: #fff; border-radius: 16px;
+                   overflow: hidden;
+                   box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        .header { background: linear-gradient(135deg, #1A56DB, #1044B2);
+                  padding: 40px 48px; text-align: center; }
+        .logo-text { font-size: 28px; font-weight: 700; color: #fff; }
+        .logo-text span { font-weight: 300; opacity: 0.85; }
+        .header-tagline { margin-top: 8px; font-size: 13px;
+                          color: rgba(255,255,255,0.65);
+                          letter-spacing: 0.5px;
+                          text-transform: uppercase; }
+        .status-banner-pending { background: #FEF3C7;
+                                 border-left: 4px solid #F59E0B;
+                                 padding: 14px 48px; font-size: 13px;
+                                 color: #92400E; font-weight: 500; }
+        .status-banner-active  { background: #D1FAE5;
+                                 border-left: 4px solid #10B981;
+                                 padding: 14px 48px; font-size: 13px;
+                                 color: #065F46; font-weight: 500; }
+        .body { padding: 48px; }
+        .greeting { font-size: 22px; font-weight: 700; margin-bottom: 16px; }
+        .greeting span { color: #1A56DB; }
+        .intro-text { font-size: 15px; color: #4B5563;
+                      line-height: 1.7; margin-bottom: 32px; }
+        .status-card { background: #F9FAFB; border: 1px solid #E5E7EB;
+                       border-radius: 12px; padding: 24px 28px;
+                       margin-bottom: 32px; }
+        .status-card-title { font-size: 13px; font-weight: 600;
+                             color: #6B7280; text-transform: uppercase;
+                             letter-spacing: 0.8px; margin-bottom: 16px; }
+        .status-row { display: flex; align-items: center; gap: 14px;
+                      padding: 10px 0;
+                      border-bottom: 1px solid #F3F4F6; }
+        .status-row:last-child { border-bottom: none; }
+        .status-icon { width: 36px; height: 36px; border-radius: 8px;
+                       display: flex; align-items: center;
+                       justify-content: center; font-size: 16px;
+                       flex-shrink: 0; }
+        .icon-done    { background: #D1FAE5; }
+        .icon-pending { background: #FEF3C7; }
+        .icon-waiting { background: #EFF6FF; }
+        .status-info { flex: 1; }
+        .status-label { font-size: 14px; font-weight: 600; color: #111827; }
+        .status-sublabel { font-size: 12px; color: #9CA3AF; margin-top: 2px; }
+        .badge { font-size: 11px; font-weight: 600;
+                 padding: 3px 10px; border-radius: 20px; }
+        .badge-done    { background: #D1FAE5; color: #065F46; }
+        .badge-pending { background: #FEF3C7; color: #92400E; }
+        .badge-waiting { background: #EFF6FF; color: #1E40AF; }
+        .credentials-box { background: #1A56DB; border-radius: 12px;
+                            padding: 24px 28px; margin-bottom: 32px; }
+        .credentials-title { font-size: 14px; font-weight: 700;
+                             color: rgba(255,255,255,0.7);
+                             text-transform: uppercase;
+                             letter-spacing: 0.8px; margin-bottom: 16px; }
+        .credential-row { display: flex; justify-content: space-between;
+                          align-items: center; padding: 10px 0;
+                          border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .credential-row:last-child { border-bottom: none; }
+        .credential-key { font-size: 13px; color: rgba(255,255,255,0.65); }
+        .credential-value { font-size: 14px; font-weight: 600;
+                            color: #ffffff; font-family: monospace; }
+        .delay-box { background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
+                     border: 1px solid #BFDBFE; border-radius: 12px;
+                     padding: 20px 24px; margin-bottom: 32px;
+                     display: flex; gap: 14px; }
+        .delay-title { font-size: 14px; font-weight: 700;
+                       color: #1E40AF; margin-bottom: 4px; }
+        .delay-desc { font-size: 13px; color: #3B82F6; line-height: 1.6; }
+        .next-title { font-size: 16px; font-weight: 700;
+                      margin-bottom: 16px; }
+        .next-list { list-style: none; margin-bottom: 32px; }
+        .next-list li { display: flex; gap: 12px; padding: 10px 0;
+                        font-size: 14px; color: #4B5563; line-height: 1.6;
+                        border-bottom: 1px solid #F9FAFB; }
+        .next-list li:last-child { border-bottom: none; }
+        .check { color: #1A56DB; font-weight: 700; flex-shrink: 0; }
+        .cta-section { text-align: center; margin-bottom: 40px; }
+        .cta-text { font-size: 14px; color: #6B7280;
+                    margin-bottom: 16px; line-height: 1.6; }
+        .cta-button { display: inline-block;
+                      background: linear-gradient(135deg, #1A56DB, #1044B2);
+                      color: #fff; text-decoration: none;
+                      font-size: 15px; font-weight: 600;
+                      padding: 14px 36px; border-radius: 10px; }
+        .divider { height: 1px; background: #F3F4F6; margin: 0 48px 32px; }
+        .contact-section { padding: 0 48px 32px; text-align: center; }
+        .contact-text { font-size: 13px; color: #9CA3AF;
+                        line-height: 1.7; margin-bottom: 12px; }
+        .contact-link { color: #1A56DB; text-decoration: none;
+                        font-weight: 600; font-size: 13px; }
+        .footer { background: #F9FAFB; border-top: 1px solid #E5E7EB;
+                  padding: 24px 48px; text-align: center; }
+        .footer-logo { font-size: 16px; font-weight: 700;
+                       color: #1A56DB; margin-bottom: 8px; }
+        .footer-logo span { font-weight: 300; color: #6B7280; }
+        .footer-text { font-size: 12px; color: #9CA3AF; line-height: 1.6; }
+        .footer-links { margin-top: 12px; display: flex;
+                        justify-content: center; gap: 16px; }
+        .footer-link { font-size: 12px; color: #6B7280; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="logo-text">Drive<span>Hub</span></div>
+        <div class="header-tagline">Plateforme de gestion d'auto-école</div>
+    </div>
+
+    <!-- BANNER DYNAMIQUE selon le statut -->
+    <div th:if="${status == 'PENDING'}" class="status-banner-pending">
+        ⏳ &nbsp; Votre compte est en cours de validation — délai : 24 à 48h
+    </div>
+    <div th:if="${status == 'ACTIVE'}" class="status-banner-active">
+        ✅ &nbsp; Votre compte est actif — vous pouvez vous connecter dès maintenant
+    </div>
+
+    <!-- BODY -->
+    <div class="body">
+
+        <p class="greeting">
+            Bienvenue, <span th:text="${name}">user</span> 👋
+        </p>
+
+        <!-- INTRO DYNAMIQUE -->
+        <p th:if="${status == 'PENDING'}" class="intro-text">
+            Nous avons bien reçu votre demande d'accès à <strong>DriveHub</strong>.
+            Votre compte est actuellement en cours d'examen par notre équipe ROOT.
+            Vous recevrez une notification dès qu'une décision sera prise.
+        </p>
+        <p th:if="${status == 'ACTIVE'}" class="intro-text">
+            Votre compte administrateur <strong>DriveHub</strong> a été créé et
+            activé par l'équipe ROOT. Vous pouvez vous connecter immédiatement
+            avec les identifiants ci-dessous. Pensez à changer votre mot de passe
+            dès votre première connexion.
+        </p>
+
+        <!-- IDENTIFIANTS (uniquement si ACTIVE et créé par ROOT) -->
+        <div th:if="${status == 'ACTIVE' and temporaryPassword != null}"
+             class="credentials-box">
+            <div class="credentials-title">Vos identifiants de connexion</div>
+            <div class="credential-row">
+                <span class="credential-key">Adresse email</span>
+                <span class="credential-value" th:text="${email}">admin@drivehub.cm</span>
+            </div>
+            <div class="credential-row">
+                <span class="credential-key">Mot de passe temporaire</span>
+                <span class="credential-value" th:text="${temporaryPassword}">••••••••</span>
+            </div>
+            <div class="credential-row">
+                <span class="credential-key">Rôle assigné</span>
+                <span class="credential-value" th:text="${role}">REVIEWER</span>
+            </div>
+        </div>
+
+        <!-- STATUT DU COMPTE (uniquement si PENDING) -->
+        <div th:if="${status == 'PENDING'}" class="status-card">
+            <div class="status-card-title">Statut de votre demande</div>
+            <div class="status-row">
+                <div class="status-icon icon-done">✓</div>
+                <div class="status-info">
+                    <div class="status-label">Inscription reçue</div>
+                    <div class="status-sublabel">Vos informations ont été enregistrées</div>
+                </div>
+                <span class="badge badge-done">Effectué</span>
+            </div>
+            <div class="status-row">
+                <div class="status-icon icon-pending">⏳</div>
+                <div class="status-info">
+                    <div class="status-label">Vérification en cours</div>
+                    <div class="status-sublabel">Examen de votre dossier par l'équipe ROOT</div>
+                </div>
+                <span class="badge badge-pending">En attente</span>
+            </div>
+            <div class="status-row">
+                <div class="status-icon icon-waiting">🔓</div>
+                <div class="status-info">
+                    <div class="status-label">Activation du compte</div>
+                    <div class="status-sublabel">Accès complet à DriveHub</div>
+                </div>
+                <span class="badge badge-waiting">À venir</span>
+            </div>
+        </div>
+
+        <!-- DÉLAI (uniquement si PENDING) -->
+        <div th:if="${status == 'PENDING'}" class="delay-box">
+            <div style="font-size:22px; flex-shrink:0; margin-top:2px;">🕐</div>
+            <div>
+                <div class="delay-title">Délai de traitement : 24 à 48 heures</div>
+                <div class="delay-desc">
+                    Notre équipe examine chaque demande manuellement pour garantir
+                    la sécurité de la plateforme. Vous serez notifié par email
+                    dès qu'une décision sera prise.
+                </div>
+            </div>
+        </div>
+
+        <!-- CE QUI VOUS ATTEND -->
+        <p class="next-title">
+            <span th:if="${status == 'PENDING'}">Ce qui vous attend une fois validé</span>
+            <span th:if="${status == 'ACTIVE'}">Ce que vous pouvez faire maintenant</span>
+        </p>
+        <ul class="next-list">
+            <li>
+                <span class="check">→</span>
+                Accéder au tableau de bord DriveHub pour gérer
+                les auto-écoles et les administrateurs de la plateforme.
+            </li>
+            <li>
+                <span class="check">→</span>
+                Approuver ou rejeter les demandes de création
+                d'auto-école soumises par les moniteurs.
+            </li>
+            <li>
+                <span class="check">→</span>
+                Suivre les statistiques en temps réel : auto-écoles actives,
+                élèves inscrits, paiements et examens.
+            </li>
+            <li th:if="${status == 'ACTIVE'}">
+                <span class="check">→</span>
+                <strong>Changer votre mot de passe temporaire</strong>
+                dès votre première connexion pour sécuriser votre compte.
+            </li>
+        </ul>
+
+        <!-- CTA -->
+        <div class="cta-section">
+            <p class="cta-text" th:if="${status == 'PENDING'}">
+                En attendant, découvrez tout ce que DriveHub vous permet de faire.
+            </p>
+            <p class="cta-text" th:if="${status == 'ACTIVE'}">
+                Votre espace est prêt. Connectez-vous dès maintenant.
+            </p>
+            <a th:if="${status == 'PENDING'}"
+               href="https://cmdrivehub.vercel.app" class="cta-button">
+                Découvrir DriveHub →
+            </a>
+            <a th:if="${status == 'ACTIVE'}"
+               href="https://app.drivehub.cm/login" class="cta-button">
+                Accéder au back-office →
+            </a>
+        </div>
+
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="contact-section">
+        <p class="contact-text">
+            Une question ? Notre équipe est disponible pour vous accompagner.
+        </p>
+        <a href="mailto:support@drivehub.cm" class="contact-link">
+            support@drivehub.cm
+        </a>
+        &nbsp;·&nbsp;
+        <a href="https://wa.me/237XXXXXXXXX" class="contact-link">
+            WhatsApp Support
+        </a>
+    </div>
+
+    <div class="footer">
+        <div class="footer-logo">Drive<span>Hub</span></div>
+        <p class="footer-text">
+            Vous recevez cet email car un compte administrateur DriveHub
+            a été créé avec votre adresse email.<br/>
+            Si vous n'êtes pas à l'origine de cette demande,
+            contactez-nous immédiatement.
+        </p>
+        <div class="footer-links">
+            <a href="#" class="footer-link">Confidentialité</a>
+            <a href="#" class="footer-link">Conditions</a>
+            <a href="#" class="footer-link">Contact</a>
+        </div>
+        <p class="footer-text" style="margin-top:12px;">
+            © 2026 DriveHub · Tous droits réservés
+        </p>
+    </div>
+
+</div>
+</body>
+</html>

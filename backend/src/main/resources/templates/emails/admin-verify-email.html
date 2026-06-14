@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Vérifiez votre email — DriveHub Back-Office</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif;
+               background: #F3F4F6; color: #111827; }
+        .wrapper { max-width: 600px; margin: 40px auto;
+                   background: #fff; border-radius: 16px;
+                   overflow: hidden;
+                   box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        .header { background: linear-gradient(135deg, #1F2937, #111827);
+                  padding: 40px 48px; text-align: center; }
+        .logo-text { font-size: 28px; font-weight: 700; color: #fff; }
+        .logo-text span { font-weight: 300; opacity: 0.7; }
+        .logo-tagline { margin-top: 8px; font-size: 12px;
+                        color: rgba(255,255,255,0.5);
+                        text-transform: uppercase; letter-spacing: 1px; }
+        .icon-circle { width: 72px; height: 72px;
+                       background: rgba(255,255,255,0.1);
+                       border-radius: 50%; margin: 24px auto 0;
+                       display: flex; align-items: center;
+                       justify-content: center; font-size: 32px; }
+        .context-banner { background: #1F2937; border-left: 4px solid #6B7280;
+                          padding: 14px 48px; font-size: 13px;
+                          color: #D1D5DB; font-weight: 500; }
+        .body { padding: 48px; }
+        .greeting { font-size: 22px; font-weight: 700;
+                    color: #111827; margin-bottom: 16px; }
+        .greeting span { color: #1A56DB; }
+        .text { font-size: 15px; color: #4B5563;
+                line-height: 1.7; margin-bottom: 24px; }
+        .context-card { background: #F9FAFB; border: 1px solid #E5E7EB;
+                        border-radius: 12px; padding: 20px 24px;
+                        margin-bottom: 32px; }
+        .context-title { font-size: 12px; font-weight: 700; color: #6B7280;
+                         text-transform: uppercase; letter-spacing: 1px;
+                         margin-bottom: 14px; }
+        .context-row { display: flex; justify-content: space-between;
+                       align-items: center; padding: 8px 0;
+                       border-bottom: 1px solid #F3F4F6;
+                       font-size: 14px; }
+        .context-row:last-child { border-bottom: none; }
+        .context-key { color: #9CA3AF; }
+        .context-value { color: #111827; font-weight: 600; }
+        .role-badge { display: inline-block; padding: 3px 12px;
+                      border-radius: 20px; font-size: 12px; font-weight: 700;
+                      background: #EFF6FF; color: #1E40AF; }
+        .cta-section { text-align: center; margin-bottom: 36px; }
+        .cta-button { display: inline-block;
+                      background: linear-gradient(135deg, #1A56DB, #1044B2);
+                      color: #fff; text-decoration: none;
+                      font-size: 15px; font-weight: 600;
+                      padding: 16px 40px; border-radius: 10px; }
+        .expiry-box { background: #FEF3C7; border: 1px solid #FDE68A;
+                      border-radius: 10px; padding: 16px 20px;
+                      display: flex; align-items: center; gap: 12px;
+                      margin-bottom: 32px; }
+        .expiry-text { font-size: 13px; color: #92400E; line-height: 1.5; }
+        .expiry-text strong { color: #78350F; }
+        .steps { margin-bottom: 32px; }
+        .steps-title { font-size: 14px; font-weight: 700;
+                       color: #374151; margin-bottom: 16px; }
+        .step { display: flex; gap: 14px; padding: 10px 0;
+                border-bottom: 1px solid #F9FAFB;
+                align-items: flex-start; }
+        .step:last-child { border-bottom: none; }
+        .step-number { width: 28px; height: 28px; border-radius: 50%;
+                       background: #EFF6FF; color: #1A56DB;
+                       font-size: 13px; font-weight: 700;
+                       display: flex; align-items: center;
+                       justify-content: center; flex-shrink: 0; }
+        .step-text { font-size: 14px; color: #4B5563;
+                     line-height: 1.6; padding-top: 4px; }
+        .step-text strong { color: #111827; }
+        .security-note { background: #FFF7ED;
+                         border-left: 3px solid #F59E0B;
+                         border-radius: 0 8px 8px 0;
+                         padding: 14px 18px; margin-bottom: 32px; }
+        .security-note p { font-size: 13px; color: #92400E; line-height: 1.6; }
+        .footer { background: #F9FAFB; border-top: 1px solid #E5E7EB;
+                  padding: 28px 48px; text-align: center; }
+        .footer-logo { font-size: 15px; font-weight: 700;
+                       color: #1A56DB; margin-bottom: 8px; }
+        .footer-logo span { font-weight: 300; color: #6B7280; }
+        .footer-text { font-size: 12px; color: #9CA3AF; line-height: 1.7; }
+        .footer-links { margin-top: 12px; display: flex;
+                        justify-content: center; gap: 16px; }
+        .footer-link { font-size: 12px; color: #6B7280; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <div class="header">
+        <div class="logo-text">Drive<span>Hub</span></div>
+        <div class="logo-tagline">Back-Office Administration</div>
+        <div class="icon-circle">🔐</div>
+    </div>
+
+    <div class="context-banner">
+        🏢 &nbsp; Demande d'accès au back-office administrateur DriveHub
+    </div>
+
+    <div class="body">
+
+        <p class="greeting">
+            Bonjour, <span th:text="${name}">Administrateur</span> 👋
+        </p>
+
+        <p class="text">
+            Vous avez soumis une demande d'accès au
+            <strong>back-office DriveHub</strong> — l'espace de gestion
+            globale de la plateforme. Pour poursuivre votre demande,
+            commencez par confirmer votre adresse email.
+        </p>
+
+        <!-- CONTEXTE DE LA DEMANDE -->
+        <div class="context-card">
+            <div class="context-title">Résumé de votre demande</div>
+            <div class="context-row">
+                <span class="context-key">Nom</span>
+                <span class="context-value" th:text="${name}">Victor Modjo</span>
+            </div>
+            <div class="context-row">
+                <span class="context-key">Email</span>
+                <span class="context-value" th:text="${email}">admin@email.cm</span>
+            </div>
+            <div class="context-row">
+                <span class="context-key">Rôle demandé</span>
+                <span class="context-value">
+          <span class="role-badge" th:text="${role}">REVIEWER</span>
+        </span>
+            </div>
+            <div class="context-row">
+                <span class="context-key">Statut actuel</span>
+                <span class="context-value" style="color:#F59E0B;">
+          En attente de vérification email
+        </span>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <a th:href="${verificationUrl}" class="cta-button">
+                ✓ &nbsp; Confirmer mon adresse email
+            </a>
+        </div>
+
+        <div class="expiry-box">
+            <div style="font-size:20px; flex-shrink:0;">⏱️</div>
+            <div class="expiry-text">
+                Ce lien est valable <strong>24 heures</strong>.
+                Passé ce délai, vous devrez en demander un nouveau
+                depuis la page d'inscription.
+            </div>
+        </div>
+
+        <!-- ÉTAPES SUIVANTES -->
+        <div class="steps">
+            <p class="steps-title">Les prochaines étapes</p>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-text">
+                    <strong>Confirmez votre email</strong> en cliquant
+                    sur le bouton ci-dessus — votre demande passera
+                    au statut PENDING.
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-text">
+                    <strong>L'équipe ROOT sera notifiée</strong> de votre
+                    demande et examinera votre dossier et votre motif.
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-text">
+                    <strong>Vous recevrez un email</strong> dès qu'une
+                    décision sera prise — sous 24 à 48 heures.
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-text">
+                    Une fois <strong>activé par ROOT</strong>, vous pourrez
+                    vous connecter au back-office DriveHub.
+                </div>
+            </div>
+        </div>
+
+        <div class="security-note">
+            <p>
+                🔒 &nbsp; Si vous n'avez pas soumis cette demande,
+                ignorez cet email. Aucun accès ne sera accordé sans
+                validation manuelle par l'équipe ROOT.
+            </p>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <div class="footer-logo">Drive<span>Hub</span></div>
+        <p class="footer-text">
+            Vous recevez cet email car une demande d'accès administrateur
+            a été soumise avec cette adresse sur DriveHub.<br/>
+            © 2026 DriveHub · Tous droits réservés
+        </p>
+        <div class="footer-links">
+            <a href="#" class="footer-link">Confidentialité</a>
+            <a href="#" class="footer-link">Conditions</a>
+            <a href="mailto:support@drivehub.cm" class="footer-link">Contact</a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

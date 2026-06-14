@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Nouvelle demande d'accès — DriveHub</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif;
+               background: #F3F4F6; color: #111827; }
+        .wrapper { max-width: 600px; margin: 40px auto;
+                   background: #fff; border-radius: 16px;
+                   overflow: hidden;
+                   box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        .header { background: linear-gradient(135deg, #1F2937, #111827);
+                  padding: 40px 48px; text-align: center; }
+        .logo-text { font-size: 28px; font-weight: 700; color: #fff; }
+        .logo-text span { font-weight: 300; opacity: 0.7; }
+        .logo-tagline { margin-top: 8px; font-size: 12px;
+                        color: rgba(255,255,255,0.5);
+                        text-transform: uppercase; letter-spacing: 1px; }
+        .icon-circle { width: 72px; height: 72px;
+                       background: rgba(255,255,255,0.1);
+                       border-radius: 50%; margin: 24px auto 0;
+                       display: flex; align-items: center;
+                       justify-content: center; font-size: 32px; }
+        .alert-banner { background: #EFF6FF; border-left: 4px solid #1A56DB;
+                        padding: 14px 48px; font-size: 13px;
+                        color: #1E40AF; font-weight: 500; }
+        .body { padding: 48px; }
+        .title { font-size: 20px; font-weight: 700;
+                 color: #111827; margin-bottom: 16px; }
+        .text { font-size: 15px; color: #4B5563;
+                line-height: 1.7; margin-bottom: 32px; }
+        .profile-card { background: #F9FAFB; border: 1px solid #E5E7EB;
+                        border-radius: 12px; padding: 24px 28px;
+                        margin-bottom: 24px; }
+        .card-title { font-size: 12px; font-weight: 700; color: #6B7280;
+                      text-transform: uppercase; letter-spacing: 1px;
+                      margin-bottom: 16px; }
+        .info-row { display: flex; justify-content: space-between;
+                    align-items: flex-start; padding: 10px 0;
+                    border-bottom: 1px solid #F3F4F6;
+                    font-size: 14px; gap: 16px; }
+        .info-row:last-child { border-bottom: none; }
+        .info-key { color: #9CA3AF; flex-shrink: 0; min-width: 120px; }
+        .info-value { color: #111827; font-weight: 600;
+                      text-align: right; word-break: break-word; }
+        .role-badge { display: inline-block; padding: 3px 12px;
+                      border-radius: 20px; font-size: 12px;
+                      font-weight: 700; }
+        .role-reviewer { background: #EFF6FF; color: #1E40AF; }
+        .role-super-admin { background: #F0FDF4; color: #065F46; }
+        .reason-card { background: #FFFBEB; border: 1px solid #FDE68A;
+                       border-radius: 12px; padding: 20px 24px;
+                       margin-bottom: 32px; }
+        .reason-title { font-size: 12px; font-weight: 700; color: #92400E;
+                        text-transform: uppercase; letter-spacing: 1px;
+                        margin-bottom: 12px; }
+        .reason-text { font-size: 14px; color: #78350F;
+                       line-height: 1.7; font-style: italic; }
+        .actions { display: flex; gap: 12px;
+                   margin-bottom: 32px; text-align: center; }
+        .btn-approve { flex: 1; display: block;
+                       background: linear-gradient(135deg, #1A56DB, #1044B2);
+                       color: #fff; text-decoration: none;
+                       font-size: 14px; font-weight: 600;
+                       padding: 14px 20px; border-radius: 10px; }
+        .btn-view { flex: 1; display: block;
+                    background: #F9FAFB; border: 1px solid #E5E7EB;
+                    color: #374151; text-decoration: none;
+                    font-size: 14px; font-weight: 600;
+                    padding: 14px 20px; border-radius: 10px; }
+        .note { background: #F0FDF4; border-left: 3px solid #10B981;
+                border-radius: 0 8px 8px 0; padding: 14px 18px;
+                margin-bottom: 32px; }
+        .note p { font-size: 13px; color: #065F46; line-height: 1.6; }
+        .footer { background: #F9FAFB; border-top: 1px solid #E5E7EB;
+                  padding: 24px 48px; text-align: center; }
+        .footer-logo { font-size: 15px; font-weight: 700;
+                       color: #1A56DB; margin-bottom: 8px; }
+        .footer-logo span { font-weight: 300; color: #6B7280; }
+        .footer-text { font-size: 12px; color: #9CA3AF; line-height: 1.7; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <div class="header">
+        <div class="logo-text">Drive<span>Hub</span></div>
+        <div class="logo-tagline">Notification système — Back-Office</div>
+        <div class="icon-circle">🔔</div>
+    </div>
+
+    <div class="alert-banner">
+        📋 &nbsp; Nouvelle demande d'accès administrateur à valider
+    </div>
+
+    <div class="body">
+
+        <p class="title">Action requise, ROOT</p>
+        <p class="text">
+            Une nouvelle demande d'accès au back-office DriveHub vient d'être
+            soumise et l'adresse email a été vérifiée. Veuillez examiner
+            le profil ci-dessous avant de prendre une décision.
+        </p>
+
+        <!-- PROFIL DU CANDIDAT -->
+        <div class="profile-card">
+            <div class="card-title">Profil du candidat</div>
+            <div class="info-row">
+                <span class="info-key">Nom complet</span>
+                <span class="info-value" th:text="${name}">user</span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Adresse email</span>
+                <span class="info-value" th:text="${email}">user@gmail.com</span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Rôle demandé</span>
+                <span class="info-value">
+          <span class="role-badge role-reviewer"
+                th:text="${role}">role</span>
+        </span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Résidence</span>
+                <span class="info-value" th:text="${residence}">Yaoundé</span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Téléphone</span>
+                <span class="info-value" th:text="${phone ?: 'Non renseigné'}">677000000</span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Date de demande</span>
+                <span class="info-value" th:text="${registeredAt}">01/06/2026</span>
+            </div>
+        </div>
+
+        <!-- MOTIF -->
+        <div class="reason-card">
+            <div class="reason-title">💬 Motif de la demande</div>
+            <p class="reason-text" th:text="${reason}">
+                Je souhaite rejoindre l'équipe DriveHub afin de contribuer
+                à la validation des auto-écoles sur la plateforme.
+            </p>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="actions">
+            <a th:href="${activateUrl}" class="btn-approve">
+                ✓ &nbsp; Activer ce compte
+            </a>
+            <a th:href="${backofficeUrl}" class="btn-view">
+                👁 &nbsp; Voir dans le back-office
+            </a>
+        </div>
+
+        <div class="note">
+            <p>
+                ✅ &nbsp; L'adresse email de ce candidat a été vérifiée avec succès.
+                Son compte est actuellement au statut <strong>PENDING</strong>
+                et ne peut pas se connecter tant que vous ne l'avez pas activé.
+            </p>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <div class="footer-logo">Drive<span>Hub</span></div>
+        <p class="footer-text">
+            Notification automatique DriveHub — Back-Office Admin<br/>
+            © 2026 DriveHub · Tous droits réservés
+        </p>
+    </div>
+
+</div>
+</body>
+</html>

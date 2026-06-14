@@ -12,6 +12,8 @@ public record PlatformAdminResponse(
         String email,
         AdminRole role,
         AdminStatus adminStatus,
+        String residence,
+        String phoneNumber,
         LocalDateTime createdAt
 ) {
 }
