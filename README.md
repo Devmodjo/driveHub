@@ -20,9 +20,9 @@ L'architecture repose sur le modèle **Shared Database / Separate Schema** : une
 ## Architecture Multi-Tenant
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                   Base PostgreSQL                        │
-│                                                         │
+┌────────────────────────────────────────────────────────┐
+│                   Base PostgreSQL                      │
+│                                                        │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
 │  │ schema:public│  │schema:auto_  │  │schema:auto_  │  │
 │  │              │  │ecole_dupont  │  │ecole_martin  │  │
@@ -34,7 +34,7 @@ L'architecture repose sur le modèle **Shared Database / Separate Schema** : une
 │  │   registry   │  │ vehicles     │  │ vehicles     │  │
 │  │ tenants      │  │ courses      │  │ courses      │  │
 │  └──────────────┘  └──────────────┘  └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────┘
 ```
 
 **Résolution du tenant :** à chaque requête HTTP, le header `X-Tenant-ID` déclenche un `SET search_path TO <schema>` via Hibernate Multi-Tenancy. Résultat : aucun `tenant_id` dans les entités, aucune clause `WHERE tenant_id = ?`.
