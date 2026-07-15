@@ -1,7 +1,9 @@
 import { Component, Input, OnChanges, ViewChild } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartData } from 'chart.js';
+import { ChartConfiguration, ChartData, Chart, registerables } from 'chart.js';
 import { RegistryStats } from '../../../interfaces/RegistryStats';
+
+Chart.register(...registerables);
 
 /**
  * Affiche deux graphiques cote a cote :
@@ -27,6 +29,10 @@ export class RegistryChartComponent implements OnChanges {
   barChartOptions: ChartConfiguration<'bar'>['options'] = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: {
+      duration: 1500,
+      easing: 'easeOutQuart'
+    },
     plugins: {
       legend: { display: false },
     },
@@ -48,6 +54,12 @@ export class RegistryChartComponent implements OnChanges {
     responsive: true,
     maintainAspectRatio: false,
     cutout: '65%',
+    animation: {
+      animateScale: true,
+      animateRotate: true,
+      duration: 1500,
+      easing: 'easeOutQuart'
+    },
     plugins: {
       legend: { display: false },
     },
@@ -59,6 +71,14 @@ export class RegistryChartComponent implements OnChanges {
     if (!this.stats) return;
     this.buildBarChart();
     this.buildDoughnutChart();
+    
+    // Force l'actualisation si le canevas est deja initialise
+    if (this.barChart) {
+      this.barChart.update();
+    }
+    if (this.doughnutChart) {
+      this.doughnutChart.update();
+    }
   }
 
   /**
@@ -104,6 +124,7 @@ export class RegistryChartComponent implements OnChanges {
         data: this.legendItems.map(i => i.value),
         backgroundColor: this.legendItems.map(i => i.color),
         borderWidth: 0,
+        hoverOffset: 4,
       }],
     };
   }

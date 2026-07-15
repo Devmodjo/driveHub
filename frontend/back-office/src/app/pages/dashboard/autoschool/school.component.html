@@ -67,7 +67,9 @@
   (approve)="onApprove($event)"
   (reject)="onReject($event)"
   (viewDetail)="onViewDetail($event)"
-  (deleteSchool)="onDelete($event)">
+  (deleteSchool)="onDelete($event)"
+  (suspend)="onSuspend($event)"
+  (reactivate)="onReactivate($event)">
 </registry-table>
 
 @if (showDetailDrawer()) {
@@ -158,10 +160,18 @@
             <button class="btn btn-green btn-full" (click)="onApprove(selectedSchool()!.id)">
               Approuver cette auto-ecole
             </button>
+            <button class="btn btn-danger btn-full" (click)="onReject(selectedSchool()!.id)">
+              Rejeter cette auto-ecole
+            </button>
+          } @else if (selectedSchool()!.drivingSchoolStatus === 'ACTIVE' || selectedSchool()!.drivingSchoolStatus === 'APPROVED') {
+            <button class="btn btn-amber btn-full" (click)="onSuspend(selectedSchool()!.id)">
+              Suspendre cette auto-ecole
+            </button>
+          } @else if (selectedSchool()!.drivingSchoolStatus === 'SUSPENDED') {
+            <button class="btn btn-green btn-full" (click)="onReactivate(selectedSchool()!.id)">
+              Activer cette auto-ecole
+            </button>
           }
-          <button class="btn btn-danger btn-full" (click)="onReject(selectedSchool()!.id)">
-            Rejeter cette auto-ecole
-          </button>
           <button class="btn btn-outline btn-full" (click)="onDelete(selectedSchool()!.id)">
             Supprimer
           </button>
