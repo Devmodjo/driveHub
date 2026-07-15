@@ -34,6 +34,8 @@ export class RegistryTableComponent {
   @Output() reject = new EventEmitter<string>();
   @Output() viewDetail = new EventEmitter<string>();
   @Output() deleteSchool = new EventEmitter<string>();
+  @Output() suspend = new EventEmitter<string>();
+  @Output() reactivate = new EventEmitter<string>();
 
   searchQuery = signal('');
 
@@ -87,6 +89,7 @@ export class RegistryTableComponent {
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
       ACTIVE: 'Active',
+      APPROVED: 'Approuvee',
       PENDING: 'En attente',
       REJECTED: 'Rejetee',
       SUSPENDED: 'Suspendue',
@@ -99,6 +102,7 @@ export class RegistryTableComponent {
   getStatusClass(status: string): string {
     const classes: Record<string, string> = {
       ACTIVE: 'badge badge-green',
+      APPROVED: 'badge badge-green',
       PENDING: 'badge badge-amber',
       REJECTED: 'badge badge-red',
       SUSPENDED: 'badge badge-gray',

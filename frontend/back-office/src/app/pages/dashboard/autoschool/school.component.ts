@@ -95,6 +95,7 @@ export class SchoolComponent implements OnInit {
         this.showMessage('Auto-ecole approuvee avec succes', 'success');
         this.loadSchools();
         this.loadStats();
+        this.closeDrawer();
       },
       error: () => this.showMessage('Erreur lors de l\'approbation', 'error'),
     });
@@ -107,6 +108,7 @@ export class SchoolComponent implements OnInit {
         this.showMessage('Auto-ecole rejetee', 'success');
         this.loadSchools();
         this.loadStats();
+        this.closeDrawer();
       },
       error: () => this.showMessage('Erreur lors du rejet', 'error'),
     });
@@ -122,8 +124,40 @@ export class SchoolComponent implements OnInit {
         this.showMessage('Auto-ecole supprimee', 'success');
         this.loadSchools();
         this.loadStats();
+        if (this.selectedSchool()?.id === registryId) {
+          this.closeDrawer();
+        }
       },
       error: () => this.showMessage('Erreur lors de la suppression', 'error'),
+    });
+  }
+
+  /** Suspend une auto-ecole. */
+  onSuspend(registryId: string): void {
+    const confirmed = confirm('Voulez-vous vraiment suspendre cette auto-ecole ?');
+    if (!confirmed) return;
+
+    this.schoolService.suspendRegistry(registryId).subscribe({
+      next: () => {
+        this.showMessage('Auto-ecole suspendue', 'success');
+        this.loadSchools();
+        this.loadStats();
+        this.closeDrawer();
+      },
+      error: () => this.showMessage('Erreur lors de la suspension', 'error'),
+    });
+  }
+
+  /** Reactive une auto-ecole. */
+  onReactivate(registryId: string): void {
+    this.schoolService.approveRegistry(registryId).subscribe({
+      next: () => {
+        this.showMessage('Auto-ecole activee', 'success');
+        this.loadSchools();
+        this.loadStats();
+        this.closeDrawer();
+      },
+      error: () => this.showMessage('Erreur lors de l\'activation', 'error'),
     });
   }
 
@@ -132,8 +166,19 @@ export class SchoolComponent implements OnInit {
     this.isLoadingDetail.set(true);
     this.showDetailDrawer.set(true);
 
+    // Tente d'abord de trouver l'ecole dans la liste deja chargee
+    const fromList = this.schools().find(s => s.id === registryId);
+    if (fromList) {
+      this.selectedSchool.set(fromList);
+      this.isLoadingDetail.set(false);
+      return;
+    }
+
+    // Sinon, appel API
     this.schoolService.getSchoolRegistryDetail(registryId).subscribe({
-      next: (detail) => {
+      next: (response: any) => {
+        // Gere le cas ou l'API retourne { data: {...} } ou directement l'objet
+        const detail = response?.data ?? response;
         this.selectedSchool.set(detail);
         this.isLoadingDetail.set(false);
       },
@@ -155,6 +200,7 @@ export class SchoolComponent implements OnInit {
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
       ACTIVE: 'Active',
+      APPROVED: 'Approuvee',
       PENDING: 'En attente',
       REJECTED: 'Rejetee',
       SUSPENDED: 'Suspendue',
@@ -167,6 +213,7 @@ export class SchoolComponent implements OnInit {
   getStatusClass(status: string): string {
     const classes: Record<string, string> = {
       ACTIVE: 'badge badge-green',
+      APPROVED: 'badge badge-green',
       PENDING: 'badge badge-amber',
       REJECTED: 'badge badge-red',
       SUSPENDED: 'badge badge-gray',

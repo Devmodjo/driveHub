@@ -17,6 +17,12 @@
           Actives
         </button>
         <button
+          class="filter-tab"
+          [class.filter-tab--active]="activeFilter === 'APPROVED'"
+          (click)="applyFilter('APPROVED')">
+          Approuvees
+        </button>
+        <button
           class="filter-tab filter-tab--badge"
           [class.filter-tab--active]="activeFilter === 'PENDING'"
           (click)="applyFilter('PENDING')">
@@ -24,6 +30,12 @@
           @if (pendingCount > 0) {
             <span class="tab-badge">{{ pendingCount }}</span>
           }
+        </button>
+        <button
+          class="filter-tab"
+          [class.filter-tab--active]="activeFilter === 'SUSPENDED'"
+          (click)="applyFilter('SUSPENDED')">
+          Suspendues
         </button>
         <button
           class="filter-tab"
@@ -107,18 +119,34 @@
                     (click)="viewDetail.emit(school.id)">
                     Voir
                   </button>
-                  <button
-                    class="btn btn-green"
-                    title="Approuver l'inscription"
-                    (click)="approve.emit(school.id)">
-                    Approuver
-                  </button>
-                  <button
-                    class="btn btn-danger"
-                    title="Rejeter l'inscription"
-                    (click)="reject.emit(school.id)">
-                    Rejeter
-                  </button>
+                  @if (school.drivingSchoolStatus === 'PENDING') {
+                    <button
+                      class="btn btn-green"
+                      title="Approuver l'inscription"
+                      (click)="approve.emit(school.id)">
+                      Approuver
+                    </button>
+                    <button
+                      class="btn btn-danger"
+                      title="Rejeter l'inscription"
+                      (click)="reject.emit(school.id)">
+                      Rejeter
+                    </button>
+                  } @else if (school.drivingSchoolStatus === 'ACTIVE' || school.drivingSchoolStatus === 'APPROVED') {
+                    <button
+                      class="btn btn-amber"
+                      title="Suspendre l'auto-ecole"
+                      (click)="suspend.emit(school.id)">
+                      Suspendre
+                    </button>
+                  } @else if (school.drivingSchoolStatus === 'SUSPENDED') {
+                    <button
+                      class="btn btn-green"
+                      title="Reactiver l'auto-ecole"
+                      (click)="reactivate.emit(school.id)">
+                      Activer
+                    </button>
+                  }
                   <button
                     class="btn btn-icon"
                     title="Supprimer"
