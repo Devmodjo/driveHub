@@ -1,16 +1,22 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
-import { MyJoinRequest, MySchoolRegistry, SchoolRequest } from '../../../../interfaces/drivehub.models';
+import {
+  DocumentRequirements, DocumentType, MyJoinRequest, MySchoolRegistry, SchoolRequest, UserDocument,
+} from '../../../../interfaces/drivehub.models';
+import { DocumentService } from '../../../../services/document-service/document.service';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
+import { missingDocumentsText } from '../../../../shared/documents';
 import { SessionService } from '../../../../services/session-service/session.service';
 import { errorMessage, fieldErrorsOf } from '../../../../shared/http-error';
 import { VALIDATION_DELAY } from '../../../../utils/UTILS';
 import { ICONS } from '../../../../shared/icons';
+import { DocumentUploadComponent } from '../../shared/document-upload.component';
 import { PageHeaderComponent } from '../../shared/page-header.component';
 import { StatusBadgeComponent } from '../../shared/status-badge.component';
+import { WhyDocumentsComponent } from '../../shared/why-documents.component';
 
 /**
  * Première étape après l'inscription, tant que l'utilisateur n'appartient à aucune auto-école
@@ -18,11 +24,20 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
  *  - moniteur : demande de création de son auto-école (registre du schéma public), puis suivi
  *    de la validation par l'équipe DriveHub ;
  *  - élève (ou moniteur salarié) : demande d'adhésion à une auto-école du catalogue.
+ *
+ * Justificatifs : ils sont demandés ici, juste avant la demande (jamais à l'inscription).
+ *  - moniteur : pièce d'identité + CAPEC, obligatoires avant d'envoyer la demande de création
+ *    (le bouton « Envoyer la demande » reste inactif tant qu'il en manque) ;
+ *  - élève : pièce d'identité, obligatoire avant de demander à rejoindre une auto-école.
+ * La liste des pièces qui manquent vient du backend (GET /api/documents/requirements).
  * Après approbation, "Accéder à mon espace" récupère un nouveau jeton qui contient le tenant.
  */
 @Component({
   selector: 'app-welcome',
-  imports: [FormsModule, RouterLink, DatePipe, LucideDynamicIcon, PageHeaderComponent, StatusBadgeComponent],
+  imports: [
+    FormsModule, RouterLink, DatePipe, LucideDynamicIcon, PageHeaderComponent, StatusBadgeComponent,
+    DocumentUploadComponent, WhyDocumentsComponent,
+  ],
   template: `
     <app-page-header badge="Bienvenue" title="Configurons votre espace"
                      [subtitle]="session.isMonitor()
@@ -35,6 +50,36 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
 
     @if (info()) { <div class="alert-success mb-6">{{ info() }}</div> }
     @if (error()) { <div class="alert-error mb-6">{{ error() }}</div> }
+
+
+    <!-- Justificatifs : demandés juste avant la demande (création d'auto-école ou adhésion) -->
+    @if (requirements(); as req) {
+      <section class="premium-card rounded-[28px] p-5 sm:p-8 max-w-3xl mb-8" aria-labelledby="docs-title">
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-2">
+          <h3 id="docs-title" class="text-xl font-bold tracking-tight">Vos justificatifs</h3>
+          @if (req.missing.length === 0) {
+            <span class="badge bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Complet</span>
+          } @else {
+            <span class="badge bg-amber-500/15 text-amber-700 dark:text-amber-300">{{ req.missing.length }} à fournir</span>
+          }
+        </div>
+        <p class="text-sm text-black/60 dark:text-white/60 mb-3">
+          @if (session.isMonitor() && !registry()) {
+            Avant d'envoyer votre demande, ajoutez votre pièce d'identité et votre CAPEC. Une photo nette ou un scan suffit.
+          } @else if (session.isMonitor()) {
+            Les pièces jointes à votre demande. Si l'une d'elles est refusée, envoyez-en simplement une nouvelle.
+          } @else {
+            Avant de demander votre inscription dans une auto-école, ajoutez votre pièce d'identité. Une photo nette suffit.
+          }
+        </p>
+        <app-why-documents [context]="session.isMonitor() && !joiningOnly() ? 'school' : 'join'" />
+        <div class="grid grid-cols-1 gap-4 mt-5" [class]="req.required.length > 1 ? 'md:grid-cols-2' : ''">
+          @for (type of req.required; track type) {
+            <app-document-upload [type]="type" [document]="docOf(type)" (changed)="onDocumentChanged(type, $event)" />
+          }
+        </div>
+      </section>
+    }
 
     @if (session.isMonitor()) {
       @if (registry(); as reg) {
@@ -115,7 +160,18 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
               @if (e['description']) { <p class="field-error">{{ e['description'] }}</p> }
             </div>
           </div>
-          <button type="submit" class="btn-primary w-full sm:w-auto" [disabled]="sending()">Envoyer la demande</button>
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <button type="submit" class="btn-primary w-full sm:w-auto" [disabled]="sending() || !documentsReady()"
+                    [attr.aria-describedby]="documentsReady() ? null : 'docs-hint'">
+              {{ sending() ? 'Envoi...' : 'Envoyer la demande' }}
+            </button>
+            @if (!documentsReady()) {
+              <p id="docs-hint" class="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
+                <svg [lucideIcon]="icons.Info" [size]="16" class="shrink-0 mt-0.5" />
+                <span>Ajoutez {{ missingText() }} (section « Vos justificatifs ») pour envoyer la demande.</span>
+              </p>
+            }
+          </div>
         </form>
 
         <p class="mt-8 text-sm text-black/50 dark:text-white/50">
@@ -124,8 +180,14 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
         </p>
       }
     } @else {
-      <div class="mb-8">
+      <div class="mb-8 flex flex-col sm:flex-row sm:items-center gap-3">
         <a routerLink="/auto-ecoles" class="btn-primary"><svg [lucideIcon]="icons.Search" [size]="16" /> Trouver une auto-école</a>
+        @if (!documentsReady()) {
+          <p class="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
+            <svg [lucideIcon]="icons.Info" [size]="16" class="shrink-0 mt-0.5" />
+            <span>Ajoutez {{ missingText() }} avant d'envoyer votre demande d'inscription.</span>
+          </p>
+        }
       </div>
     }
 
@@ -149,6 +211,7 @@ export class WelcomeComponent {
   protected readonly icons = ICONS;
   protected readonly session = inject(SessionService);
   private readonly api = inject(SchoolApiService);
+  private readonly documents = inject(DocumentService);
   private readonly router = inject(Router);
 
   protected readonly loading = signal(true);
@@ -163,6 +226,16 @@ export class WelcomeComponent {
   /** Longueur maximale de la présentation (même valeur que le backend). */
   protected readonly descriptionMax = 2000;
   protected readonly error = signal('');
+
+  /** Justificatifs déjà envoyés par l'utilisateur. */
+  protected readonly myDocuments = signal<UserDocument[]>([]);
+  /** Pièces demandées et pièces manquantes (null tant que la réponse n'est pas arrivée). */
+  protected readonly requirements = signal<DocumentRequirements | null>(null);
+  /** Vrai quand toutes les pièces demandées ont été envoyées. */
+  protected readonly documentsReady = computed(() => (this.requirements()?.missing.length ?? 1) === 0);
+  protected readonly missingText = computed(() => missingDocumentsText(this.requirements()?.missing ?? ['CNI']));
+  /** Moniteur qui a déjà une demande d'adhésion : ses pièces sont vues par le responsable de l'auto-école. */
+  protected readonly joiningOnly = computed(() => !this.registry() && this.joinRequests().length > 0);
 
   protected school: SchoolRequest = {
     name: '', email: '', country: 'Cameroun', city: '', phoneNumber: '', address: '',
@@ -183,6 +256,27 @@ export class WelcomeComponent {
       this.loading.set(false);
     }
     this.api.myJoinRequests().subscribe({ next: (list) => this.joinRequests.set(list ?? []) });
+    this.documents.myDocuments().subscribe({ next: (docs) => this.myDocuments.set(docs ?? []) });
+    this.loadRequirements();
+  }
+
+  private loadRequirements(): void {
+    this.documents.requirements().subscribe({
+      next: (req) => this.requirements.set(req),
+      error: (err) => this.error.set(errorMessage(err, 'Impossible de charger la liste des justificatifs.')),
+    });
+  }
+
+  /** Document déjà envoyé pour ce type (null s'il n'y en a pas). */
+  protected docOf(type: DocumentType): UserDocument | null {
+    return this.myDocuments().find((d) => d.type === type) ?? null;
+  }
+
+  /** Après un envoi ou une suppression : mise à jour de la liste, puis des pièces manquantes (backend). */
+  protected onDocumentChanged(type: DocumentType, doc: UserDocument | null): void {
+    const others = this.myDocuments().filter((d) => d.type !== type);
+    this.myDocuments.set(doc ? [...others, doc] : others);
+    this.loadRequirements();
   }
 
   protected submitSchool(): void {

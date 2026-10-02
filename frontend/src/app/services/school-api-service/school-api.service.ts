@@ -3,9 +3,9 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   ApiMessage, Course, CourseRequest, Exam, ExamInscription, ExamRequest, InscriptionStatus, Monitor,
-  MyJoinRequest, MySchoolRegistry, Page, Payment, PaymentRequest, PaymentSummary, PendingJoinRequest,
-  PublicSchool, Reservation, ReservationRequest, SchoolRequest, Student, StudentUpdate, UserRole, Vehicle,
-  VehicleRequest,
+  MonitorCreateRequest, MyJoinRequest, MySchoolRegistry, Page, Payment, PaymentRequest, PaymentSummary,
+  PendingJoinRequest, PublicSchool, Reservation, ReservationRequest, SchoolRequest, SchoolSubscription, Student,
+  StudentUpdate, UserRole, Vehicle, VehicleRequest,
 } from '../../interfaces/drivehub.models';
 import { API_URL } from '../../utils/UTILS';
 
@@ -32,6 +32,14 @@ export class SchoolApiService {
   /** Demande de création d'auto-école du moniteur connecté (null si aucune). */
   mySchool(): Observable<MySchoolRegistry | null> {
     return this.http.get<MySchoolRegistry | null>(`${API_URL}driving-schools/me`);
+  }
+
+  /**
+   * Abonnement de l'auto-école du responsable connecté (période d'essai, formule).
+   * Le backend répond 204 (corps vide, donc null) tant que l'auto-école n'est pas validée.
+   */
+  mySubscription(): Observable<SchoolSubscription | null> {
+    return this.http.get<SchoolSubscription | null>(`${API_URL}driving-schools/me/subscription`);
   }
 
   requestJoin(drivingSchoolId: string, role: UserRole): Observable<ApiMessage> {
@@ -73,6 +81,24 @@ export class SchoolApiService {
 
   monitors(): Observable<Monitor[]> {
     return this.http.get<Monitor[]>(`${API_URL}monitors`);
+  }
+
+  /**
+   * Le responsable ajoute un moniteur à son auto-école (POST /api/monitors, multipart/form-data) :
+   *  - partie « monitor » : les informations du moniteur en JSON. On l'envoie comme un Blob de type
+   *    application/json, sinon le backend (Spring, @RequestPart) ne saurait pas la lire comme un objet ;
+   *  - fichiers « cni » et « capec » (obligatoires), numéros « cniNumber » et « capecNumber » (facultatifs).
+   * Le backend crée le compte et envoie une invitation par email au moniteur.
+   * Ne pas fixer l'en-tête Content-Type : le navigateur l'ajoute lui-même avec la « boundary » du multipart.
+   */
+  addMonitor(monitor: MonitorCreateRequest, cni: File, capec: File, cniNumber?: string, capecNumber?: string): Observable<Monitor> {
+    const form = new FormData();
+    form.append('monitor', new Blob([JSON.stringify(monitor)], { type: 'application/json' }));
+    form.append('cni', cni, cni.name);
+    form.append('capec', capec, capec.name);
+    if (cniNumber?.trim()) form.append('cniNumber', cniNumber.trim());
+    if (capecNumber?.trim()) form.append('capecNumber', capecNumber.trim());
+    return this.http.post<Monitor>(`${API_URL}monitors`, form);
   }
 
   // ─── Véhicules ────────────────────────────────────────────────────

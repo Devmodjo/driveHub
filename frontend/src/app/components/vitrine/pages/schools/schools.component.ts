@@ -6,12 +6,15 @@ import { RevealDirective } from '../../../../directives/reveal.directive';
 import { PublicSchool } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
 import { SessionService } from '../../../../services/session-service/session.service';
+import { isMissingDocumentsError } from '../../../../shared/documents';
 import { errorMessage } from '../../../../shared/http-error';
 import { ICONS } from '../../../../shared/icons';
 
 /**
  * Catalogue public « Trouver une auto-école » : liste des auto-écoles approuvées par la plateforme
  * (registre du schéma public). Un élève connecté peut demander à rejoindre une auto-école.
+ * Le backend exige d'abord les justificatifs (élève : pièce d'identité ; moniteur : pièce d'identité
+ * et CAPEC) : s'il en manque, le message d'erreur propose un lien vers la page où les ajouter.
  */
 @Component({
   selector: 'app-schools',
@@ -35,7 +38,17 @@ import { ICONS } from '../../../../shared/icons';
         </div>
 
         @if (message()) { <div class="alert-success mb-8">{{ message() }}</div> }
-        @if (error()) { <div class="alert-error mb-8">{{ error() }}</div> }
+        @if (error()) {
+          <div class="alert-error mb-8" role="alert">
+            {{ error() }}
+            <!-- Justificatifs manquants : lien direct vers la page où on les ajoute -->
+            @if (missingDocuments()) {
+              <a routerLink="/dashboard/bienvenue" class="mt-2 flex items-center gap-1.5 font-bold underline">
+                Ajouter mes justificatifs <svg [lucideIcon]="icons.ArrowRight" [size]="15" />
+              </a>
+            }
+          </div>
+        }
 
         @if (loading()) {
           <p class="text-black/50 dark:text-white/50">Chargement des auto-écoles...</p>
@@ -88,6 +101,8 @@ export class SchoolsComponent {
   protected readonly sending = signal<string | null>(null);
   protected readonly message = signal('');
   protected readonly error = signal('');
+  /** Le backend a refusé la demande car un justificatif manque (pièce d'identité, CAPEC). */
+  protected readonly missingDocuments = signal(false);
 
   protected readonly filtered = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -113,12 +128,18 @@ export class SchoolsComponent {
     this.sending.set(school.id);
     this.message.set('');
     this.error.set('');
+    this.missingDocuments.set(false);
     this.api.requestJoin(school.id, role).subscribe({
       next: () => {
         this.sending.set(null);
         this.message.set(`Demande envoyée à ${school.name}. Suivez son statut depuis votre espace.`);
       },
-      error: (err) => { this.sending.set(null); this.error.set(errorMessage(err)); },
+      error: (err) => {
+        this.sending.set(null);
+        const message = errorMessage(err);
+        this.error.set(message);
+        this.missingDocuments.set(isMissingDocumentsError(err?.status ?? 0, message));
+      },
     });
   }
 }

@@ -93,6 +93,7 @@ export class DashboardLayoutComponent {
     return [
       ...common.slice(0, 1),
       { label: 'Élèves', path: '/dashboard/eleves', icon: ICONS.Users },
+      { label: 'Moniteurs', path: '/dashboard/moniteurs', icon: ICONS.UserCheck },
       { label: 'Demandes d\'adhésion', path: '/dashboard/demandes', icon: ICONS.UserPlus },
       { label: 'Véhicules', path: '/dashboard/vehicules', icon: ICONS.Car },
       ...common.slice(1),

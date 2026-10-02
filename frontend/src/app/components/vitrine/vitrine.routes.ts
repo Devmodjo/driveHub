@@ -44,6 +44,10 @@ export const VITRINE_ROUTES: Routes = [
     loadComponent: () => import('./pages/auth/verify-email.component').then((m) => m.VerifyEmailComponent),
   },
   {
+    path: 'invitation', title: 'Invitation - DriveHub',
+    loadComponent: () => import('./pages/auth/accept-invitation.component').then((m) => m.AcceptInvitationComponent),
+  },
+  {
     path: 'reset-password', title: 'Nouveau mot de passe - DriveHub',
     loadComponent: () => import('./pages/auth/reset-password.component').then((m) => m.ResetPasswordComponent),
   },

@@ -5,6 +5,7 @@ import {
   LucidePlus, LucideRefreshCw, LucideSchool, LucideSearch, LucideSettings, LucideSun, LucideTarget, LucideTrash,
   LucideUserPlus, LucideUsers, LucideWallet, LucideX,
   LucideArrowLeft, LucideBan, LucideBuilding2, LucideChevronLeft, LucideChevronRight, LucideCircleX, LucideClock, LucideCopy, LucideEye, LucideEyeOff, LucideHistory, LucideInbox, LucideInfo, LucideKeyRound, LucideLoaderCircle, LucideRotateCcw, LucideSend, LucideShieldCheck, LucideTriangleAlert, LucideUser, LucideUserCheck, LucideUserRound, LucideUserX,
+  LucideCamera, LucideCircleHelp, LucideDownload, LucideExternalLink, LucideFileText, LucideIdCard, LucideLock, LucideUpload,
 } from '@lucide/angular';
 
 /**
@@ -80,4 +81,13 @@ export const ICONS = {
   UserCheck: LucideUserCheck,
   UserRound: LucideUserRound,
   UserX: LucideUserX,
+  // Justificatifs (pièce d'identité, CAPEC)
+  Camera: LucideCamera,
+  CircleHelp: LucideCircleHelp,
+  Download: LucideDownload,
+  ExternalLink: LucideExternalLink,
+  FileText: LucideFileText,
+  IdCard: LucideIdCard,
+  Lock: LucideLock,
+  Upload: LucideUpload,
 } as const;

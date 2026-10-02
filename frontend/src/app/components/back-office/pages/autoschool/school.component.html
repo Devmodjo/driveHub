@@ -82,6 +82,11 @@
         <p class="text-sm text-black/60 dark:text-white/60">{{ school.monitorPhone || 'Téléphone non renseigné' }}</p>
       </div>
 
+      <!-- Pièce d'identité et CAPEC du fondateur : à vérifier avant d'approuver l'auto-école -->
+      <div class="mt-5">
+        <bo-registry-documents [registryId]="school.id" (notify)="showMessage($event.text, $event.type)" />
+      </div>
+
       <p class="mt-5 text-xs text-black/40 dark:text-white/40 font-mono break-all">ID {{ school.id }}</p>
 
       <div class="mt-6 flex flex-col gap-2">

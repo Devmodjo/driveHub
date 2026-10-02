@@ -2,12 +2,14 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { LucideDynamicIcon, LucideIcon } from '@lucide/angular';
-import { Reservation, Student } from '../../../../interfaces/drivehub.models';
+import { Reservation, SchoolSubscription, Student, UserDocument } from '../../../../interfaces/drivehub.models';
+import { DocumentService } from '../../../../services/document-service/document.service';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
+import { documentStatusLabel } from '../../../../shared/documents';
 import { SessionService } from '../../../../services/session-service/session.service';
 import { errorMessage } from '../../../../shared/http-error';
 import { ICONS } from '../../../../shared/icons';
-import { formatAmount, formatDateTime, label } from '../../shared/labels';
+import { formatAmount, formatDate, formatDateTime, label } from '../../shared/labels';
 import { PageHeaderComponent } from '../../shared/page-header.component';
 import { StatusBadgeComponent } from '../../shared/status-badge.component';
 
@@ -18,7 +20,11 @@ interface Kpi {
   link: string;
 }
 
-/** Vue d'ensemble : indicateurs de l'auto-école (moniteur) ou dossier de formation (élève). */
+/**
+ * Vue d'ensemble : indicateurs de l'auto-école (moniteur) ou dossier de formation (élève).
+ * Pour le responsable, un bandeau discret rappelle la fin de la période d'essai (abonnement TRIAL).
+ * Rien sur le paiement pour l'instant : la facturation n'est pas encore activée.
+ */
 @Component({
   selector: 'app-overview',
   imports: [RouterLink, LucideDynamicIcon, PageHeaderComponent, StatusBadgeComponent],
@@ -26,6 +32,16 @@ interface Kpi {
     <app-page-header title="Vue d'ensemble" [subtitle]="session.isMonitor() ? 'Activité de votre auto-école' : 'Votre formation en un coup d\\'oeil'" />
 
     @if (error()) { <div class="alert-error mb-6">{{ error() }}</div> }
+
+    @if (trial(); as t) {
+      <div class="mb-6 flex items-start sm:items-center gap-3 rounded-2xl border border-[#0070f3]/20 bg-[#0070f3]/[0.06] dark:bg-[#0070f3]/10 px-4 py-3 text-sm text-black/80 dark:text-white/80" role="status">
+        <svg [lucideIcon]="icons.Clock" [size]="18" class="shrink-0 text-[#0070f3] mt-0.5 sm:mt-0" />
+        <p>
+          <strong class="font-bold text-black dark:text-white">Période d'essai :</strong>
+          {{ trialDaysText(t) }}@if (t.trialEndsAt) { (fin le {{ formatDate(t.trialEndsAt) }})}.
+        </p>
+      </div>
+    }
 
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-10">
       @for (kpi of kpis(); track kpi.label) {
@@ -47,7 +63,7 @@ interface Kpi {
           <div><dt class="field-label">Téléphone</dt><dd>{{ p.phoneNumber }}</dd></div>
           <div><dt class="field-label">Catégorie de permis</dt><dd>{{ p.licenseCategory ?? 'À définir avec votre auto-école' }}</dd></div>
           <div><dt class="field-label">Ville</dt><dd>{{ p.residenceCity }}</dd></div>
-          <div><dt class="field-label">CNI</dt><dd>{{ p.cniRectoUrl ? 'Fournie' : 'À fournir à votre auto-école' }}</dd></div>
+          <div><dt class="field-label">Pièce d'identité</dt><dd>{{ cniStatus() }}</dd></div>
         </dl>
       </div>
     }
@@ -77,15 +93,22 @@ interface Kpi {
   `,
 })
 export class OverviewComponent {
+  protected readonly icons = ICONS;
   protected readonly session = inject(SessionService);
   private readonly api = inject(SchoolApiService);
+  private readonly documents = inject(DocumentService);
   protected readonly label = label;
+  protected readonly formatDate = formatDate;
   protected readonly formatDateTime = formatDateTime;
 
   protected readonly kpis = signal<Kpi[]>([]);
   protected readonly upcoming = signal<Reservation[]>([]);
   protected readonly profile = signal<Student | null>(null);
   protected readonly error = signal('');
+  /** Abonnement en période d'essai (null sinon, ou si l'utilisateur n'est pas le responsable). */
+  protected readonly trial = signal<SchoolSubscription | null>(null);
+  /** Statut de la pièce d'identité de l'élève (« Vérifié », « En vérification »...). */
+  protected readonly cniStatus = signal('-');
 
   constructor() {
     const onError = (err: unknown) => this.error.set(errorMessage(err));
@@ -102,6 +125,11 @@ export class OverviewComponent {
     });
 
     if (this.session.isMonitor()) {
+      // Seul le responsable a accès à l'abonnement : pour un autre moniteur, l'erreur est ignorée
+      this.api.mySubscription().subscribe({
+        next: (sub) => this.trial.set(sub?.status === 'TRIAL' ? sub : null),
+        error: () => this.trial.set(null),
+      });
       forkJoin({
         students: this.api.students(0, 1),
         vehicles: this.api.vehicles(0, 1),
@@ -118,6 +146,10 @@ export class OverviewComponent {
       });
     } else {
       this.api.myStudentProfile().subscribe({ next: (p) => this.profile.set(p), error: onError });
+      this.documents.myDocuments().subscribe({
+        next: (docs) => this.cniStatus.set(documentStatusLabel(docs?.find((d: UserDocument) => d.type === 'CNI')?.status)),
+        error: () => this.cniStatus.set('-'),
+      });
       forkJoin({ payments: this.api.payments(0, 100), exams: this.api.myExamInscriptions() }).subscribe({
         next: ({ payments, exams }) => {
           const paid = payments.content.filter((p) => p.paymentStatus === 'VALIDATE').reduce((sum, p) => sum + Number(p.amount), 0);
@@ -130,5 +162,12 @@ export class OverviewComponent {
         error: onError,
       });
     }
+  }
+
+  /** « 15 jours restants », « 1 jour restant » ou « dernier jour ». */
+  protected trialDaysText(sub: SchoolSubscription): string {
+    const days = Math.max(0, sub.trialDaysLeft ?? 0);
+    if (days === 0) return 'dernier jour';
+    return days === 1 ? '1 jour restant' : `${days} jours restants`;
   }
 }
