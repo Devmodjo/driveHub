@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { Exam, ExamInscription, ExamRequest, Student } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
 import { SessionService } from '../../../../services/session-service/session.service';
@@ -13,11 +13,11 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
 /** Sessions d'examen : le moniteur crée les sessions et y inscrit ses élèves ; l'élève suit ses inscriptions. */
 @Component({
   selector: 'app-exams',
-  imports: [FormsModule, LucideAngularModule, PageHeaderComponent, StatusBadgeComponent],
+  imports: [FormsModule, LucideDynamicIcon, PageHeaderComponent, StatusBadgeComponent],
   template: `
     <app-page-header title="Examens" [subtitle]="isMonitor ? 'Sessions d\\'examen et inscriptions de vos élèves.' : 'Vos inscriptions aux examens du permis.'">
       @if (isMonitor) {
-        <button class="btn-primary" (click)="formOpen.set(!formOpen())"><lucide-icon [img]="icons.Plus" [size]="16" /> Nouvelle session</button>
+        <button class="btn-primary" (click)="formOpen.set(!formOpen())"><svg [lucideIcon]="icons.Plus" [size]="16" /> Nouvelle session</button>
       }
     </app-page-header>
     @if (error()) { <div class="alert-error mb-6">{{ error() }}</div> }
@@ -44,7 +44,7 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
               </div>
               <div class="flex gap-2">
                 <button class="btn-ghost" (click)="toggle(exam)">{{ openExam() === exam.id ? 'Masquer' : 'Inscriptions' }}</button>
-                <button class="btn-small text-red-600 hover:bg-red-500/10" (click)="remove(exam)" aria-label="Supprimer"><lucide-icon [img]="icons.Trash2" [size]="15" /></button>
+                <button class="btn-small text-red-600 hover:bg-red-500/10" (click)="remove(exam)" aria-label="Supprimer"><svg [lucideIcon]="icons.Trash" [size]="15" /></button>
               </div>
             </div>
 

@@ -2,10 +2,11 @@
    STYLES GLOBAUX — application DriveHub unique
    (vitrine + back-office plateforme + dashboard auto-école / élève)
 
-   Polices : Lato (texte) et Plus Jakarta Sans (titres de la vitrine)
+   Polices : Lato (texte) et Plus Jakarta Sans (titres de la vitrine), servies par l'application
+             elle-même (paquets @fontsource déclarés dans angular.json), comme next/font dans l'ancienne
+             landing : aucun appel à Google Fonts, rendu identique hors ligne.
    Thème   : classe "dark" sur <html>, gérée par ThemeService (clé localStorage "drivehub_theme")
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&display=swap');
 @import "tailwindcss";
 
 /* Les classes "dark:" de Tailwind s'appliquent quand <html class="dark"> */
@@ -38,6 +39,12 @@
   --border: #e5e5e5;
   --card: #ffffff;
   --card-foreground: #000000;
+  --warm: #0070f3;
+  --warm-foreground: #ffffff;
+
+  /* Polices (équivalent des variables --font-lato / --font-jakarta créées par next/font) */
+  --font-lato: 'Lato';
+  --font-jakarta: 'Plus Jakarta Sans Variable';
 }
 
 /* ══ THÈME DARK ════════════════════════════════════════════ */
@@ -63,6 +70,8 @@
   --border: #1a1a1a;
   --card: #050505;
   --card-foreground: #ffffff;
+  --warm: #0070f3;
+  --warm-foreground: #ffffff;
 }
 
 /* Couleurs et polices utilisables en classes Tailwind (bg-primary, text-foreground, font-display...) */
@@ -79,8 +88,8 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
 
-  --font-sans: 'Lato', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-lato), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 
   --radius-xl: 1.5rem;
   --radius-lg: 1rem;
@@ -92,10 +101,10 @@
    Dans @layer base : sinon ces règles (non « layered ») l'emporteraient sur les classes
    Tailwind (text-white, list-disc...), qui sont dans @layer utilities. */
 @layer base {
-  html { scroll-behavior: smooth; scroll-padding-top: 90px; } /* la barre de navigation est fixe */
+  html { scroll-behavior: smooth; }
 
   body {
-    font-family: 'Lato', sans-serif;
+    font-family: var(--font-lato), ui-sans-serif, system-ui, sans-serif;
     background: var(--page-bg);
     color: var(--text-primary);
     transition: background 0.25s ease, color 0.25s ease;
@@ -122,6 +131,20 @@
 .hub-grid {
   background-image: radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
   background-size: 32px 32px;
+}
+
+.hub-gradient-orb {
+  background: radial-gradient(circle at center, var(--primary) 0%, transparent 75%);
+  filter: blur(80px);
+  opacity: 0.15;
+}
+
+.hub-line {
+  position: absolute;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  height: 1px;
+  width: 100%;
+  opacity: 0.2;
 }
 
 .premium-card {
@@ -152,7 +175,7 @@
 .reveal-down  { transform: translateY(-10px); }
 .reveal-left  { transform: translateX(-20px); }
 .reveal-scale { transform: scale(0.95); }
-.reveal.reveal-visible { opacity: 1; transform: none; }
+.reveal.reveal-visible { opacity: 1; transform: none; will-change: auto; }  /* will-change relâché après l'animation, comme framer-motion */
 
 @media (prefers-reduced-motion: reduce) {
   .reveal { transition: none; opacity: 1; transform: none; }

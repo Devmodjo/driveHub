@@ -1,6 +1,6 @@
 import { Component, HostListener, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { SessionService } from '../../../../services/session-service/session.service';
 import { ThemeService } from '../../../../services/theme-service/theme.service';
 import { ICONS } from '../../../../shared/icons';
@@ -9,7 +9,7 @@ import { I18nService } from '../../i18n/i18n.service';
 /** Barre de navigation de la vitrine (conversion de Navbar.tsx). */
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink, LucideAngularModule],
+  imports: [RouterLink, LucideDynamicIcon],
   templateUrl: './navbar.component.html',
 })
 export class NavbarComponent {

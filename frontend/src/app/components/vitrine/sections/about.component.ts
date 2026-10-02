@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { RevealDirective } from '../../../directives/reveal.directive';
 import { ICONS } from '../../../shared/icons';
 import { I18nService } from '../i18n/i18n.service';
@@ -7,7 +7,7 @@ import { I18nService } from '../i18n/i18n.service';
 /** Section « À propos » (conversion de About.tsx). */
 @Component({
   selector: 'app-about',
-  imports: [LucideAngularModule, RevealDirective],
+  imports: [LucideDynamicIcon, RevealDirective],
   template: `
     <section id="about" class="py-32 bg-[#fafafa] dark:bg-[#080808] border-b border-black/5 dark:border-white/5 overflow-hidden">
       <div class="container mx-auto px-6">
@@ -26,7 +26,7 @@ import { I18nService } from '../i18n/i18n.service';
               <div class="absolute top-0 right-0 w-64 h-64 bg-[#0070f3]/25 blur-[80px] rounded-full group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
               <div class="absolute -bottom-10 -left-10 w-48 h-48 bg-[#4096ff]/20 blur-[60px] rounded-full pointer-events-none"></div>
 
-              <lucide-icon [img]="icons.Target" class="text-[#0070f3] mb-8 relative z-10" [size]="48" [strokeWidth]="1.5" />
+              <svg [lucideIcon]="icons.Target" class="text-[#0070f3] mb-8 relative z-10" [size]="48" [strokeWidth]="1.5" />
 
               <h4 class="text-3xl lg:text-4xl font-black mb-6 relative z-10 tracking-tight leading-[1.1]">{{ i18n.dict().About.banner_title }}</h4>
               <p class="text-white/60 leading-relaxed font-light text-lg relative z-10 mb-8">{{ i18n.dict().About.banner_desc }}</p>
@@ -38,7 +38,7 @@ import { I18nService } from '../i18n/i18n.service';
                 </div>
                 <div class="flex gap-1">
                   @for (i of stars; track i) {
-                    <lucide-icon [img]="icons.CircleCheck" [size]="16" class="text-[#0070f3]" />
+                    <svg [lucideIcon]="icons.CircleCheck" [size]="16" class="text-[#0070f3]" />
                   }
                 </div>
               </div>

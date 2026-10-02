@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { MyJoinRequest, MySchoolRegistry, SchoolRequest } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
 import { SessionService } from '../../../../services/session-service/session.service';
@@ -21,14 +21,14 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
  */
 @Component({
   selector: 'app-welcome',
-  imports: [FormsModule, RouterLink, DatePipe, LucideAngularModule, PageHeaderComponent, StatusBadgeComponent],
+  imports: [FormsModule, RouterLink, DatePipe, LucideDynamicIcon, PageHeaderComponent, StatusBadgeComponent],
   template: `
     <app-page-header badge="Bienvenue" title="Configurons votre espace"
                      [subtitle]="session.isMonitor()
                        ? 'Inscrivez votre auto-école. Notre équipe vérifie chaque établissement avant son activation.'
                        : 'Choisissez votre auto-école : elle validera votre inscription.'">
       <button class="btn-ghost" (click)="refreshAccess()" [disabled]="refreshing()">
-        <lucide-icon [img]="icons.RefreshCw" [size]="16" /> Accéder à mon espace
+        <svg [lucideIcon]="icons.RefreshCw" [size]="16" /> Accéder à mon espace
       </button>
     </app-page-header>
 
@@ -83,7 +83,7 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
       }
     } @else {
       <div class="mb-8">
-        <a routerLink="/auto-ecoles" class="btn-primary"><lucide-icon [img]="icons.Search" [size]="16" /> Trouver une auto-école</a>
+        <a routerLink="/auto-ecoles" class="btn-primary"><svg [lucideIcon]="icons.Search" [size]="16" /> Trouver une auto-école</a>
       </div>
     }
 

@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { Monitor, Reservation, ReservationType, Student, Vehicle } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
 import { SessionService } from '../../../../services/session-service/session.service';
@@ -17,10 +17,10 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
  */
 @Component({
   selector: 'app-reservations',
-  imports: [FormsModule, LucideAngularModule, PageHeaderComponent, StatusBadgeComponent],
+  imports: [FormsModule, LucideDynamicIcon, PageHeaderComponent, StatusBadgeComponent],
   template: `
     <app-page-header title="Réservations" subtitle="Leçons de conduite et rendez-vous (créneaux de 60 minutes).">
-      <button class="btn-primary" (click)="openForm()"><lucide-icon [img]="icons.Plus" [size]="16" /> Réserver un créneau</button>
+      <button class="btn-primary" (click)="openForm()"><svg [lucideIcon]="icons.Plus" [size]="16" /> Réserver un créneau</button>
     </app-page-header>
     @if (error()) { <div class="alert-error mb-6">{{ error() }}</div> }
 

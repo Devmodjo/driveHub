@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { LucideAngularModule, LucideIconData } from 'lucide-angular';
+import { LucideDynamicIcon, LucideIcon } from '@lucide/angular';
 import { Reservation, Student } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
 import { SessionService } from '../../../../services/session-service/session.service';
@@ -14,14 +14,14 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
 interface Kpi {
   label: string;
   value: string;
-  icon: LucideIconData;
+  icon: LucideIcon;
   link: string;
 }
 
 /** Vue d'ensemble : indicateurs de l'auto-école (moniteur) ou dossier de formation (élève). */
 @Component({
   selector: 'app-overview',
-  imports: [RouterLink, LucideAngularModule, PageHeaderComponent, StatusBadgeComponent],
+  imports: [RouterLink, LucideDynamicIcon, PageHeaderComponent, StatusBadgeComponent],
   template: `
     <app-page-header title="Vue d'ensemble" [subtitle]="session.isMonitor() ? 'Activité de votre auto-école' : 'Votre formation en un coup d\\'oeil'" />
 
@@ -31,7 +31,7 @@ interface Kpi {
       @for (kpi of kpis(); track kpi.label) {
         <a [routerLink]="kpi.link" class="premium-card rounded-[24px] p-6 block">
           <div class="w-11 h-11 rounded-xl bg-[#0070f3]/10 text-[#0070f3] flex items-center justify-center mb-5">
-            <lucide-icon [img]="kpi.icon" [size]="20" />
+            <svg [lucideIcon]="kpi.icon" [size]="20" />
           </div>
           <p class="text-3xl font-black tracking-tight">{{ kpi.value }}</p>
           <p class="text-sm text-black/50 dark:text-white/50 mt-1">{{ kpi.label }}</p>
