@@ -7,7 +7,7 @@ import cm.mvtech.drivehub.modules.auth.application.dto.ResetPasswordRequest;
 import cm.mvtech.drivehub.modules.messageapi.ApiResponse;
 import cm.mvtech.drivehub.modules.auth.application.dto.LoginRequest;
 import cm.mvtech.drivehub.modules.monitor.application.dto.MonitorRegisterRequest;
-import cm.mvtech.drivehub.modules.student.StudentRegisterRequest;
+import cm.mvtech.drivehub.modules.student.application.dto.StudentRegisterRequest;
 
 import cm.mvtech.drivehub.modules.auth.domain.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(originPatterns = "*")
 @RequiredArgsConstructor
 @Tag(name = "USER API", description = "api d'authentification des utilisateurs lambda de la plateforme")
 public class AuthController {

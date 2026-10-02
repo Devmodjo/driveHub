@@ -97,8 +97,13 @@ L'architecture repose sur le modèle **Shared Database / Separate Schema** : une
    Monitor activé (statut ACTIVE)
 
 5. ACCÈS MÉTIER
-   Monitor se connecte avec X-Tenant-ID
-   Accès aux données isolées de son auto-école
+   Le Monitor se reconnecte : son JWT porte maintenant le schéma de son auto-école (claim "tenant")
+   Chaque requête métier envoie X-Tenant-ID = ce schéma (le filtre JWT vérifie qu'ils correspondent)
+
+6. ADHÉSION D'UN ÉLÈVE (ou d'un moniteur supplémentaire)
+   Inscription → vérification email → POST /api/join-school/public (id de l'auto-école du catalogue)
+   Le Monitor responsable valide → la fiche est copiée dans le schéma de l'auto-école
+   L'élève se reconnecte : son JWT porte le tenant de l'auto-école
 ```
 
 ---
@@ -135,7 +140,35 @@ L'architecture repose sur le modèle **Shared Database / Separate Schema** : une
 | Méthode | Endpoint | Auth | Description |
 |---------|----------|------|-------------|
 | `POST` | `/api/driving-schools/request` | JWT Monitor | Créer une demande d'auto-école |
-| `GET` | `/api/driving-schools/public/all` | Public | Liste des auto-écoles actives |
+| `GET` | `/api/driving-schools/public/all` | Public | Catalogue des auto-écoles validées |
+
+### JOIN SCHOOL API — `/api/join-school` (schéma public)
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| `POST` | `/api/join-school/public` | JWT Student/Monitor (email vérifié) | Demander à rejoindre une auto-école |
+| `GET` | `/api/join-school/admin/pending` | JWT Monitor responsable | Demandes en attente de son auto-école |
+| `POST` | `/api/join-school/admin/{id}/approve` | JWT Monitor responsable | Accepter (copie la fiche dans le schéma tenant) |
+| `POST` | `/api/join-school/admin/{id}/reject` | JWT Monitor responsable | Refuser |
+
+### API MÉTIER (tenant) — en-tête `X-Tenant-ID` obligatoire
+
+Toutes ces routes s'exécutent dans le schéma de l'auto-école. Le `X-Tenant-ID` doit être égal au
+claim `tenant` du JWT, sinon la requête est refusée (401).
+
+| Ressource | Moniteur | Élève |
+|-----------|----------|-------|
+| `/api/students` | liste, détail, `PUT /{id}` (CNI, permis), `DELETE /{id}` | `GET /me` |
+| `/api/monitors` | liste, `GET /me` | liste (pour réserver) |
+| `/api/vehicles` | CRUD (immatriculation unique, état) | lecture |
+| `/api/courses` | CRUD | lecture |
+| `/api/exams` | CRUD, `POST /{id}/inscriptions`, `GET /{id}/inscriptions`, `PATCH /inscriptions/{id}?status=` | lecture, `GET /inscriptions/me` |
+| `/api/reservations` | créer (CONFIRMED), lister tout, `PATCH /{id}/confirm`, `PATCH /{id}/cancel` | créer (PENDING), lister les siennes, annuler |
+| `/api/payments` | enregistrer (VALIDATE), lister tout, `PATCH /{id}/validate`, `/{id}/reject`, `GET /summary` | déclarer MOMO/OM (PENDING), lister les siens |
+
+Règles métier : pas de double réservation d'un moniteur ou d'un véhicule sur le même créneau (60 min),
+véhicule disponible obligatoire pour une leçon de conduite, inscription à un examen de la même catégorie
+de permis que l'élève, statut d'un paiement fixé par le serveur (jamais par le client).
 
 ---
 
@@ -159,11 +192,22 @@ cd drivehub-backend
 Crée un fichier `.env` à la racine du projet :
 
 ```properties
-# Base de données
+# Base de données (valeurs par défaut : localhost:5432, postgres / root)
 DBNAME=drivehubDB
+# DB_URL=jdbc:postgresql://localhost:5432/drivehubDB
+# DB_USERNAME=postgres
+# DB_PASSWORD=root
+
+# Origines du front autorisées (CORS)
+# CORS_ALLOWED_ORIGINS=http://localhost:4200,http://localhost:3000
+
+# Compte ROOT créé au premier démarrage
+MOCK_ROOT_USERNAME=root@drivehub.cm
+MOCK_ROOT_PASSWORD=change-moi
 
 # JWT
-JWT_SECRET_KEY=ta_cle_secrete_minimum_256_bits
+JWT_SECRET_KEY=ta_cle_secrete_minimum_32_caracteres   # vérifiée au démarrage
+# JWT_EXPIRATION_MINUTES=1440
 
 # Email (Gmail + App Password)
 MAIL_USERNAME=ton.email@gmail.com
@@ -197,28 +241,27 @@ http://localhost:8082/swagger-ui.html
 
 ## Structure du Projet
 
+Chaque module suit le même découpage : `application` (entrée HTTP), `domain` (métier), `infrastructure` (accès aux données).
+
 ```
-backend/
+backend/src/main/java/cm/mvtech/drivehub/
 ├── core/
-│   ├── domain/
-│   │   ├── entities/          ← EntityBase (classe de base JPA)
-│   │   └── service/           ← TenantProvisioningService
-│   └── infrastructure/        ← TenantContext, TenantIdentifierResolver
-│                                 SchemaMultiTenantConnectionProvider
+│   ├── domain/entities/       ← EntityBase (id UUID, dates, suppression logique), TenantEntity
+│   ├── domain/service/        ← TenantProvisioningService (Flyway par schéma), TenantMigrationRunner
+│   └── infrastructure/        ← TenantContext, TenantIdentifierResolver, SchemaMultiTenantConnectionProvider,
+│                                 TenantExecutor (exécuter du code dans un tenant), TenantSchemas (noms sûrs)
 ├── modules/
-│   ├── auth/                  ← Authentification, JWT, Users
-│   ├── drivingschool/         ← Auto-école, Registry
-│   ├── monitor/               ← Moniteurs
-│   ├── student/               ← Élèves
-│   ├── vehicle/               ← Véhicules
-│   ├── course/                ← Cours
-│   ├── exam/                  ← Examens
-│   ├── reservation/           ← Réservations
-│   ├── payment/               ← Paiements
-│   └── enums/                 ← Enums partagés
-├── platform/
-│   └── admin/                 ← Back-office PlatformAdmin
-└── configs/                   ← Flyway, Security, Hibernate Multitenant
+│   ├── auth/                  ← Authentification, JWT, Users, UserTenantResolver, CurrentUserProvider
+│   ├── drivingschool/         ← Auto-école, Registry, CurrentSchoolProvider
+│   ├── monitor/   student/   vehicle/   course/   exam/   reservation/   payment/
+│   │   ├── application/controller   ← endpoints REST
+│   │   ├── application/dto          ← DTOs (records) validés
+│   │   ├── domain/model             ← entités JPA
+│   │   ├── domain/services          ← règles métier
+│   │   └── infrastructure/mapper|repository ← MapStruct, Spring Data
+│   ├── enums/   exception/   messageapi/
+├── platform/admin/            ← Back-office PlatformAdmin
+└── configs/                   ← CORS, OpenAPI, Hibernate Multitenant
 ```
 
 ---
@@ -227,11 +270,25 @@ backend/
 
 ```
 src/main/resources/db/migration/
-├── public/
-│   ├── V1__init_public_schema.sql      ← Tables globales (users, admin, registry)
-│   └── V2__add_auth_tokens.sql         ← Tokens verify-email / reset-password
-└── tenant/
-    └── V2__init_tenant_schema_template.sql  ← Template tables métier par auto-école
+├── public/                                  ← appliquées au démarrage sur le schéma public
+│   ├── V1__init_migration_public_schema.sql
+│   ├── V5 … V7                              ← tokens admin, motif, statuts
+│   └── V8__join_request_references_registry.sql
+└── tenant/                                  ← appliquées à CHAQUE schéma d'auto-école
+    ├── V2__init_tenant_schema_template.sql
+    └── V3__corrections_champs_metier.sql
+```
+
+Les migrations `tenant/` sont exécutées par Flyway à la création d'une auto-école **et** au démarrage
+pour toutes les auto-écoles existantes (`TenantMigrationRunner`). Pour faire évoluer les tables métier :
+créer `tenant/V4__....sql` — ne jamais modifier une migration déjà appliquée.
+
+## Tester
+
+```bash
+cd backend && mvn test                                  # 109 tests unitaires et d'intégration
+./scripts/e2e-multitenant.sh http://localhost:8082 \
+   "postgresql://postgres:root@localhost:5432/drivehubDB"  # parcours complet sur l'API lancée (43 vérifications)
 ```
 
 ---
@@ -264,9 +321,9 @@ Pour activer l'envoi d'emails :
 - [x] Workflow création et approbation auto-école
 - [x] Migrations Flyway
 - [ ] Gestion des étudiants par vague d'inscription
-- [ ] Gestion des véhicules et cours
-- [ ] Système de réservations
-- [ ] Paiements (Mobile Money, Cash)
+- [x] Gestion des véhicules, cours, examens
+- [x] Système de réservations (conflits de créneaux)
+- [x] Paiements (déclaration Mobile Money, validation, caisse) — intégration agrégateur à venir
 - [ ] Tableau de bord analytique
 - [ ] Frontend React / Angular
 - [ ] Déploiement VPS (Docker + Nginx)

@@ -31,7 +31,8 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.disable())
+                // CORS : règles définies dans configs/CorsConfig (origines lues dans application.yaml)
+                .cors(Customizer.withDefaults())
 
                 // IMPORTANT: Session stateless pour éviter les problèmes
                 .sessionManagement(session ->
@@ -48,6 +49,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
+                                "/error",                    // page d'erreur Spring : sinon un 401/400 envoyé par un filtre devient un 403 vide
                                 "/api/auth/**",              // Login/Register users normaux
                                 "/api/driving-schools/**",   // Liste publique des écoles
                                 "/api/platform/admin/login", // Login admin platform
@@ -81,7 +83,6 @@ public class SecurityConfig {
                         // Tout le reste nécessite authentification
                         .anyRequest().authenticated()
                 );
-        http.cors(Customizer.withDefaults());
         return http.build();
     }
 }

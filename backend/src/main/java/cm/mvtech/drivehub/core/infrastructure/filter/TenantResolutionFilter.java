@@ -24,6 +24,7 @@ public class TenantResolutionFilter implements Filter {
             "/api/auth",
             "/api/driving-schools",
             "/api/platform",
+            "/api/join-school",   // demandes d'adhésion : tables du schéma public (le demandeur n'a pas encore d'auto-école)
             "/error"
     );
 

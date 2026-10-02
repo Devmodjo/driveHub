@@ -24,7 +24,6 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @RequestMapping("/api/driving-schools")
-@CrossOrigin(originPatterns = "*")
 @RequiredArgsConstructor
 @Tag(name="DRIVING SCHOOL API", description = "api pour la gestion métier des auto-écoles")
 public class DrivingSchoolController {

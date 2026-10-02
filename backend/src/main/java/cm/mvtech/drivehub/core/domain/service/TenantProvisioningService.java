@@ -1,64 +1,77 @@
 package cm.mvtech.drivehub.core.domain.service;
 
-import jakarta.transaction.Transactional;
+import cm.mvtech.drivehub.core.domain.entities.TenantEntity;
+import cm.mvtech.drivehub.core.infrastructure.TenantSchemas;
+import cm.mvtech.drivehub.core.infrastructure.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
+import org.flywaydb.core.Flyway;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.List;
 
+/**
+ * Création et mise à jour des schémas PostgreSQL des auto-écoles.
+ *
+ * <p>Chaque schéma tenant est géré par Flyway avec les scripts de
+ * {@code db/migration/tenant/}. Avantage par rapport à l'exécution brute d'un script :
+ * chaque schéma a son propre historique ({@code flyway_schema_history}), donc une nouvelle
+ * migration (V3__..., V4__...) est appliquée automatiquement à TOUTES les auto-écoles
+ * existantes au démarrage (voir {@code TenantMigrationRunner}).</p>
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TenantProvisioningService {
 
+    private static final String TENANT_MIGRATIONS = "classpath:db/migration/tenant";
+
     private final DataSource dataSource;
+    private final TenantRepository tenantRepository;
 
-    // Lit le fichier SQL template depuis resources/
-    @Value("classpath:db/migration/tenant/V2__init_tenant_schema_template.sql")
-    private Resource tenantSchemaTemplate;
-
+    /**
+     * Crée (ou met à jour) le schéma du tenant puis l'enregistre comme actif dans {@code public.tenants}.
+     * Sans cette ligne dans {@code tenants}, {@link TenantService#isValidTenant} refuserait toutes les requêtes.
+     */
     @Transactional
-    public void createTenantSchema(String tenantId) {
+    public void createTenantSchema(String schema) {
+        migrate(schema);
 
-        String schema = tenantId.toLowerCase().replace("-", "_");
+        TenantEntity tenant = tenantRepository.findByCode(schema).orElseGet(() -> new TenantEntity(schema));
+        tenant.setActive(true);
+        tenantRepository.save(tenant);
+        log.info("Tenant {} provisionné et activé", schema);
+    }
 
-        // Lire le SQL du template une seule fois
-        String templateSql;
-        try {
-            templateSql = tenantSchemaTemplate.getContentAsString(StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new IllegalStateException(
-                    "Impossible de lire le template SQL tenant", e);
-        }
+    /** Active / désactive un tenant (ex : suspension d'une auto-école). */
+    @Transactional
+    public void setActive(String schema, boolean active) {
+        tenantRepository.findByCode(schema).ifPresent(tenant -> {
+            tenant.setActive(active);
+            tenantRepository.save(tenant);
+        });
+    }
 
-        try (Connection connection = dataSource.getConnection();
-             Statement stmt = connection.createStatement()) {
+    /** Applique les migrations en attente à tous les tenants connus (appelé au démarrage). */
+    public void migrateAllTenants() {
+        List<TenantEntity> tenants = tenantRepository.findAll();
+        tenants.forEach(tenant -> migrate(tenant.getCode()));
+        log.info("Migrations tenant appliquées sur {} schéma(s)", tenants.size());
+    }
 
-            // 1. Créer le schéma (ton code existant)
-            stmt.execute("CREATE SCHEMA IF NOT EXISTS " + schema);
-            log.info("Schéma créé : {}", schema);
-
-            // 2. Basculer vers le nouveau schéma
-            stmt.execute("SET search_path TO " + schema);
-
-            // 3. Créer toutes les tables métier dans ce schéma
-            stmt.execute(templateSql);
-            log.info("Tables métier créées dans le schéma : {}", schema);
-
-            // 4. Revenir au schéma public
-            stmt.execute("SET search_path TO public");
-
-        } catch (SQLException e) {
-            throw new IllegalStateException(
-                    "Impossible de créer le schéma du tenant : " + schema, e);
-        }
+    private void migrate(String schema) {
+        TenantSchemas.requireValid(schema);
+        Flyway.configure()
+                .dataSource(dataSource)
+                .schemas(schema)              // crée le schéma s'il n'existe pas
+                .defaultSchema(schema)        // les CREATE TABLE non qualifiés vont dans ce schéma
+                .locations(TENANT_MIGRATIONS)
+                // Schémas créés avant l'adoption de Flyway : tables déjà là, version 2 considérée appliquée.
+                .baselineOnMigrate(true)
+                .baselineVersion("2")
+                .load()
+                .migrate();
     }
 }

@@ -43,6 +43,11 @@ public interface DrivingSchoolRegistryRepository
 
     Optional<DrivingSchoolRegistry> findBySchoolName(String schoolName);
 
+    boolean existsBySchoolNameIgnoreCase(String schoolName);
+
+    /** Catalogue public : auto-écoles validées par la plateforme. */
+    List<DrivingSchoolRegistry> findAllByDrivingSchoolStatusIn(java.util.Collection<DrivingSchoolStatus> statuses);
+
     @Query("""
                 SELECT r FROM DrivingSchoolRegistry r
                 LEFT JOIN FETCH r.admin a

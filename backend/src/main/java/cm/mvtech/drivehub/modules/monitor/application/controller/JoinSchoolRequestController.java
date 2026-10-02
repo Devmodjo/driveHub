@@ -21,7 +21,6 @@ import java.util.UUID;
 
 
 @RestController
-@CrossOrigin(originPatterns = "*")
 @RequestMapping("/api/join-school")
 @RequiredArgsConstructor
 public class JoinSchoolRequestController {
@@ -31,6 +30,7 @@ public class JoinSchoolRequestController {
     private final UserRepository userRepository;
 
     @PostMapping("/public")
+    @PreAuthorize("hasAnyRole('STUDENT','MONITOR')")
     public ResponseEntity<ApiResponse> requestJoin(
             @RequestBody @Valid JoinSchoolRequestDto dto,
             @AuthenticationPrincipal(expression = "username") String email
@@ -41,18 +41,33 @@ public class JoinSchoolRequestController {
     }
 
 
+    /**
+     * Correction : hasRole('ADMIN') ne correspondait à aucun rôle existant (MONITOR, STUDENT) :
+     * personne ne pouvait approuver. C'est le moniteur responsable de l'auto-école qui valide.
+     */
     @PostMapping("/admin/{id}/approve")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('MONITOR')")
     public ResponseEntity<ApiResponse> approve(
-            @PathVariable UUID id
+            @PathVariable UUID id,
+            @AuthenticationPrincipal(expression = "username") String email
     ) {
-        adminJoinApprovalService.approve(id);
+        adminJoinApprovalService.approve(id, email);
         return ResponseEntity.ok(new ApiResponse(true, "Demande approuvée"));
+    }
+
+    @PostMapping("/admin/{id}/reject")
+    @PreAuthorize("hasRole('MONITOR')")
+    public ResponseEntity<ApiResponse> reject(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal(expression = "username") String email
+    ) {
+        adminJoinApprovalService.reject(id, email);
+        return ResponseEntity.ok(new ApiResponse(true, "Demande rejetée"));
     }
 
 
     @GetMapping("/admin/pending")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('MONITOR')")
     public ResponseEntity<ApiPageResponse<PendingJoinRequestResponse>> pending(
             @AuthenticationPrincipal(expression = "username") String email,
             @RequestParam(defaultValue = "0") int page,

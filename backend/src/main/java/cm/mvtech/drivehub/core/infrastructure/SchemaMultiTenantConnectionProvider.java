@@ -87,7 +87,8 @@ public class SchemaMultiTenantConnectionProvider
 
     /**
      * Résout le schéma PostgreSQL à utiliser.
-     * - fallback vers 'public' si tenant null ou invalide
+     * - fallback vers 'public' si tenant null ou vide ;
+     * - un nom invalide est REFUSÉ : il est concaténé dans du SQL (protection contre l'injection).
      */
     private String resolveSchema(Object tenantIdentifier) {
         if (tenantIdentifier == null) {
@@ -100,6 +101,6 @@ public class SchemaMultiTenantConnectionProvider
             return DEFAULT_SCHEMA;
         }
 
-        return tenant;
+        return TenantSchemas.requireValid(tenant);
     }
 }

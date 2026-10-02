@@ -2,7 +2,7 @@ package cm.mvtech.drivehub.modules.auth.domain.services;
 
 import cm.mvtech.drivehub.modules.auth.application.dto.*;
 import cm.mvtech.drivehub.modules.monitor.application.dto.MonitorRegisterRequest;
-import cm.mvtech.drivehub.modules.student.StudentRegisterRequest;
+import cm.mvtech.drivehub.modules.student.application.dto.StudentRegisterRequest;
 import org.springframework.security.core.Authentication;
 
 public interface AuthService {

@@ -3,17 +3,23 @@ spring:
     import: optional:file:.env[.properties]
   application:
     name: driveHub
+  # Connexion PostgreSQL : valeurs lues dans .env (ou les variables d'environnement du serveur).
+  # Les valeurs après ":" sont les valeurs par défaut pour le poste de développement.
+  # (Remplace configs/DataSourceConfig.java qui avait l'utilisateur et le mot de passe écrits en dur.)
   datasource:
-    url: jdbc:postgresql://localhost:5432/${DBNAME}
-    username: postgres
-    password: root
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/${DBNAME:drivehubDB}}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:root}
   jpa:
     hibernate:
       ddl-auto: none
     properties:
       hibernate:
-        multiTenancy: SCHEMA
-        default_schema: public
+        # PAS de "default_schema" : Hibernate préfixerait toutes les tables par "public."
+        # et le "SET search_path TO <tenant>" de SchemaMultiTenantConnectionProvider serait
+        # sans effet (toutes les données métier finissaient dans le schéma public).
+        # Les tables globales déclarent leur schéma explicitement : @Table(schema = "public").
+        # Le multi-tenant est activé par HibernateMultiTenantConfig (connection provider + resolver).
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
   flyway:
@@ -23,7 +29,8 @@ spring:
     baseline-on-migrate: true                 # important car tables existent déjà (false en prod)
     baseline-version: 0
     out-of-order: false
-    repair-on-migrate: true # en prod
+    # repair-on-migrate retiré : il masquait les scripts modifiés après coup (checksum).
+    # Règle : ne jamais modifier une migration déjà appliquée, en créer une nouvelle.
   devtools:
     restart:
       enabled: false
@@ -51,25 +58,27 @@ server:
   port: 8082
 
 cors:
-  allowed-origins: "*"
+  # Origines du front autorisées (séparées par des virgules). Ex : https://app.drivehub.cm
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:3000,http://localhost:5173}
   allowed-methods: "*"
   allowed-headers: "*"
   exposed-headers: "*"
   allow-credentials: true
   max-age: 3600
 
+# Passer à DEBUG uniquement pour diagnostiquer un problème (très verbeux, ralentit l'application).
 logging:
   level:
-    org.springframework.security: DEBUG
-    org.springdoc: DEBUG
-    org.springframework.web: DEBUG
+    org.springframework.security: INFO
+    org.springdoc: INFO
+    org.springframework.web: INFO
 jwt:
-  secret: ${JWT_SECRET_KEY}
+  secret: ${JWT_SECRET_KEY}          # 32 caractères minimum (vérifié au démarrage)
+  expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}
 app:
   root-admin:
     email: ${MOCK_ROOT_USERNAME}
     password: ${MOCK_ROOT_PASSWORD}
-  dbname: ${DBNAME}
   frontend-url: http://localhost:4200
   mail:
     from: ${MAIL_USERNAME}

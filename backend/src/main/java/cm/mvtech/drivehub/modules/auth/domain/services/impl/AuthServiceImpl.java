@@ -14,20 +14,24 @@ import java.time.LocalDateTime;
 import cm.mvtech.drivehub.modules.auth.domain.model.UserPrincipal;
 import cm.mvtech.drivehub.modules.auth.domain.services.AuthService;
 import cm.mvtech.drivehub.modules.auth.domain.services.JwtService;
+import cm.mvtech.drivehub.modules.auth.domain.services.UserTenantResolver;
+import cm.mvtech.drivehub.modules.exception.ConflictException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import cm.mvtech.drivehub.modules.monitor.domain.model.Monitor;
-import cm.mvtech.drivehub.modules.student.Student;
+import cm.mvtech.drivehub.modules.student.domain.model.Student;
 import cm.mvtech.drivehub.modules.auth.domain.model.User;
 import cm.mvtech.drivehub.modules.enums.ProfileStatus;
 import cm.mvtech.drivehub.modules.enums.Role;
 import cm.mvtech.drivehub.modules.auth.application.dto.AuthResponse;
 import cm.mvtech.drivehub.modules.auth.application.dto.LoginRequest;
 import cm.mvtech.drivehub.modules.monitor.application.dto.MonitorRegisterRequest;
-import cm.mvtech.drivehub.modules.student.StudentRegisterRequest;
+import cm.mvtech.drivehub.modules.student.application.dto.StudentRegisterRequest;
 
-import cm.mvtech.drivehub.modules.monitor.infrastucture.repository.MonitorsRepository;
-import cm.mvtech.drivehub.modules.student.StudentsRepository;
+import cm.mvtech.drivehub.modules.monitor.infrastructure.repository.MonitorsRepository;
+import cm.mvtech.drivehub.modules.student.infrastructure.repository.StudentsRepository;
 import cm.mvtech.drivehub.modules.auth.infrastructure.repository.UserRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.access.AccessDeniedException;
@@ -51,6 +55,7 @@ public class AuthServiceImpl implements AuthService {
     private final MonitorsRepository monitorsRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final UserTenantResolver userTenantResolver;
 
     private final EmailVerificationTokenRepository emailTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -60,25 +65,26 @@ public class AuthServiceImpl implements AuthService {
     private String frontendUrl;
 
 
+    /** Statuts qui interdisent la connexion. */
+    private static final java.util.Set<ProfileStatus> BLOCKED_STATUSES = java.util.Set.of(ProfileStatus.SUSPENDED);
+
+    /** Message identique pour "email inconnu" et "mauvais mot de passe" : ne révèle pas quels emails existent. */
+    private static final String INVALID_CREDENTIALS = "Email ou mot de passe incorrect";
+
     @Override
     public AuthResponse login(LoginRequest request) {
 
-        // Charger l'utilisateur
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable"));
+        User user = userRepository.findByEmail(request.email().trim().toLowerCase())
+                .filter(u -> passwordEncoder.matches(request.password(), u.getPassword()))
+                .orElseThrow(() -> new BadCredentialsException(INVALID_CREDENTIALS));
 
-        // Vérifier le mot de passe manuellement
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new AccessDeniedException("Email ou mot de passe incorrect");
+        if (BLOCKED_STATUSES.contains(user.getProfileStatus())) {
+            throw new DisabledException("Ce compte est suspendu");
         }
 
-        // Chargement utilisateur (BON SCHÉMA)
-       /** user = userRepository.findByEmail(request.email())
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("Utilisateur introuvable"));
-        */
-        // Génération JWT tenant-aware
-        String token = jwtService.generateToken(user);
+        // Le tenant (schéma de l'auto-école) est calculé par le SERVEUR et inscrit dans le JWT.
+        String tenant = userTenantResolver.resolveTenant(user).orElse(null);
+        String token = jwtService.generateToken(user, tenant);
 
         return new AuthResponse(
                 user.getId(),
@@ -92,19 +98,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void registerStudent(StudentRegisterRequest request) {
 
-        if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new IllegalArgumentException("Email déja utilisé");
-        }
-
-        User user = new User();
-        user.setFirstname(request.firstname());
-        user.setLastname(request.lastname());
-        user.setEmail(request.email());
-        user.setRoles(Role.STUDENT);
-        user.setPassword(passwordEncoder.encode(request.password()));
-        user.setProfileStatus(ProfileStatus.ACTIVE);
-
-        userRepository.save(user);
+        User user = newUser(request.firstname(), request.lastname(), request.email(),
+                request.password(), Role.STUDENT);
 
         Student student = new Student();
         student.setUser(user);
@@ -117,24 +112,15 @@ public class AuthServiceImpl implements AuthService {
 
         studentsRepository.save(student);
 
+        // Même parcours que le moniteur : l'email doit être vérifié avant de rejoindre une auto-école.
+        sendVerificationEmail(user.getEmail());
     }
 
     @Override
     public void registerMonitor(MonitorRegisterRequest request) {
 
-        if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new IllegalArgumentException("Email déja utilisé");
-        }
-
-        User user = new User();
-        user.setFirstname(request.firstname());
-        user.setLastname(request.lastname());
-        user.setEmail(request.email());
-        user.setRoles(Role.MONITOR);
-        user.setPassword(passwordEncoder.encode(request.password()));
-        user.setProfileStatus(ProfileStatus.REGISTERED);
-
-        userRepository.save(user);
+        User user = newUser(request.firstname(), request.lastname(), request.email(),
+                request.password(), Role.MONITOR);
 
         Monitor monitor = new Monitor();
         monitor.setUser(user);
@@ -177,28 +163,27 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void sendVerificationEmail(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable"));
+        // Silencieux si l'email est inconnu ou déjà vérifié : l'endpoint public
+        // /resend-verification ne doit pas révéler quels comptes existent.
+        userRepository.findByEmail(email.trim().toLowerCase())
+                .filter(user -> user.getProfileStatus() == ProfileStatus.REGISTERED)
+                .ifPresent(user -> {
+                    // Supprimer les anciens tokens
+                    emailTokenRepository.deleteAllByUserId(user.getId());
 
-        // Supprimer les anciens tokens
-        emailTokenRepository.deleteAllByUserId(user.getId());
+                    // Créer le nouveau token
+                    String token = UUID.randomUUID().toString();
+                    EmailVerificationToken verificationToken = new EmailVerificationToken();
+                    verificationToken.setUser(user);
+                    verificationToken.setToken(token);
+                    verificationToken.setExpiresAt(LocalDateTime.now().plusHours(24));
+                    verificationToken.setUsed(false);
+                    emailTokenRepository.save(verificationToken);
 
-        // Créer le nouveau token
-        String token = UUID.randomUUID().toString();
-        EmailVerificationToken verificationToken = new EmailVerificationToken();
-        verificationToken.setUser(user);
-        verificationToken.setToken(token);
-        verificationToken.setExpiresAt(LocalDateTime.now().plusHours(24));
-        verificationToken.setUsed(false);
-        emailTokenRepository.save(verificationToken);
-
-        // Envoyer l'email (async)
-        String verificationUrl = frontendUrl + "/verify-email?token=" + token;
-        emailService.sendVerificationEmail(
-                user.getEmail(),
-                user.getFirstname(),
-                verificationUrl
-        );
+                    // Envoyer l'email (async)
+                    String verificationUrl = frontendUrl + "/verify-email?token=" + token;
+                    emailService.sendVerificationEmail(user.getEmail(), user.getFirstname(), verificationUrl);
+                });
     }
 
     @Override
@@ -290,5 +275,22 @@ public class AuthServiceImpl implements AuthService {
         passwordResetTokenRepository.save(resetToken);
     }
 
-
+    /**
+     * Création commune d'un compte (élève ou moniteur) : une seule implémentation (DRY).
+     * L'email est stocké en minuscules pour éviter les doublons "Jean@x.cm" / "jean@x.cm".
+     */
+    private User newUser(String firstname, String lastname, String email, String rawPassword, Role role) {
+        String normalizedEmail = email.trim().toLowerCase();
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new ConflictException("Email déjà utilisé");
+        }
+        User user = new User();
+        user.setFirstname(firstname);
+        user.setLastname(lastname);
+        user.setEmail(normalizedEmail);
+        user.setRoles(role);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setProfileStatus(ProfileStatus.REGISTERED);
+        return userRepository.save(user);
+    }
 }

@@ -1,12 +1,12 @@
 package cm.mvtech.drivehub.modules.auth.domain.services;
 
-import cm.mvtech.drivehub.platform.admin.models.PlatformAdmin;
 import cm.mvtech.drivehub.modules.auth.domain.model.User;
-import cm.mvtech.drivehub.core.infrastructure.TenantContext;
+import cm.mvtech.drivehub.platform.admin.models.PlatformAdmin;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -17,23 +17,44 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Génération et lecture des JWT.
+ *
+ * <p>Claims d'un utilisateur métier : role, profileStatus, fullProfile, tokenType=USER et
+ * {@code tenant} = schéma de son auto-école (absent s'il n'en a pas encore).
+ * Le tenant est calculé par le serveur ({@link UserTenantResolver}), jamais fourni par le client.</p>
+ */
 @Service
 public class JwtService {
 
+    public static final String CLAIM_TENANT = "tenant";
+    public static final String CLAIM_TOKEN_TYPE = "tokenType";
+    public static final String TOKEN_TYPE_USER = "USER";
+    public static final String TOKEN_TYPE_PLATFORM_ADMIN = "PLATFORM_ADMIN";
+
     @Value("${jwt.secret}")
-    private String SECRET_KEY;
+    private String secretKey;
 
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24h
+    @Value("${jwt.expiration-minutes:1440}")
+    private long expirationMinutes;
 
-    private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+    private Key signingKey;
+
+    /** Vérifie la clé au démarrage plutôt qu'au premier login (HS256 exige 32 octets minimum). */
+    @PostConstruct
+    void init() {
+        byte[] bytes = secretKey == null ? new byte[0] : secretKey.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length < 32) {
+            throw new IllegalStateException("jwt.secret (JWT_SECRET_KEY) doit contenir au moins 32 caractères.");
+        }
+        this.signingKey = Keys.hmacShaKeyFor(bytes);
     }
 
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+                .setSigningKey(signingKey)
                 .build()
-                .parseClaimsJws(token)
+                .parseClaimsJws(token)   // vérifie aussi la signature ET l'expiration
                 .getBody();
     }
 
@@ -50,7 +71,7 @@ public class JwtService {
     }
 
     public String extractTenant(String token) {
-        return extractClaim(token, claims -> claims.get("tenant", String.class));
+        return extractClaim(token, claims -> claims.get(CLAIM_TENANT, String.class));
     }
 
     public boolean isTokenExpired(String token) {
@@ -66,52 +87,21 @@ public class JwtService {
        ========================= */
 
     /**
-     * Génère un token pour un utilisateur normal (avec tenant)
-     * Le tenant DOIT être passé en paramètre, pas depuis le TenantContext
+     * Token d'un utilisateur métier.
+     *
+     * @param tenant schéma de son auto-école, ou {@code null} s'il n'est rattaché à aucune
      */
-    public String generateToken(User user, String tenantId) {
+    public String generateToken(User user, String tenant) {
         Map<String, Object> claims = new HashMap<>();
-
         claims.put("role", user.getRoles().name());
         claims.put("profileStatus", user.getProfileStatus().name());
         claims.put("fullProfile", user.getFullProfile());
-        claims.put("tokenType", "USER");
-        claims.put("tenant", tenantId); // Passé explicitement
-
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(user.getEmail())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
+        claims.put(CLAIM_TOKEN_TYPE, TOKEN_TYPE_USER);
+        if (tenant != null) {
+            claims.put(CLAIM_TENANT, tenant);
+        }
+        return build(claims, user.getEmail());
     }
-
-    /**
-     * Version avec TenantContext (pour compatibilité)
-     */
-    public String generateToken(User user) {
-
-        Map<String, Object> claims = new HashMap<>();
-
-        claims.put("role", user.getRoles().name());
-        claims.put("profileStatus", user.getProfileStatus().name());
-        claims.put("fullProfile", user.getFullProfile());
-
-        // CLÉ MULTITENANT
-        claims.put("tenant", TenantContext.getTenantId());
-
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(user.getEmail())
-                .setIssuedAt(new Date())
-                .setExpiration(
-                        new Date(System.currentTimeMillis() + EXPIRATION_TIME)
-                )
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-
 
     /**
      * JWT pour les admins de la plateforme (SANS tenant)
@@ -119,15 +109,18 @@ public class JwtService {
     public String generatePlatformAdminToken(PlatformAdmin admin) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", admin.getRole().name());
-        claims.put("tokenType", "PLATFORM_ADMIN");
-        // PAS de tenant pour les admins platform
+        claims.put(CLAIM_TOKEN_TYPE, TOKEN_TYPE_PLATFORM_ADMIN);
+        return build(claims, admin.getEmail());
+    }
 
+    private String build(Map<String, Object> claims, String subject) {
+        long now = System.currentTimeMillis();
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(admin.getEmail())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .setSubject(subject)
+                .setIssuedAt(new Date(now))
+                .setExpiration(new Date(now + expirationMinutes * 60_000))
+                .signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 

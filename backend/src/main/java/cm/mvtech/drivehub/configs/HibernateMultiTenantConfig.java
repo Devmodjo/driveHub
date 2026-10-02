@@ -19,10 +19,8 @@ public class HibernateMultiTenantConfig {
             TenantIdentifierResolver tenantIdentifierResolver) {
 
         return properties -> {
-            properties.put(
-                    "hibernate.multi_tenancy",
-                    "SCHEMA"
-            );
+            // Hibernate 6 : le multi-tenant est activé dès qu'un MultiTenantConnectionProvider est fourni
+            // (l'ancienne propriété "hibernate.multi_tenancy" n'existe plus et était ignorée).
             properties.put(
                     "hibernate.multi_tenant_connection_provider",
                     connectionProvider

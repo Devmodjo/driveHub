@@ -76,8 +76,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             } else {
                 // Pour les users normaux, vérifier la cohérence du tenant
-                if (tokenTenant != null && !tokenTenant.equals(currentTenant)
-                        && !"public".equals(currentTenant)) {
+                // Correction : la vérification était ignorée quand le token n'avait pas de tenant
+                // (tokenTenant == null) ; un utilisateur sans auto-école pouvait alors envoyer
+                // n'importe quel X-Tenant-ID. Désormais le token DOIT porter le tenant demandé.
+                if (!"public".equals(currentTenant) && !java.util.Objects.equals(tokenTenant, currentTenant)) {
                     // Incohérence entre le tenant du token et le header
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
                             "Tenant mismatch");

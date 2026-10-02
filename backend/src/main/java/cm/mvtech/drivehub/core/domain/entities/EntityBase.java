@@ -2,19 +2,36 @@ package cm.mvtech.drivehub.core.domain.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
-import org.hibernate.annotations.Where;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Classe mère de toutes les entités.
+ *
+ * <p>Corrections apportées :</p>
+ * <ul>
+ *   <li>{@code @Getter/@Setter} au lieu de {@code @Data} : {@code @Data} génère equals/hashCode/toString
+ *       sur TOUS les champs, ce qui casse les collections JPA ({@code Set}) quand l'id change à la
+ *       sauvegarde et peut provoquer des boucles infinies (toString sur des relations bidirectionnelles).</li>
+ *   <li>{@code @CreationTimestamp/@UpdateTimestamp} (Hibernate) au lieu de {@code @LastModifiedDate} :
+ *       ce dernier n'est rempli que si {@code @EnableJpaAuditing} est activé, ce qui n'était pas le cas
+ *       (last_update_on restait toujours NULL).</li>
+ *   <li>{@code deletedAt} n'est plus annoté {@code @LastModifiedDate} : il était mis à jour à chaque
+ *       modification, même sans suppression.</li>
+ *   <li>{@code @SQLRestriction} remplace {@code @Where}, déprécié depuis Hibernate 6.3.</li>
+ * </ul>
+ */
 @MappedSuperclass
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
-@EntityListeners(AuditingEntityListener.class)
-@Where(clause = "deleted = false")
+@SQLRestriction("deleted = false")
 public class EntityBase {
 
     @Id
@@ -23,20 +40,19 @@ public class EntityBase {
     @Column(name = "id", nullable = false)
     protected UUID id;
 
-    @Column(name = "created_on")
-    @Temporal(TemporalType.TIMESTAMP)
+    @CreationTimestamp
+    @Column(name = "created_on", updatable = false)
     protected LocalDateTime createdOn;
 
+    @UpdateTimestamp
     @Column(name = "last_update_on")
-    @Temporal(TemporalType.TIMESTAMP)
-    @LastModifiedDate
     protected LocalDateTime lastUpdateOn;
 
     @Column(name = "deleted", columnDefinition = "boolean default false")
     protected boolean deleted;
 
+    /** Renseigné uniquement lors d'une suppression logique (voir {@link #markDeleted()}). */
     @Column(name = "deleted_at")
-    @LastModifiedDate
     protected LocalDateTime deletedAt;
 
     @Basic(optional = false)
@@ -45,7 +61,6 @@ public class EntityBase {
 
     public EntityBase() {
         super();
-        this.createdOn = LocalDateTime.now();
     }
 
     public EntityBase(UUID id) {
@@ -62,6 +77,12 @@ public class EntityBase {
         this.createdOn = entityBaseDTO.getCreatedOn();
         this.lastUpdateOn = entityBaseDTO.getLastUpdateOn();
         this.status = entityBaseDTO.getStatus();
+    }
+
+    /** Suppression logique : la ligne reste en base mais n'apparaît plus dans les requêtes. */
+    public void markDeleted() {
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
     }
 
     public static EntityBaseDTO fromEntityBase(EntityBase entity) {

@@ -32,7 +32,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/platform")
-@CrossOrigin(originPatterns = "*")
 @RequiredArgsConstructor
 @Tag(name = "PLATFORM ADMIN API", description = "Endpoints des admins de la plateforme")
 public class PlatformAdminController {

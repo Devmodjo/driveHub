@@ -5,7 +5,6 @@ import cm.mvtech.drivehub.modules.drivingschool.domain.model.DrivingSchool;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.DrivingSchoolRegistry;
 import cm.mvtech.drivehub.modules.auth.domain.model.User;
 import cm.mvtech.drivehub.modules.auth.domain.model.UserPrincipal;
-import cm.mvtech.drivehub.core.infrastructure.TenantContext;
 import cm.mvtech.drivehub.modules.enums.DrivingSchoolStatus;
 import cm.mvtech.drivehub.modules.enums.ProfileStatus;
 import cm.mvtech.drivehub.modules.enums.Role;
@@ -14,7 +13,12 @@ import cm.mvtech.drivehub.modules.drivingschool.infrastructure.DrivingSchoolRepo
 import cm.mvtech.drivehub.modules.auth.infrastructure.repository.UserRepository;
 import cm.mvtech.drivehub.core.domain.service.TenantProvisioningService;
 import cm.mvtech.drivehub.modules.monitor.domain.model.Monitor;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
+import cm.mvtech.drivehub.core.infrastructure.TenantExecutor;
+import cm.mvtech.drivehub.core.infrastructure.TenantSchemas;
+import cm.mvtech.drivehub.modules.exception.ConflictException;
+import cm.mvtech.drivehub.modules.monitor.infrastructure.repository.MonitorsRepository;
+import java.util.EnumSet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -39,6 +43,8 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
     private final UserRepository userRepository;
     private final DrivingSchoolRegistryRepository drivingSchoolRegistryRepository;
     private final DrivingSchoolMapper mapper;
+    private final TenantExecutor tenantExecutor;
+    private final MonitorsRepository monitorsRepository;
 
     /**
      * Soumet une demande de création d'auto-école au nom de l'utilisateur authentifié. La méthode
@@ -57,7 +63,19 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
             throw new UsernameNotFoundException("cet utilisateur n'existe pas !");
         }
 
+        if (admin.get().getRoles() != Role.MONITOR) {
+            throw new AccessDeniedException("seul les Encadreur peuvent cree des auto écoles");
+        }
+
         if (admin.get().getProfileStatus() == ProfileStatus.EMAIL_VERIFIED) {
+            // Contraintes UNIQUE de driving_school_registry : on les vérifie avant d'écrire
+            // pour renvoyer une 409 claire plutôt qu'une erreur SQL (500).
+            if (drivingSchoolRegistryRepository.findByAdmin(admin.get()).isPresent()) {
+                throw new ConflictException("Vous avez déjà soumis une demande d'auto-école");
+            }
+            if (drivingSchoolRegistryRepository.existsBySchoolNameIgnoreCase(req.name().trim())) {
+                throw new ConflictException("Une auto-école porte déjà ce nom");
+            }
             DrivingSchoolRegistry dr = getDrivingSchoolRegistry(req, admin);
             drivingSchoolRegistryRepository.save(dr);
         } else {
@@ -66,11 +84,10 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
     }
 
     private static DrivingSchoolRegistry getDrivingSchoolRegistry(DrivingSchoolRequestDto req, Optional<User> admin) {
-        if (admin.get().getRoles() != Role.MONITOR) {
-            throw new AccessDeniedException("seul les Encadreur peuvent cree des auto écoles");
-        }
-
-        String schemaName = req.name().toLowerCase().replaceAll("[^a-z0-9]", "_");
+        // Nom de schéma sûr et unique (ex : "ae_auto_ecole_le_volant_3f9a1c").
+        // L'ancien calcul pouvait commencer par un chiffre, contenir des accents remplacés par "_"
+        // et produire le même schéma pour "Le Volant" et "Le-Volant".
+        String schemaName = TenantSchemas.fromSchoolName(req.name());
 
         DrivingSchoolRegistry dr = new DrivingSchoolRegistry();
         dr.setSchoolName(req.name());
@@ -94,28 +111,26 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
      * informations publiques de l'établissement.
      */
     @Override
+    @Transactional(readOnly = true)
     public List<DrivingSchoolResponseDto> retreiveSchool() {
-
-        List<DrivingSchoolResponseDto> list = new ArrayList<>();
-
-        drivingSchoolRepository.findAll().forEach(
-                (DrivingSchool e) -> list.add(
-                        new DrivingSchoolResponseDto(
-                                e.getId(),
-                                e.getName(),
-                                e.getPhoneNumber(),
-                                e.getAddress(),
-                                e.getEmail(),
-                                e.getCountry(),
-                                e.getCity(),
-                                e.getCreatedAt(),
-                                e.getWhatsappNumber(),
-                                e.getWebsiteUrl(),
-                                e.getDrivingSchoolStatus()
-                        )
-                )
-        );
-        return list;
+        // La table driving_school vit dans le schéma de CHAQUE auto-école : le catalogue public
+        // est donc construit à partir du registre (schéma public), filtré sur les écoles validées.
+        return drivingSchoolRegistryRepository
+                .findAllByDrivingSchoolStatusIn(EnumSet.of(DrivingSchoolStatus.APPROVED, DrivingSchoolStatus.ACTIVE))
+                .stream()
+                .map(e -> new DrivingSchoolResponseDto(
+                        e.getId(),
+                        e.getSchoolName(),
+                        e.getPhoneNumber(),
+                        e.getAddress(),
+                        e.getEmail(),
+                        e.getCountry(),
+                        e.getCity(),
+                        e.getCreatedAt(),
+                        e.getWhatsappNumber(),
+                        e.getWebsiteUrl(),
+                        e.getDrivingSchoolStatus()))
+                .toList();
     }
 
     /**
@@ -130,12 +145,12 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
     @Override
     @Transactional
     public void approveRegistry(UUID registryId) {
-        Optional<DrivingSchoolRegistry> drivingSchoolRegistry = Optional.ofNullable(drivingSchoolRegistryRepository.findById(registryId).orElseThrow(
-                () -> {
-                    throw new IllegalArgumentException("ce auto-ecole n'existe pas dans les registres");
-                }
-        ));
-        DrivingSchoolRegistry schoolRegistry = drivingSchoolRegistry.get();
+        DrivingSchoolRegistry schoolRegistry = drivingSchoolRegistryRepository.findById(registryId)
+                .orElseThrow(() -> new IllegalArgumentException("ce auto-ecole n'existe pas dans les registres"));
+
+        if (schoolRegistry.getDrivingSchoolStatus() != DrivingSchoolStatus.PENDING) {
+            throw new IllegalStateException("Seule une demande en attente peut être approuvée");
+        }
 
         User monitor = schoolRegistry.getAdmin();
 
@@ -145,20 +160,38 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
 
         String schemaName = schoolRegistry.getSchemaName();
 
+        // 1. Schéma + tables métier (Flyway) + enregistrement dans public.tenants
         tenantProvisioningService.createTenantSchema(schemaName);
+
+        // 2. Dans le schéma de l'auto-école : la fiche auto-école et le moniteur fondateur.
+        //    TenantExecutor ouvre une NOUVELLE transaction sur le schéma du tenant :
+        //    changer TenantContext au milieu de cette méthode n'aurait aucun effet
+        //    (la session Hibernate courante est déjà ouverte sur "public").
+        Monitor publicProfile = monitor.getMonitors().stream().findFirst().orElse(null);
+        tenantExecutor.runInTenant(schemaName, () -> {
+            DrivingSchool ds = drivingSchoolRepository.save(getDrivingSchool(schoolRegistry, monitor));
+            if (publicProfile != null) {
+                monitorsRepository.save(copyMonitorProfile(publicProfile, monitor, ds));
+            }
+        });
+
+        // 3. Schéma public : activation du moniteur et du registre.
         monitor.setProfileStatus(ProfileStatus.ACTIVE);
-
-        TenantContext.setTenantId(schemaName);
-
-        try {
-            DrivingSchool ds = getDrivingSchool(schoolRegistry, monitor);
-            drivingSchoolRepository.save(ds);
-        } finally {
-            TenantContext.clear();
-        }
-
         schoolRegistry.setDrivingSchoolStatus(DrivingSchoolStatus.APPROVED);
         drivingSchoolRegistryRepository.save(schoolRegistry);
+    }
+
+    /** Copie du profil moniteur (schéma public) vers le schéma de l'auto-école. */
+    private static Monitor copyMonitorProfile(Monitor source, User user, DrivingSchool school) {
+        Monitor copy = new Monitor();
+        copy.setUser(user);
+        copy.setDrivingSchool(school);
+        copy.setPhoneNumber(source.getPhoneNumber());
+        copy.setDateOfBirth(source.getDateOfBirth());
+        copy.setGender(source.getGender());
+        copy.setNationality(source.getNationality());
+        copy.setResidenceCity(source.getResidenceCity());
+        return copy;
     }
 
     /**
@@ -283,6 +316,8 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
 
         registry.setDrivingSchoolStatus(DrivingSchoolStatus.SUSPENDED);
         drivingSchoolRegistryRepository.save(registry);
+        // Bloque l'accès aux données de l'auto-école (TenantResolutionFilter refuse le tenant).
+        tenantProvisioningService.setActive(registry.getSchemaName(), false);
         log.info("Auto-école {} suspendue", registry.getSchoolName());
     }
 
@@ -299,6 +334,9 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Auto-école introuvable : " + registryId));
 
+        // Le schéma PostgreSQL n'est PAS supprimé (sauvegarde / obligations comptables) :
+        // il est seulement désactivé. Sa suppression définitive reste une opération manuelle.
+        tenantProvisioningService.setActive(registry.getSchemaName(), false);
         drivingSchoolRegistryRepository.delete(registry);
         log.info("Auto-école {} supprimée définitivement", registry.getSchoolName());
     }
