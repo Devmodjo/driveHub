@@ -37,14 +37,22 @@
               class="p-2 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-black dark:text-white">
         <lucide-icon [img]="theme.isDark() ? icons.Sun : icons.Moon" [size]="20" />
       </button>
-      <a routerLink="/connexion"
-         class="inline-flex items-center justify-center rounded-full transition-all active:scale-95 px-6 py-3 text-base text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 font-medium">
-        {{ i18n.dict().Navbar.btn_login }}
-      </a>
-      <a routerLink="/inscription"
-         class="inline-flex items-center justify-center rounded-full transition-all active:scale-95 py-3 text-base bg-[#0070f3] hover:bg-[#0070f3]/90 text-white shadow-lg shadow-[#0070f3]/25 font-bold px-6">
-        {{ i18n.dict().Navbar.btn_signup }}
-      </a>
+      @if (session.isLoggedIn()) {
+        <!-- Utilisateur déjà connecté : accès direct à son espace -->
+        <a routerLink="/dashboard"
+           class="inline-flex items-center justify-center rounded-full transition-all active:scale-95 py-3 text-base bg-[#0070f3] hover:bg-[#0070f3]/90 text-white shadow-lg shadow-[#0070f3]/25 font-bold px-6">
+          Mon espace
+        </a>
+      } @else {
+        <a routerLink="/connexion"
+           class="inline-flex items-center justify-center rounded-full transition-all active:scale-95 px-6 py-3 text-base text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 font-medium">
+          {{ i18n.dict().Navbar.btn_login }}
+        </a>
+        <a routerLink="/inscription"
+           class="inline-flex items-center justify-center rounded-full transition-all active:scale-95 py-3 text-base bg-[#0070f3] hover:bg-[#0070f3]/90 text-white shadow-lg shadow-[#0070f3]/25 font-bold px-6">
+          {{ i18n.dict().Navbar.btn_signup }}
+        </a>
+      }
     </div>
 
     <!-- Bouton du menu mobile -->
@@ -72,14 +80,21 @@
                   class="flex justify-center items-center gap-2 p-3 bg-black/5 dark:bg-white/5 rounded-xl font-bold text-black dark:text-white">
             <lucide-icon [img]="icons.Globe" [size]="18" /> {{ i18n.locale().toUpperCase() }}
           </button>
-          <a routerLink="/connexion" (click)="isOpen.set(false)"
-             class="inline-flex items-center justify-center rounded-full px-6 py-3 w-full text-black border border-black/20 dark:text-white dark:border-white/20 font-medium">
-            {{ i18n.dict().Navbar.btn_login }}
-          </a>
-          <a routerLink="/inscription" (click)="isOpen.set(false)"
-             class="inline-flex items-center justify-center w-full bg-[#0070f3] text-white font-bold rounded-full py-3 shadow-lg shadow-[#0070f3]/25">
-            {{ i18n.dict().Navbar.btn_signup }}
-          </a>
+          @if (session.isLoggedIn()) {
+            <a routerLink="/dashboard" (click)="isOpen.set(false)"
+               class="inline-flex items-center justify-center w-full bg-[#0070f3] text-white font-bold rounded-full py-3 shadow-lg shadow-[#0070f3]/25">
+              Mon espace
+            </a>
+          } @else {
+            <a routerLink="/connexion" (click)="isOpen.set(false)"
+               class="inline-flex items-center justify-center rounded-full px-6 py-3 w-full text-black border border-black/20 dark:text-white dark:border-white/20 font-medium">
+              {{ i18n.dict().Navbar.btn_login }}
+            </a>
+            <a routerLink="/inscription" (click)="isOpen.set(false)"
+               class="inline-flex items-center justify-center w-full bg-[#0070f3] text-white font-bold rounded-full py-3 shadow-lg shadow-[#0070f3]/25">
+              {{ i18n.dict().Navbar.btn_signup }}
+            </a>
+          }
         </div>
       </div>
     </div>

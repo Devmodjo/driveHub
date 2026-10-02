@@ -1,5 +1,6 @@
 package cm.mvtech.drivehub.modules.drivingschool.domain.services;
 
+import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
 import cm.mvtech.drivehub.modules.drivingschool.application.dto.*;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.DrivingSchool;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.DrivingSchoolRegistry;
@@ -45,6 +46,7 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
     private final DrivingSchoolMapper mapper;
     private final TenantExecutor tenantExecutor;
     private final MonitorsRepository monitorsRepository;
+    private final EmailService emailService;
 
     /**
      * Soumet une demande de création d'auto-école au nom de l'utilisateur authentifié. La méthode
@@ -179,6 +181,9 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
         monitor.setProfileStatus(ProfileStatus.ACTIVE);
         schoolRegistry.setDrivingSchoolStatus(DrivingSchoolStatus.APPROVED);
         drivingSchoolRegistryRepository.save(schoolRegistry);
+
+        // 4. Prévenir le moniteur (envoi asynchrone : n'annule rien en cas d'échec)
+        emailService.sendSchoolApprovedEmail(monitor.getEmail(), monitor.getFirstname(), schoolRegistry.getSchoolName());
     }
 
     /** Copie du profil moniteur (schéma public) vers le schéma de l'auto-école. */
@@ -292,6 +297,9 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
         registry.setDrivingSchoolStatus(DrivingSchoolStatus.REJECTED);
         drivingSchoolRegistryRepository.save(registry);
         log.info("Auto-école {} rejetée", registry.getSchoolName());
+
+        User monitor = registry.getAdmin();
+        emailService.sendSchoolRejectedEmail(monitor.getEmail(), monitor.getFirstname(), registry.getSchoolName());
     }
 
     /**

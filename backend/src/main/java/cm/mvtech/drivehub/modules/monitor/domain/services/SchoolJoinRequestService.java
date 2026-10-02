@@ -1,5 +1,6 @@
 package cm.mvtech.drivehub.modules.monitor.domain.services;
 
+import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
 import cm.mvtech.drivehub.modules.monitor.infrastructure.repository.SchoolJoinRequestRepository;
 
 import cm.mvtech.drivehub.modules.auth.domain.model.User;
@@ -32,6 +33,7 @@ public class SchoolJoinRequestService {
     private final SchoolJoinRequestRepository joinRequestRepository;
     private final DrivingSchoolRegistryRepository registryRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     /**
      * icic on enregistrer les requete permettant aux
@@ -79,6 +81,11 @@ public class SchoolJoinRequestService {
         request.setRequestedRole(user.getRoles());
         request.setJoinStatus(JoinStatus.PENDING);
         joinRequestRepository.save(request);
+
+        // Prévenir le responsable de l'auto-école qu'une demande l'attend
+        User owner = registry.getAdmin();
+        String applicant = (user.getFirstname() + " " + (user.getLastname() == null ? "" : user.getLastname())).trim();
+        emailService.sendJoinRequestReceivedEmail(owner.getEmail(), owner.getFirstname(), applicant, registry.getSchoolName());
     }
 
     /** Demandes d'adhésion de l'utilisateur connecté, avec le nom de l'auto-école. */

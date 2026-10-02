@@ -67,10 +67,17 @@ export class AuthService {
     return !!this.getToken();
   }
   /**
-   * Déconnecte l'utilisateur en supprimant le token du localStorage.
+   * Déconnecte l'administrateur : le backend invalide le jeton (POST /api/platform/admin/logout),
+   * puis il est supprimé du localStorage. Le jeton est envoyé explicitement car il est effacé
+   * localement avant la fin de la requête.
    */
   logout(): void {
+    const token = this.getToken();
     localStorage.removeItem(this.TOKEN_KEY);
+    if (token) {
+      this.http.post(`${BASE_URL}admin/logout`, {}, { headers: { Authorization: `Bearer ${token}` } })
+        .subscribe({ error: () => undefined });
+    }
   }
 
   

@@ -8,7 +8,7 @@ export const sessionGuard: CanActivateFn = (_route, state) => {
   if (session.isLoggedIn()) {
     return true;
   }
-  session.logout();
+  session.clear();
   return inject(Router).createUrlTree(['/connexion'], { queryParams: { redirect: state.url } });
 };
 

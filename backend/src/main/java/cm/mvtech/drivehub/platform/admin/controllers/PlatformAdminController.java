@@ -3,6 +3,7 @@ package cm.mvtech.drivehub.platform.admin.controllers;
 
 import cm.mvtech.drivehub.modules.auth.application.dto.ForgotPasswordRequest;
 import cm.mvtech.drivehub.modules.auth.application.dto.ResetPasswordRequest;
+import cm.mvtech.drivehub.modules.auth.domain.services.TokenRevocationService;
 import cm.mvtech.drivehub.modules.drivingschool.application.dto.DrivingSchoolPendingRequestDTO;
 import cm.mvtech.drivehub.modules.drivingschool.application.dto.DrivingSchoolRegistryPageDTO;
 import cm.mvtech.drivehub.modules.drivingschool.application.dto.SchoolRegistryStatsResponse;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -38,6 +40,7 @@ public class PlatformAdminController {
 
     private final AdminerService adminerService;
     private final DrivingSchoolService drivingSchoolService;
+    private final TokenRevocationService tokenRevocationService;
 
     /**
      * Login pour les admins de la plateforme (ROOT, SUPER_ADMIN, etc.)
@@ -53,6 +56,15 @@ public class PlatformAdminController {
 
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(adminerService.adminerLogin(loginRequest));
+    }
+
+    @Operation(summary = "Déconnexion admin",
+            description = "Invalide le jeton envoyé dans l'en-tête Authorization : il est refusé ensuite (401).")
+    @PostMapping("/admin/logout")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        tokenRevocationService.revoke(authorization.substring(7));   // retire le préfixe "Bearer "
+        return ResponseEntity.ok(new ApiResponse(true, "Déconnexion réussie"));
     }
 
     @Operation(

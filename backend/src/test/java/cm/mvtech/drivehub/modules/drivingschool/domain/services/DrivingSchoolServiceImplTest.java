@@ -1,5 +1,6 @@
 package cm.mvtech.drivehub.modules.drivingschool.domain.services;
 
+import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
 import cm.mvtech.drivehub.core.domain.service.TenantProvisioningService;
 import cm.mvtech.drivehub.core.infrastructure.TenantContext;
 import cm.mvtech.drivehub.core.infrastructure.TenantExecutor;
@@ -58,6 +59,7 @@ class DrivingSchoolServiceImplTest {
     @Mock private DrivingSchoolMapper mapper;
     @Mock private TenantExecutor tenantExecutor;
     @Mock private MonitorsRepository monitorsRepository;
+    @Mock private EmailService emailService;
 
     @InjectMocks
     private DrivingSchoolServiceImpl service;
@@ -238,6 +240,8 @@ class DrivingSchoolServiceImplTest {
         assertEquals(ProfileStatus.ACTIVE, monitorUser.getProfileStatus());
         assertEquals(DrivingSchoolStatus.APPROVED, registry.getDrivingSchoolStatus());
         assertNull(TenantContext.getTenantId());
+        // Le moniteur est prévenu par email.
+        verify(emailService).sendSchoolApprovedEmail(monitorUser.getEmail(), monitorUser.getFirstname(), registry.getSchoolName());
     }
 
     /**
@@ -321,6 +325,7 @@ class DrivingSchoolServiceImplTest {
 
         assertEquals(DrivingSchoolStatus.REJECTED, registry.getDrivingSchoolStatus());
         verify(drivingSchoolRegistryRepository).save(registry);
+        verify(emailService).sendSchoolRejectedEmail(monitorUser.getEmail(), monitorUser.getFirstname(), registry.getSchoolName());
     }
 
     /**

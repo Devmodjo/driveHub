@@ -11,12 +11,14 @@ import cm.mvtech.drivehub.modules.monitor.application.dto.MonitorRegisterRequest
 import cm.mvtech.drivehub.modules.student.application.dto.StudentRegisterRequest;
 
 import cm.mvtech.drivehub.modules.auth.domain.services.AuthService;
+import cm.mvtech.drivehub.modules.auth.domain.services.TokenRevocationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -32,6 +34,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final TokenRevocationService tokenRevocationService;
 
     @Operation(
             summary = "login des users",
@@ -83,6 +86,15 @@ public class AuthController {
     @PostMapping("/refresh-token")
     public ResponseEntity<AuthResponse> refreshToken(Authentication authentication) {
         return ResponseEntity.ok(authService.refreshToken(authentication.getName()));
+    }
+
+    @Operation(summary = "Déconnexion",
+            description = "Invalide le jeton envoyé dans l'en-tête Authorization : il est refusé ensuite (401).")
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        tokenRevocationService.revoke(authorization.substring(7));   // retire le préfixe "Bearer "
+        return ResponseEntity.ok(new ApiResponse(true, "Déconnexion réussie"));
     }
 
     @Operation(summary = "Vérification email",

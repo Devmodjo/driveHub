@@ -145,9 +145,9 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    void me_WhenNotAuthenticated_ShouldReturnForbidden() throws Exception {
+    void me_WhenNotAuthenticated_ShouldReturnUnauthorized() throws Exception {
         mockMvc.perform(get("/api/auth/me"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     // ─── VERIFY EMAIL ─────────────────────────────────────────────────────────

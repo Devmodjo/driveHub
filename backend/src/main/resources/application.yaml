@@ -35,8 +35,8 @@ spring:
     restart:
       enabled: false
   mail:
-    host: smtp.gmail.com
-    port: 587
+    host: ${MAIL_HOST:smtp.gmail.com}   # serveur SMTP (Gmail par défaut, ou Brevo, Mailjet... en production)
+    port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
     properties:

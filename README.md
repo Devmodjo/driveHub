@@ -162,6 +162,9 @@ En résumé :
 5. **Adhésion** d'un élève (ou d'un moniteur salarié) : demande dans le schéma public, validation par
    le moniteur responsable, profil copié dans le schéma de l'auto-école.
 
+Un email part à chaque étape : vérification de l'adresse, auto-école validée ou refusée (au moniteur),
+nouvelle demande d'adhésion (au responsable), adhésion acceptée ou refusée (au demandeur).
+
 ---
 
 ## Endpoints Disponibles
@@ -175,6 +178,7 @@ En résumé :
 | `POST` | `/api/auth/login` | Public | Authentification |
 | `GET` | `/api/auth/me` | JWT | Utilisateur connecté |
 | `POST` | `/api/auth/refresh-token` | JWT | Nouveau jeton (avec le tenant après une validation) |
+| `POST` | `/api/auth/logout` | JWT | Déconnexion : le jeton est refusé ensuite (401) |
 | `GET` | `/api/auth/verify-email` | Public | Vérification email |
 | `POST` | `/api/auth/resend-verification` | Public | Renvoyer l'email |
 | `POST` | `/api/auth/forgot-password` | Public | Mot de passe oublié |
@@ -189,6 +193,7 @@ En résumé :
 | `GET` | `/api/platform/admin/pending` | ROOT | Admins en attente |
 | `GET` | `/api/platform/admin/{id}/activate` | ROOT | Activer un admin |
 | `GET` | `/api/platform/admin/me` | JWT Admin | Profil admin connecté |
+| `POST` | `/api/platform/admin/logout` | JWT Admin | Déconnexion admin |
 | `GET` | `/api/platform/registries/pending` | REVIEWER/ROOT | Auto-écoles en attente |
 | `PATCH` | `/api/platform/registries/{id}/approve` | REVIEWER/ROOT | Approuver une auto-école |
 
@@ -345,7 +350,9 @@ MOCK_ROOT_PASSWORD=change-moi
 JWT_SECRET_KEY=ta_cle_secrete_minimum_32_caracteres   # vérifiée au démarrage
 # JWT_EXPIRATION_MINUTES=1440
 
-# Email (Gmail + App Password)
+# Email (Gmail + App Password par défaut ; en production, un service SMTP transactionnel)
+# MAIL_HOST=smtp.gmail.com
+# MAIL_PORT=587
 MAIL_USERNAME=ton.email@gmail.com
 MAIL_PASSWORD=xxxx xxxx xxxx xxxx
 
@@ -423,7 +430,8 @@ src/main/resources/db/migration/
 │   ├── V1__init_migration_public_schema.sql
 │   ├── V5 … V7                              ← tokens admin, motif, statuts
 │   ├── V8__join_request_references_registry.sql
-│   └── V9__reprise_donnees_tenants_existants.sql   ← reprise des données de l'ancien code
+│   ├── V9__reprise_donnees_tenants_existants.sql   ← reprise des données de l'ancien code
+│   └── V10__revoked_tokens.sql                     ← déconnexion (jetons révoqués)
 └── tenant/                                  ← appliquées à CHAQUE schéma d'auto-école
     ├── V2__init_tenant_schema_template.sql
     ├── V3__corrections_champs_metier.sql
@@ -436,10 +444,13 @@ créer `tenant/V5__....sql` — ne jamais modifier une migration déjà appliqu�
 
 ## Tester
 
+**Pas à pas depuis Swagger** (créer une auto-école, la valider, faire rejoindre un élève, réserver,
+payer, se déconnecter, avec les emails attendus à chaque étape) : [docs/GUIDE-TEST-SWAGGER.md](docs/GUIDE-TEST-SWAGGER.md).
+
 ```bash
 cd backend && mvn test                                  # 115 tests unitaires et d'intégration
 ./scripts/e2e-multitenant.sh http://localhost:8082 \
-   "postgresql://postgres:root@localhost:5432/drivehubDB"  # parcours complet sur l'API lancée (47 vérifications)
+   "postgresql://postgres:root@localhost:5432/drivehubDB"  # parcours complet sur l'API lancée (52 vérifications)
 ```
 
 ---
@@ -460,6 +471,8 @@ Pour activer l'envoi d'emails :
 - Séparation stricte des chaînes de filtres (Users vs PlatformAdmin)
 - Aucune donnée partagée entre schémas tenant
 - Tokens email à usage unique avec TTL (24h vérification, 1h reset)
+- Déconnexion réelle : le jeton est inscrit (empreinte SHA-256) dans `public.revoked_tokens` et refusé ensuite
+- 401 = pas de jeton valide (absent, expiré, révoqué) ; 403 = connecté mais rôle insuffisant
 - Mots de passe hashés avec BCrypt
 
 ---

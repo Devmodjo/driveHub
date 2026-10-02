@@ -3,6 +3,7 @@ package cm.mvtech.drivehub.modules.auth.infrastructure.filter;
 import cm.mvtech.drivehub.core.infrastructure.TenantContext;
 import cm.mvtech.drivehub.modules.auth.domain.services.CustomUserDetailsService;
 import cm.mvtech.drivehub.modules.auth.domain.services.JwtService;
+import cm.mvtech.drivehub.modules.auth.domain.services.TokenRevocationService;
 import cm.mvtech.drivehub.platform.admin.services.serviceImpl.PlatformAdminDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
     private final PlatformAdminDetailsService platformAdminDetailsService;
+    private final TokenRevocationService tokenRevocationService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -51,6 +53,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // Vérifier si le token est expiré avant tout traitement
             if (jwtService.isTokenExpired(token)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            // Jeton invalidé par une déconnexion (POST /api/auth/logout) : traité comme absent
+            if (tokenRevocationService.isRevoked(token)) {
                 filterChain.doFilter(request, response);
                 return;
             }

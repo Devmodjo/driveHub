@@ -1,5 +1,6 @@
 package cm.mvtech.drivehub.platform.admin.services.serviceImpl;
 
+import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
 import cm.mvtech.drivehub.modules.monitor.domain.model.Monitor;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.SchoolJoinRequest;
 import cm.mvtech.drivehub.modules.student.domain.model.Student;
@@ -45,6 +46,7 @@ public class AdminJoinApprovalService {
     private final DrivingSchoolRepository drivingSchoolRepository;
     private final DrivingSchoolRegistryRepository drivingSchoolRegistryRepository;
     private final TenantExecutor tenantExecutor;
+    private final EmailService emailService;
 
     /**
      * Le moniteur responsable d'une auto-école accepte une demande d'adhésion.
@@ -110,6 +112,9 @@ public class AdminJoinApprovalService {
         // Clôture de la demande
         request.setJoinStatus(JoinStatus.APPROVED);
         joinRequestRepository.save(request);
+
+        // Prévenir le demandeur
+        emailService.sendJoinApprovedEmail(user.getEmail(), user.getFirstname(), registry.getSchoolName());
     }
 
     @Transactional
@@ -126,6 +131,9 @@ public class AdminJoinApprovalService {
         }
         request.setJoinStatus(JoinStatus.REJECTED);
         joinRequestRepository.save(request);
+
+        User user = request.getUser();
+        emailService.sendJoinRejectedEmail(user.getEmail(), user.getFirstname(), registry.getSchoolName());
     }
 
     private static Student copyStudent(Student source, User user) {

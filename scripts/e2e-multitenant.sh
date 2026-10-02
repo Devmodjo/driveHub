@@ -123,7 +123,15 @@ R=$(call GET /api/students "$TB" "$SB"); expect 200 "$R" "Moniteur B dans son pr
 [[ $(body "$R" | jq -r .totalElements) == 0 ]] && ok "B ne voit aucun élève de A" || fail "Fuite de données entre tenants"
 expect 403 "$(call GET /api/students "$TS" "$SA")" "Un élève n'accède pas à la liste des élèves"
 expect 400 "$(call GET /api/students "$TA" "x;DROP SCHEMA public")" "Nom de tenant invalide rejeté"
-expect 403 "$(call GET /api/vehicles "" "$SA")" "Accès refusé sans jeton"
+expect 401 "$(call GET /api/vehicles "" "$SA")" "Accès refusé sans jeton (401)"
+
+echo "6. Déconnexion"
+expect 200 "$(call GET /api/auth/me "$TB")" "Jeton du moniteur B valide avant la déconnexion"
+expect 200 "$(call POST /api/auth/logout "$TB")" "Déconnexion du moniteur B"
+expect 401 "$(call GET /api/auth/me "$TB")" "Jeton refusé après la déconnexion"
+expect 401 "$(call GET /api/students "$TB" "$SB")" "Jeton refusé aussi sur les routes du tenant"
+TB=$(login "$MB")
+expect 200 "$(call GET /api/students "$TB" "$SB")" "Nouvelle connexion : nouveau jeton valide"
 
 echo
 echo "Tous les tests sont passés ($PASS vérifications)."

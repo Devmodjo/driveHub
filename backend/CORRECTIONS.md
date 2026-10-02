@@ -55,7 +55,7 @@ L'architecture n'a pas changé : un schéma PostgreSQL par auto-école, tenant t
 ## 5. Ajouté pour compléter le backend
 
 Services et contrôleurs `students`, `monitors`, `vehicles`, `courses`, `exams` (avec inscriptions),
-`reservations` et `payments` (voir le README). Script `scripts/e2e-multitenant.sh` : 47 vérifications
+`reservations` et `payments` (voir le README). Script `scripts/e2e-multitenant.sh` : 52 vérifications
 de bout en bout, isolation entre auto-écoles comprise.
 
 ## 6. Paiement, endpoints pour le frontend, détails
@@ -69,3 +69,16 @@ de bout en bout, isolation entre auto-écoles comprise.
 - `EmailService` : l'URL du frontend était écrite en dur (`https://localhost:4200`) et les liens du
   back-office pointaient vers des pages inexistantes ; elle vient maintenant de `app.frontend-url`.
 - Migration `V9` : reprise des auto-écoles validées avec l'ancien code (pas besoin de supprimer la base).
+
+## 7. Workflow prêt pour une première version
+
+- **Emails du workflow** (ils manquaient) : auto-école validée / refusée (au moniteur), nouvelle demande
+  d'adhésion (au responsable de l'auto-école), adhésion acceptée / refusée (au demandeur). Un seul modèle
+  `templates/emails/notification.html`, cinq méthodes nommées dans `EmailService`.
+- **Déconnexion** : `POST /api/auth/logout` et `POST /api/platform/admin/logout`. Le jeton est inscrit
+  dans `public.revoked_tokens` (migration `V10`) et refusé par `JwtAuthenticationFilter` ; purge nocturne.
+- **401 au lieu de 403** quand le jeton est absent, expiré ou révoqué (`SecurityConfig`,
+  `GlobalHandlerException`) : le frontend ferme alors la session. 403 reste réservé à un rôle insuffisant.
+- **Swagger** : le bouton « Authorize » propose aussi `X-Tenant-ID`, ce qui permet de tester les routes
+  métier. Guide pas à pas : `docs/GUIDE-TEST-SWAGGER.md`.
+- **SMTP configurable** : `MAIL_HOST`, `MAIL_PORT` (Gmail par défaut).

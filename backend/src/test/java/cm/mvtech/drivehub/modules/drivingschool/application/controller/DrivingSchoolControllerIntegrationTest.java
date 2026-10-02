@@ -91,8 +91,8 @@ class DrivingSchoolControllerIntegrationTest {
     }
 
     @Test
-    void createSchoolRequest_WithoutAuth_ShouldReturnForbidden() throws Exception {
-        // Sans token → le service AuthService bloque → 403
+    void createSchoolRequest_WithoutAuth_ShouldReturnUnauthorized() throws Exception {
+        // Sans token → 401 (non authentifié)
         // Note: /api/driving-schools/** est en permitAll dans SecurityConfig
         // mais @PreAuthorize("hasRole('MONITOR')") bloque sans auth
         DrivingSchoolRequestDto dto = new DrivingSchoolRequestDto(
@@ -103,7 +103,7 @@ class DrivingSchoolControllerIntegrationTest {
         mockMvc.perform(post("/api/driving-schools/request")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

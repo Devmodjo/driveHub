@@ -83,7 +83,21 @@ export class SessionService {
     return this.http.post<ApiMessage>(`${API_URL}auth/reset-password`, { token, newPassword });
   }
 
+  /**
+   * Déconnexion : le backend invalide le jeton (POST /api/auth/logout), puis on l'efface du navigateur.
+   * Le jeton est envoyé explicitement car il est effacé localement avant la fin de la requête.
+   */
   logout(): void {
+    const token = this.token();
+    this.clear();
+    if (token) {
+      this.http.post(`${API_URL}auth/logout`, {}, { headers: { Authorization: `Bearer ${token}` } })
+        .subscribe({ error: () => undefined });   // jeton déjà expiré : rien à faire
+    }
+  }
+
+  /** Efface la session locale sans appeler le backend (jeton expiré ou refusé). */
+  clear(): void {
     this.token.set(null);
     try {
       localStorage.removeItem(this.TOKEN_KEY);

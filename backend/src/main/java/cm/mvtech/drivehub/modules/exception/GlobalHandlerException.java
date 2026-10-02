@@ -7,7 +7,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -84,7 +87,18 @@ public class GlobalHandlerException {
      */
     @ExceptionHandler({AccessDeniedException.class, IllegalAccessException.class})
     public ResponseEntity<ApiResponseError> handleAccessDenied(Exception ex, HttpServletRequest request) {
+        // Pas de jeton valide (absent, expiré ou révoqué par un logout) : 401 « non authentifié ».
+        // Le frontend s'appuie sur ce 401 pour fermer la session. Un utilisateur connecté mais sans
+        // le bon rôle reçoit 403 « accès interdit ».
+        if (isAnonymous()) {
+            return build(HttpStatus.UNAUTHORIZED, "Authentification requise", request);
+        }
         return build(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+    }
+
+    private static boolean isAnonymous() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth == null || auth instanceof AnonymousAuthenticationToken || !auth.isAuthenticated();
     }
 
     /** Identifiants invalides, compte suspendu, utilisateur introuvable : 401. */
