@@ -130,6 +130,12 @@ public class ReservationService {
                 reservation.getMonitor().getId(), from, to, ReservationStatus.CANCELLED)) {
             throw new ConflictException("Le moniteur a déjà un créneau à cette heure");
         }
+        // Correction : l'élève n'était pas contrôlé ; il pouvait réserver deux leçons à la même heure
+        // avec deux moniteurs et deux véhicules différents.
+        if (reservationsRepository.existsByStudent_IdAndDateTimeBetweenAndReservationStatusNot(
+                reservation.getStudent().getId(), from, to, ReservationStatus.CANCELLED)) {
+            throw new ConflictException("L'élève a déjà un créneau à cette heure");
+        }
         if (reservation.getVehicle() != null
                 && reservationsRepository.existsByVehicle_IdAndDateTimeBetweenAndReservationStatusNot(
                 reservation.getVehicle().getId(), from, to, ReservationStatus.CANCELLED)) {

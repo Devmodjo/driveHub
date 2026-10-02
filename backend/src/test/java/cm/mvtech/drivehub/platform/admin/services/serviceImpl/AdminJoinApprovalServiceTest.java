@@ -226,6 +226,7 @@ class AdminJoinApprovalServiceTest {
     void reject_ByOwner_ShouldRejectAndNotify() {
         when(joinRequestRepository.findById(request.getId())).thenReturn(Optional.of(request));
         when(drivingSchoolRegistryRepository.findById(registry.getId())).thenReturn(Optional.of(registry));
+        when(userRepository.findByEmail(owner.getEmail())).thenReturn(Optional.of(owner));
 
         service.reject(request.getId(), owner.getEmail());
 
@@ -239,10 +240,29 @@ class AdminJoinApprovalServiceTest {
     void reject_ByMonitorWhoIsNotTheOwner_ShouldThrowAccessDenied() {
         when(joinRequestRepository.findById(request.getId())).thenReturn(Optional.of(request));
         when(drivingSchoolRegistryRepository.findById(registry.getId())).thenReturn(Optional.of(registry));
+        cm.mvtech.drivehub.modules.auth.domain.model.User other = new cm.mvtech.drivehub.modules.auth.domain.model.User();
+        other.setId(UUID.randomUUID());
+        other.setEmail("autre-moniteur@test.cm");
+        when(userRepository.findByEmail("autre-moniteur@test.cm")).thenReturn(Optional.of(other));
 
         assertThrows(AccessDeniedException.class, () -> service.reject(request.getId(), "autre-moniteur@test.cm"));
         assertEquals(JoinStatus.PENDING, request.getJoinStatus());
         verifyNoInteractions(emailService);
+    }
+
+    /**
+     * Non-régression : le contrôle du propriétaire comparait les emails à l'identique (sensible à la casse).
+     * Il se fait maintenant par identifiant, comme pour approve().
+     */
+    @Test
+    void reject_ByOwnerWithDifferentEmailCase_ShouldReject() {
+        when(joinRequestRepository.findById(request.getId())).thenReturn(Optional.of(request));
+        when(drivingSchoolRegistryRepository.findById(registry.getId())).thenReturn(Optional.of(registry));
+        when(userRepository.findByEmail("OWNER-VARIANT")).thenReturn(Optional.of(owner));
+
+        service.reject(request.getId(), "OWNER-VARIANT");
+
+        assertEquals(JoinStatus.REJECTED, request.getJoinStatus());
     }
 
     @Test

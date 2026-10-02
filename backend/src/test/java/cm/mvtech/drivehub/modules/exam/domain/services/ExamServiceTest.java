@@ -151,6 +151,19 @@ class ExamServiceTest {
         verify(inscriptionRepository, never()).save(any());
     }
 
+    /** Non-régression : un élève sans catégorie de permis pouvait être inscrit à n'importe quel examen. */
+    @Test
+    void register_StudentWithoutLicenseCategory_ShouldThrowBadRequest() {
+        student.setLicenseCategory(null);
+        when(examsRepository.findById(exam.getId())).thenReturn(Optional.of(exam));
+        when(studentService.getEntity(student.getId())).thenReturn(student);
+
+        BadRequestException error = assertThrows(BadRequestException.class,
+                () -> service.register(exam.getId(), student.getId()));
+        assertTrue(error.getMessage().startsWith("Définissez d'abord la catégorie de permis"));
+        verify(inscriptionRepository, never()).save(any());
+    }
+
     @Test
     void register_UnknownExam_ShouldThrowResourceNotFound() {
         UUID unknown = UUID.randomUUID();

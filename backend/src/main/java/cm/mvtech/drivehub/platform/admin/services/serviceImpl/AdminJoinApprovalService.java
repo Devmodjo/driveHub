@@ -126,7 +126,10 @@ public class AdminJoinApprovalService {
         }
         DrivingSchoolRegistry registry = drivingSchoolRegistryRepository.findById(request.getDrivingSchoolId())
                 .orElseThrow(() -> new IllegalStateException("Auto-école registry introuvable"));
-        if (!registry.getAdmin().getEmail().equals(approverEmail)) {
+        // Même contrôle que approve() : par identifiant (la comparaison d'emails était sensible à la casse)
+        User approver = userRepository.findByEmail(approverEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable"));
+        if (!registry.getAdmin().getId().equals(approver.getId())) {
             throw new AccessDeniedException("Vous ne pouvez traiter que les demandes de votre auto-école");
         }
         request.setJoinStatus(JoinStatus.REJECTED);

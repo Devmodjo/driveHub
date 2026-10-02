@@ -169,6 +169,24 @@ class ReservationServiceTest {
                 monitor.getId(), SLOT.minusMinutes(59), SLOT.plusMinutes(59), ReservationStatus.CANCELLED);
         verify(reservationsRepository).existsByVehicle_IdAndDateTimeBetweenAndReservationStatusNot(
                 vehicle.getId(), SLOT.minusMinutes(59), SLOT.plusMinutes(59), ReservationStatus.CANCELLED);
+        verify(reservationsRepository).existsByStudent_IdAndDateTimeBetweenAndReservationStatusNot(
+                eq(student.getId()), eq(SLOT.minusMinutes(59)), eq(SLOT.plusMinutes(59)), eq(ReservationStatus.CANCELLED));
+    }
+
+    /**
+     * Non-régression : l'élève n'était pas contrôlé. Il pouvait réserver deux leçons à la même heure
+     * avec deux moniteurs et deux véhicules différents.
+     */
+    @Test
+    void create_StudentAlreadyBooked_ShouldThrowConflict() {
+        givenStudentIsBooking();
+        when(vehicleService.getEntity(vehicle.getId())).thenReturn(vehicle);
+        when(reservationsRepository.existsByStudent_IdAndDateTimeBetweenAndReservationStatusNot(
+                eq(student.getId()), any(), any(), eq(ReservationStatus.CANCELLED))).thenReturn(true);
+
+        ConflictException error = assertThrows(ConflictException.class, () -> service.create(conduite(null)));
+        assertEquals("L'élève a déjà un créneau à cette heure", error.getMessage());
+        verify(reservationsRepository, never()).save(any());
     }
 
     @Test
