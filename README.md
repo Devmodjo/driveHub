@@ -297,8 +297,8 @@ frontend/src/app/
 │   ├── vitrine/          site public — /
 │   │   ├── layout/       navbar, footer
 │   │   ├── sections/     hero, how-it-works, features, about, pricing, faq
-│   │   ├── pages/        landing, catalogue /auto-ecoles, /connexion, /inscription,
-│   │   │                 /verify-email, /reset-password, /mot-de-passe-oublie
+│   │   ├── pages/        landing, catalogue /auto-ecoles, et en plein écran (écran divisé, photo à gauche) :
+│   │   │                 /connexion, /inscription, /verify-email, /reset-password, /mot-de-passe-oublie
 │   │   └── i18n/         fr.json, en.json, I18nService
 │   ├── dashboard/        espace moniteur / élève — /dashboard
 │   │   ├── layout/       barre latérale (menu selon le rôle)
@@ -322,6 +322,34 @@ npm install
 npm start            # http://localhost:4200 (API attendue sur http://localhost:8082)
 npm test             # tests unitaires
 ```
+
+---
+
+## Déployer le frontend sur Vercel
+
+La configuration est dans `frontend/vercel.json`. Dans Vercel → *Settings* :
+
+| Réglage | Valeur |
+|---------|--------|
+| **Root Directory** | `frontend` (le dépôt contient aussi `backend/`) |
+| Framework Preset | Angular |
+| Build / Output / Install Command | laisser vides : `vercel.json` les fixe (`npm run build`, `dist/drivehub/browser`) |
+| Node.js Version | 22.x |
+
+Pourquoi une erreur 404 apparaît sinon :
+- Angular ne génère pas le site dans `dist/` mais dans **`dist/drivehub/browser/`** : avec « Output = dist »,
+  Vercel ne trouve pas de `index.html` et répond 404 alors que le déploiement a réussi ;
+- les pages Angular (`/connexion`, `/dashboard`...) n'existent pas en fichiers : la règle `rewrites` de
+  `vercel.json` renvoie toutes les adresses vers `index.html`, puis Angular affiche la bonne page.
+
+**Adresse du backend :** `frontend/src/environments/environment.ts` (`apiUrl`) pour la production,
+`environment.development.ts` pour `npm start`. Tant que le backend n'est pas hébergé, la vitrine
+fonctionne en ligne mais pas la connexion ni le dashboard. Côté backend, ajouter le domaine du frontend
+dans `CORS_ALLOWED_ORIGINS` et le mettre dans `APP_FRONTEND_URL`.
+
+**Images :** les photos d'origine (`frontend/images-src/`, jusqu'à 18 Mo) ne sont pas publiées.
+`npm run images` en crée des versions WebP légères dans `public/images/optimized/` (95 Ko au lieu de 18 Mo
+pour le haut de la page d'accueil) ; le navigateur choisit la taille adaptée à l'écran.
 
 ---
 

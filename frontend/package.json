@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "images": "node scripts/optimize-images.mjs"
   },
   "prettier": {
     "printWidth": 100,
@@ -45,6 +46,7 @@
     "@tailwindcss/postcss": "^4.1.12",
     "jsdom": "^27.1.0",
     "postcss": "^8.5.3",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.1.12",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"
