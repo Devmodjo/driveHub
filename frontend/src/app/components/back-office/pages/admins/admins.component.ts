@@ -1,372 +1,272 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Observable } from 'rxjs';
+import { LucideDynamicIcon } from '@lucide/angular';
 
 import { AdminService } from '../../../../services/admin-service/admin.service';
 import { AuthService } from '../../../../services/auth-service/auth.service';
 import { AdminProfile } from '../../../../interfaces/AdminProfile';
+import { ApiResponse } from '../../../../interfaces/ApiResponse';
 import UserRegisterModel from '../../../../interfaces/UserRegisterModel';
-import AdminStatus from '../../../../enums/adminstatus.enum';
 import { Role } from '../../../../enums/role.enum';
+import { errorMessage, fieldErrors } from '../../../../shared/http-error';
+import { ICONS } from '../../../../shared/icons';
+import { BoConfirmComponent } from '../../shared/bo-confirm.component';
+import { BoDrawerComponent } from '../../shared/bo-drawer.component';
+import { BoToastComponent, BoToastMessage } from '../../shared/bo-toast.component';
+import { adminStatusClass, adminStatusLabel, initials, roleLabel } from '../../shared/bo-status';
 
+/** Action sensible qui attend la confirmation (désactivation ou suppression). */
+interface PendingAction {
+  kind: 'deactivate' | 'delete';
+  admin: AdminProfile;
+}
+
+/**
+ * Page « Administrateurs » (/backoffice/dashboard/admins), réservée aux ROOT côté API.
+ * Liste paginée et filtrable, détail, création, activation / désactivation et suppression.
+ *
+ * Mobile : une carte par administrateur ; à partir de md: : tableau.
+ */
 @Component({
   selector: 'app-admins',
-  imports: [DatePipe, FormsModule],
-  providers: [AdminService],
+  imports: [DatePipe, NgTemplateOutlet, FormsModule, LucideDynamicIcon, BoConfirmComponent, BoDrawerComponent, BoToastComponent],
   templateUrl: './admins.component.html',
-  styleUrl: './admins.component.css',
 })
 export class AdminsComponent implements OnInit {
-
   private adminService = inject(AdminService);
-
   private authService = inject(AuthService);
+  protected readonly icons = ICONS;
+  protected readonly statusLabel = adminStatusLabel;
+  protected readonly statusClass = adminStatusClass;
+  protected readonly roleLabel = roleLabel;
+  protected readonly initials = initials;
 
   admins = signal<AdminProfile[]>([]);
-
   currentPage = signal<number>(0);
-
   pageSize = signal<number>(10);
-
   totalPages = signal<number>(0);
-
   totalElements = signal<number>(0);
-
   statusFilter = signal<string | undefined>(undefined);
-
   roleFilter = signal<string | undefined>(undefined);
-
-  actionMessage = signal<{ text: string; type: 'success' | 'error' } | null>(null);
-
+  actionMessage = signal<BoToastMessage | null>(null);
   isLoading = signal<boolean>(false);
-
+  /** Message affiché à la place de la liste si elle ne peut pas être chargée (ex. 403). */
+  listError = signal<string>('');
   currentUserRole = signal<Role | null>(null);
 
   selectedAdmin = signal<AdminProfile | null>(null);
-
   showDetailDrawer = signal<boolean>(false);
-
   showCreateDrawer = signal<boolean>(false);
+  pendingAction = signal<PendingAction | null>(null);
+  /** Identifiant de l'admin en cours de traitement. */
+  busyId = signal<string | null>(null);
 
-  createFormData = signal<UserRegisterModel>({
-    name: '',
-    email: '',
-    password: '',
-    role: Role.REVIEWER,
-    residence: '',
-    phoneNumber: '',
-    reason: '',
-  });
-
+  createFormData = signal<UserRegisterModel>(this.emptyForm());
   isSubmitting = signal<boolean>(false);
+  createError = signal<string>('');
+  createFieldErrors = signal<Record<string, string>>({});
 
   isRoot = computed(() => this.currentUserRole() === Role.ROOT);
   isSuperAdmin = computed(() => this.currentUserRole() === Role.SUPER_ADMIN);
-
   canActivate = computed(() => this.isRoot() || this.isSuperAdmin());
 
   isFirstPage = computed(() => this.currentPage() === 0);
   isLastPage = computed(() => this.currentPage() >= this.totalPages() - 1);
-
   displayedPage = computed(() => this.currentPage() + 1);
 
+  /** Onglets de filtre par statut (undefined = tous). */
+  protected readonly statusTabs: { label: string; value: string | undefined }[] = [
+    { label: 'Tous', value: undefined },
+    { label: 'Actifs', value: 'ACTIVE' },
+    { label: 'En attente', value: 'PENDING' },
+    { label: 'Suspendus', value: 'SUSPENDED' },
+    { label: 'Inactifs', value: 'INACTIVE' },
+    { label: 'Email non vérifié', value: 'EMAIL_PENDING' },
+  ];
 
-  /**
-   * Initialisation du composant.
-   * Charge le role de l'utilisateur connecte puis recupere la premiere page d'administrateurs.
-   */
   ngOnInit(): void {
     this.loadCurrentUser();
     this.loadAdmins();
   }
 
-
-  /**
-   * Recupere le profil de l'utilisateur connecte via AuthService
-   * et extrait son role pour piloter les regles RBAC du template.
-   */
+  /** Récupère le rôle de l'utilisateur connecté, qui pilote les boutons visibles (RBAC). */
   loadCurrentUser(): void {
     this.authService.getCurrentAdmin().subscribe({
       next: (profile) => this.currentUserRole.set(profile.role),
-      error: () => this.showMessage('Impossible de charger le profil utilisateur', 'error'),
+      error: (err) => this.showMessage(errorMessage(err, 'Impossible de charger votre profil.'), 'error'),
     });
   }
 
-  /**
-   * Charge la liste paginee des administrateurs en fonction
-   * de la page courante, de la taille de page et des filtres actifs.
-   *
-   * Met a jour les signaux `admins`, `totalPages` et `totalElements`
-   * a partir de la reponse paginee de l'API.
-   */
+  /** Charge la page courante des administrateurs selon les filtres actifs. */
   loadAdmins(): void {
     this.isLoading.set(true);
-
+    this.listError.set('');
     this.adminService
-      .getAllAdmins(
-        this.currentPage(),
-        this.pageSize(),
-        this.statusFilter(),
-        this.roleFilter()
-      )
+      .getAllAdmins(this.currentPage(), this.pageSize(), this.statusFilter(), this.roleFilter())
       .subscribe({
         next: (response) => {
           this.admins.set(response.content);
           this.totalPages.set(response.totalPages);
           this.totalElements.set(response.totalElements);
+          this.isLoading.set(false);
         },
-        error: () => this.showMessage('Impossible de charger la liste des admins', 'error'),
-        complete: () => this.isLoading.set(false),
+        error: (err) => {
+          this.isLoading.set(false);
+          this.admins.set([]);
+          this.listError.set(err?.status === 403
+            ? 'La gestion des administrateurs est réservée aux comptes ROOT.'
+            : errorMessage(err, 'Impossible de charger la liste des administrateurs.'));
+        },
       });
   }
 
-
-  /** Passe a la page suivante si la page courante n'est pas la derniere. */
   nextPage(): void {
     if (!this.isLastPage()) {
-      this.currentPage.update(p => p + 1);
+      this.currentPage.update((p) => p + 1);
       this.loadAdmins();
     }
   }
 
-  /** Revient a la page precedente si la page courante n'est pas la premiere. */
   previousPage(): void {
     if (!this.isFirstPage()) {
-      this.currentPage.update(p => p - 1);
+      this.currentPage.update((p) => p - 1);
       this.loadAdmins();
     }
   }
 
-
-  /**
-   * Applique un filtre par statut et recharge la liste depuis la premiere page.
-   * @param status - Valeur du statut a filtrer, ou `undefined` pour retirer le filtre.
-   */
+  /** Filtre par statut et revient à la première page. */
   applyStatusFilter(status: string | undefined): void {
     this.statusFilter.set(status);
     this.currentPage.set(0);
     this.loadAdmins();
   }
 
-  /**
-   * Applique un filtre par role et recharge la liste depuis la premiere page.
-   * @param role - Valeur du role a filtrer, ou `undefined` pour retirer le filtre.
-   */
+  /** Filtre par rôle et revient à la première page. */
   applyRoleFilter(role: string | undefined): void {
     this.roleFilter.set(role);
     this.currentPage.set(0);
     this.loadAdmins();
   }
 
-
-  /**
-   * Ouvre le drawer de detail pour l'administrateur selectionne.
-   * Ferme le drawer de creation s'il etait ouvert (un seul drawer a la fois).
-   */
+  /** Ouvre le volet de détail (un seul volet ouvert à la fois). */
   openDetail(admin: AdminProfile): void {
     this.selectedAdmin.set(admin);
     this.showCreateDrawer.set(false);
     this.showDetailDrawer.set(true);
   }
 
-  /**
-   * Ouvre le drawer de creation d'un nouvel administrateur.
-   * Reinitialise le formulaire et ferme le drawer de detail s'il etait ouvert.
-   */
+  /** Ouvre le volet de création avec un formulaire vide. */
   openCreateDrawer(): void {
     this.showDetailDrawer.set(false);
-    this.resetCreateForm();
+    this.createFormData.set(this.emptyForm());
+    this.createError.set('');
+    this.createFieldErrors.set({});
     this.showCreateDrawer.set(true);
   }
 
-  /**
-   * Ferme tous les drawers et reinitialise l'administrateur selectionne.
-   */
   closeDrawers(): void {
     this.showDetailDrawer.set(false);
     this.showCreateDrawer.set(false);
     this.selectedAdmin.set(null);
   }
 
-
-  /**
-   * Cree un nouvel administrateur via l'API.
-   *
-   * Validation locale minimale : les champs `name`, `email` et `password` sont obligatoires.
-   * En cas de succes, le drawer est ferme et la liste est rechargee.
-   * Le signal `isSubmitting` empeche les doubles soumissions pendant l'appel.
-   */
+  /** Crée un administrateur ; les erreurs du backend s'affichent sous les champs concernés. */
   createAdmin(): void {
     const formData = this.createFormData();
-    if (!formData.name || !formData.email || !formData.password) {
-      this.showMessage('Veuillez remplir tous les champs obligatoires', 'error');
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password) {
+      this.createError.set('Le nom, l\'email et le mot de passe sont obligatoires.');
       return;
     }
 
     this.isSubmitting.set(true);
+    this.createError.set('');
+    this.createFieldErrors.set({});
 
-    this.adminService.createAdmin(formData).subscribe({
+    this.adminService.createAdmin({ ...formData, email: formData.email.trim() }).subscribe({
       next: () => {
-        this.showMessage('Administrateur cree avec succes', 'success');
-        this.closeDrawers();
-        this.loadAdmins();
-      },
-      error: () => {
-        this.showMessage('Erreur lors de la creation de l\'administrateur', 'error');
         this.isSubmitting.set(false);
+        this.showMessage('Administrateur créé.', 'success');
+        this.closeDrawers();
+        this.loadAdmins();
       },
-      complete: () => this.isSubmitting.set(false),
+      error: (err) => {
+        this.isSubmitting.set(false);
+        this.createFieldErrors.set(fieldErrors(err));
+        this.createError.set(errorMessage(err, 'Erreur lors de la création de l\'administrateur.'));
+      },
     });
   }
 
-  /**
-   * Active un administrateur en attente (statut PENDING -> ACTIVE).
-   * Accessible uniquement aux utilisateurs ROOT et SUPER_ADMIN (RBAC).
-   *
-   * @param adminId - Identifiant unique de l'administrateur a activer.
-   */
+  /** Active un compte en attente ou réactive un compte suspendu (ROOT côté API). */
   activateAdmin(adminId: string): void {
-    this.isLoading.set(true);
-
-    this.adminService.activateAdmin(adminId).subscribe({
-      next: () => {
-        this.showMessage('Admin active avec succes', 'success');
-        this.closeDrawers();
-        this.loadAdmins();
-      },
-      error: () => {
-        this.showMessage('Erreur lors de l\'activation', 'error');
-        this.isLoading.set(false);
-      },
-    });
+    this.run(adminId, this.adminService.activateAdmin(adminId), 'Administrateur activé.', 'Erreur lors de l\'activation.');
   }
 
-  /**
-   * Supprime un administrateur apres confirmation de l'utilisateur.
-   * Reserve exclusivement au role ROOT.
-   *
-   * @param adminId - Identifiant unique de l'administrateur a supprimer.
-   */
-  deleteAdmin(adminId: string): void {
-    const confirmed = confirm('Supprimer cet administrateur ? Cette action est irreversible.');
-    if (!confirmed) return;
-
-    this.isLoading.set(true);
-
-    this.adminService.deleteAdmin(adminId).subscribe({
-      next: () => {
-        this.showMessage('Admin supprime', 'success');
-        this.closeDrawers();
-        this.loadAdmins();
-      },
-      error: () => {
-        this.showMessage('Erreur lors de la suppression', 'error');
-        this.isLoading.set(false);
-      },
-    });
+  /** Demande confirmation avant de désactiver un administrateur. */
+  askDeactivate(admin: AdminProfile): void {
+    this.pendingAction.set({ kind: 'deactivate', admin });
   }
 
+  /** Demande confirmation avant de supprimer un administrateur. */
+  deleteAdmin(admin: AdminProfile): void {
+    this.pendingAction.set({ kind: 'delete', admin });
+  }
 
-  /**
-   * Met a jour un champ specifique du formulaire de creation de maniere immutable.
-   * Utilise une copie superficielle de l'objet pour respecter la reactivity des signaux.
-   *
-   * @param field - Cle du champ a modifier dans `UserRegisterModel`.
-   * @param value - Nouvelle valeur du champ.
-   */
+  confirmPendingAction(): void {
+    const action = this.pendingAction();
+    if (!action) return;
+    const id = action.admin.id;
+    if (action.kind === 'deactivate') {
+      this.run(id, this.adminService.disableAdmin(id), 'Administrateur désactivé.', 'Erreur lors de la désactivation.');
+    } else {
+      this.run(id, this.adminService.deleteAdmin(id), 'Administrateur supprimé.', 'Erreur lors de la suppression.');
+    }
+  }
+
+  /** Met à jour un champ du formulaire de création (copie de l'objet pour que le signal change). */
   updateCreateField(field: keyof UserRegisterModel, value: string): void {
-    this.createFormData.update(current => ({ ...current, [field]: value }));
+    this.createFormData.update((current) => ({ ...current, [field]: value }));
   }
 
-
-  /**
-   * Extrait les initiales d'un nom complet pour l'affichage dans l'avatar.
-   * Retourne au maximum deux caracteres en majuscules.
-   *
-   * @param name - Nom complet de l'administrateur (ex. "Jean Dupont").
-   * @returns Les initiales (ex. "JD").
-   */
+  /** Initiales pour l'avatar (ex. « Jean Dupont » → « JD »). */
   getInitials(name: string): string {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+    return initials(name);
   }
 
-  /**
-   * Retourne le libelle francais correspondant a un statut d'administrateur.
-   * Sert a la traduction des valeurs brutes de l'enum vers un texte lisible.
-   *
-   * @param status - Valeur de l'enum `AdminStatus`.
-   * @returns Le libelle traduit, ou la valeur brute si aucune correspondance.
-   */
-  getStatusLabel(status: AdminStatus): string {
-    const labels: Record<string, string> = {
-      ACTIVE: 'Actif',
-      PENDING: 'En attente',
-      INACTIVE: 'Inactif',
-      EMAIL_PENDING: 'Email en attente',
-    };
-    return labels[status] ?? status;
+  getStatusLabel(status: string): string {
+    return adminStatusLabel(status);
   }
 
-  /**
-   * Retourne la classe CSS correspondant a un statut d'administrateur.
-   * Permet d'appliquer un badge colore dans le template (vert, ambre, gris, bleu).
-   *
-   * @param status - Valeur de l'enum `AdminStatus`.
-   * @returns La chaine de classes CSS a appliquer au badge.
-   */
-  getStatusClass(status: AdminStatus): string {
-    const classes: Record<string, string> = {
-      ACTIVE: 'badge badge-green',
-      PENDING: 'badge badge-amber',
-      INACTIVE: 'badge badge-gray',
-      EMAIL_PENDING: 'badge badge-blue',
-    };
-    return classes[status] ?? 'badge';
-  }
-
-  /**
-   * Retourne le libelle lisible correspondant a un role d'administrateur.
-   *
-   * @param role - Valeur de l'enum `Role`.
-   * @returns Le libelle traduit, ou la valeur brute si aucune correspondance.
-   */
   getRoleLabel(role: Role): string {
-    const labels: Record<string, string> = {
-      ROOT: 'Root',
-      SUPER_ADMIN: 'Super Admin',
-      REVIEWER: 'Reviewer',
-    };
-    return labels[role] ?? role;
+    return roleLabel(role);
   }
 
-  /**
-   * Reinitialise le formulaire de creation a ses valeurs par defaut.
-   * Appelee automatiquement a l'ouverture du drawer de creation.
-   */
-  private resetCreateForm(): void {
-    this.createFormData.set({
-      name: '',
-      email: '',
-      password: '',
-      role: Role.REVIEWER,
-      residence: '',
-      phoneNumber: '',
-      reason:''
+  /** Exécute une action de l'API sur un admin puis recharge la liste. */
+  private run(id: string, call: Observable<ApiResponse>, success: string, failure: string): void {
+    this.busyId.set(id);
+    call.subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.pendingAction.set(null);
+        this.closeDrawers();
+        this.showMessage(success, 'success');
+        this.loadAdmins();
+      },
+      error: (err) => {
+        this.busyId.set(null);
+        this.pendingAction.set(null);
+        this.showMessage(errorMessage(err, failure), 'error');
+      },
     });
   }
 
-  /**
-   * Affiche un message toast temporaire pendant 3,5 secondes.
-   * Utilise pour notifier l'utilisateur du resultat d'une action (succes ou erreur).
-   *
-   * @param text - Contenu du message a afficher.
-   * @param type - Type du message : 'success' pour une confirmation, 'error' pour un echec.
-   */
+  private emptyForm(): UserRegisterModel {
+    return { name: '', email: '', password: '', role: Role.REVIEWER, residence: '', phoneNumber: '', reason: '' };
+  }
+
+  /** Affiche un message temporaire pendant 3,5 secondes. */
   private showMessage(text: string, type: 'success' | 'error'): void {
     this.actionMessage.set({ text, type });
     setTimeout(() => this.actionMessage.set(null), 3500);

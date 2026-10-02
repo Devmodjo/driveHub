@@ -1,57 +1,25 @@
-@if (actionMessage()) {
-  <div class="toast-wrap">
-    <div class="toast" [class.toast--error]="actionMessage()!.type === 'error'">
-      {{ actionMessage()!.text }}
-    </div>
-  </div>
-}
+<bo-toast [message]="actionMessage()" />
 
-<div class="page-header">
-  <div>
-    <h2 class="page-title">Dashboard > Auto-ecoles</h2>
+<header class="mb-6">
+  <h1 class="bo-page-title">Auto-écoles</h1>
+  <p class="bo-page-subtitle">Validez les inscriptions et suivez l'activité des auto-écoles.</p>
+</header>
+
+<!-- Indicateurs : 2 colonnes sur mobile, 3 sur md:, 5 à partir de xl: -->
+<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
+  <registry-kpi KpiTitle="Total" [KpiResult]="stats()?.totalRegistries ?? 0" KpiColor="#0070f3"
+                [KpiSubtext]="'+' + (stats()?.newThisMonth ?? 0) + ' ce mois'" KpiSubtextColor="#10b981" />
+  <registry-kpi KpiTitle="Actives" [KpiResult]="stats()?.activeRegistries ?? 0" KpiColor="#10b981" [KpiSubtext]="activePercent()" />
+  <registry-kpi KpiTitle="En attente" [KpiResult]="stats()?.pendingRegistries ?? 0" KpiColor="#f59e0b"
+                KpiSubtext="Action requise" KpiSubtextColor="#d97706" />
+  <registry-kpi KpiTitle="Rejetées" [KpiResult]="stats()?.rejectedRegistries ?? 0" KpiColor="#ef4444" KpiSubtext="Dossiers refusés" />
+  <!-- Sur mobile, la 5e carte prend toute la largeur pour ne pas laisser de trou -->
+  <div class="col-span-2 md:col-span-1">
+    <registry-kpi KpiTitle="Moniteurs" [KpiResult]="stats()?.totalMonitors ?? 0" KpiColor="#6366f1" KpiSubtext="Toutes auto-écoles" />
   </div>
 </div>
 
-<div class="kpi-grid">
-  <registry-kpi
-    KpiTitle="Total Auto-ecoles"
-    [KpiResult]="stats()?.totalRegistries ?? 0"
-    KpiColor="#0056b3"
-    [KpiSubtext]="'+' + (stats()?.newThisMonth ?? 0) + ' ce mois'"
-    KpiSubtextColor="#10b981">
-  </registry-kpi>
-
-  <registry-kpi
-    KpiTitle="Actives"
-    [KpiResult]="stats()?.activeRegistries ?? 0"
-    KpiColor="#10b981"
-    [KpiSubtext]="activePercent()">
-  </registry-kpi>
-
-  <registry-kpi
-    KpiTitle="En attente d'approbation"
-    [KpiResult]="stats()?.pendingRegistries ?? 0"
-    KpiColor="#f59e0b"
-    KpiSubtext="Action requise"
-    KpiSubtextColor="#f59e0b">
-  </registry-kpi>
-
-  <registry-kpi
-    KpiTitle="Rejetees"
-    [KpiResult]="stats()?.rejectedRegistries ?? 0"
-    KpiColor="#ef4444"
-    KpiSubtext="Dossiers incomplets">
-  </registry-kpi>
-
-  <registry-kpi
-    KpiTitle="Moniteurs enregistres"
-    [KpiResult]="stats()?.totalMonitors ?? 0"
-    KpiColor="#6366f1"
-    KpiSubtext="Toutes ecoles">
-  </registry-kpi>
-</div>
-
-<registry-chart [stats]="stats()"></registry-chart>
+<registry-chart [stats]="stats()" />
 
 <registry-table
   [schools]="schools()"
@@ -69,114 +37,71 @@
   (viewDetail)="onViewDetail($event)"
   (deleteSchool)="onDelete($event)"
   (suspend)="onSuspend($event)"
-  (reactivate)="onReactivate($event)">
-</registry-table>
+  (reactivate)="onReactivate($event)" />
 
+<!-- Volet de détail -->
 @if (showDetailDrawer()) {
-  <div class="drawer-overlay" (click)="closeDrawer()"></div>
+  <bo-drawer title="Détails de l'auto-école" (closed)="closeDrawer()">
+    @if (isLoadingDetail()) {
+      <p class="py-10 text-center text-sm text-black/50 dark:text-white/50">Chargement des détails...</p>
+    } @else if (selectedSchool(); as school) {
+      <div class="flex items-start justify-between gap-3 mb-5">
+        <h4 class="font-display text-xl font-black tracking-tight text-black dark:text-white break-words min-w-0">{{ school.schoolName }}</h4>
+        <span class="shrink-0" [class]="statusClass(school.drivingSchoolStatus)">{{ statusLabel(school.drivingSchoolStatus) }}</span>
+      </div>
 
-  <aside class="drawer">
-    <div class="drawer-header">
-      <h3 class="drawer-title">Details de l'auto-ecole</h3>
-      <button class="drawer-close" (click)="closeDrawer()">X</button>
-    </div>
+      <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-sm">
+        <div><dt class="field-label mb-1!">Ville</dt><dd class="break-words">{{ school.city || '—' }}</dd></div>
+        <div><dt class="field-label mb-1!">Pays</dt><dd class="break-words">{{ school.country || '—' }}</dd></div>
+        <div class="sm:col-span-2"><dt class="field-label mb-1!">Adresse</dt><dd class="break-words">{{ school.address || '—' }}</dd></div>
+        <div class="sm:col-span-2">
+          <dt class="field-label mb-1!">Email</dt>
+          <dd class="break-all">
+            @if (school.email) { <a class="text-[#0070f3] font-semibold" [href]="'mailto:' + school.email">{{ school.email }}</a> } @else { — }
+          </dd>
+        </div>
+        <div>
+          <dt class="field-label mb-1!">Téléphone</dt>
+          <dd>@if (school.phoneNumber) { <a class="text-[#0070f3] font-semibold" [href]="'tel:' + school.phoneNumber">{{ school.phoneNumber }}</a> } @else { — }</dd>
+        </div>
+        <div><dt class="field-label mb-1!">WhatsApp</dt><dd>{{ school.whatsappNumber || '—' }}</dd></div>
+        <div class="sm:col-span-2"><dt class="field-label mb-1!">Site web</dt><dd class="break-all">{{ school.websiteUrl || '—' }}</dd></div>
+        <div><dt class="field-label mb-1!">Inscrite le</dt><dd>{{ school.createdAt | date:'dd/MM/yyyy' }}</dd></div>
+      </dl>
 
-    <div class="drawer-body">
-      @if (isLoadingDetail()) {
-        <div class="drawer-loading">Chargement des details...</div>
+      @if (school.description) {
+        <div class="mt-5">
+          <p class="field-label mb-1!">Description</p>
+          <p class="text-sm text-black/70 dark:text-white/70 leading-relaxed whitespace-pre-line">{{ school.description }}</p>
+        </div>
       }
 
-      @else if (selectedSchool()) {
-        <div class="detail-top">
-          <h4 class="detail-school-name">{{ selectedSchool()!.schoolName }}</h4>
-          <span [class]="getStatusClass(selectedSchool()!.drivingSchoolStatus)">
-            {{ getStatusLabel(selectedSchool()!.drivingSchoolStatus) }}
-          </span>
-        </div>
+      <div class="mt-5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] p-4">
+        <p class="field-label mb-2!">Moniteur principal</p>
+        <p class="font-bold text-black dark:text-white">{{ school.monitorName || '—' }}</p>
+        <p class="text-sm text-black/60 dark:text-white/60">{{ school.monitorPhone || 'Téléphone non renseigné' }}</p>
+      </div>
 
-        <div class="detail-grid">
-          <div class="detail-item">
-            <span class="detail-label">Ville</span>
-            <span class="detail-value">{{ selectedSchool()!.city || '—' }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Pays</span>
-            <span class="detail-value">{{ selectedSchool()!.country || '—' }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Adresse</span>
-            <span class="detail-value">{{ selectedSchool()!.address || '—' }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Email</span>
-            <span class="detail-value">{{ selectedSchool()!.email || '—' }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Telephone</span>
-            <span class="detail-value">{{ selectedSchool()!.phoneNumber || '—' }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">WhatsApp</span>
-            <span class="detail-value">{{ selectedSchool()!.whatsappNumber || '—' }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Site web</span>
-            <span class="detail-value">{{ selectedSchool()!.websiteUrl || '—' }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Date d'inscription</span>
-            <span class="detail-value">{{ selectedSchool()!.createdAt | date:'dd/MM/yyyy' }}</span>
-          </div>
-        </div>
+      <p class="mt-5 text-xs text-black/40 dark:text-white/40 font-mono break-all">ID {{ school.id }}</p>
 
-        @if (selectedSchool()!.description) {
-          <div class="detail-section">
-            <span class="detail-label">Description</span>
-            <p class="detail-description">{{ selectedSchool()!.description }}</p>
-          </div>
+      <div class="mt-6 flex flex-col gap-2">
+        @if (school.drivingSchoolStatus === 'PENDING') {
+          <button type="button" class="bo-btn bo-btn-green w-full" [disabled]="isActing()" (click)="onApprove(school.id)">Approuver cette auto-école</button>
+          <button type="button" class="bo-btn bo-btn-red w-full" [disabled]="isActing()" (click)="onReject(school.id)">Rejeter la demande</button>
+        } @else if (school.drivingSchoolStatus === 'ACTIVE' || school.drivingSchoolStatus === 'APPROVED') {
+          <button type="button" class="bo-btn bo-btn-amber w-full" [disabled]="isActing()" (click)="onSuspend(school.id)">Suspendre cette auto-école</button>
+        } @else if (school.drivingSchoolStatus === 'SUSPENDED') {
+          <button type="button" class="bo-btn bo-btn-green w-full" [disabled]="isActing()" (click)="onReactivate(school.id)">Réactiver cette auto-école</button>
         }
+        <button type="button" class="bo-btn bo-btn-ghost-red w-full" [disabled]="isActing()" (click)="onDelete(school.id)">Supprimer définitivement</button>
+      </div>
+    }
+  </bo-drawer>
+}
 
-        <div class="detail-section">
-          <span class="detail-section-title">Moniteur principal</span>
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="detail-label">Nom</span>
-              <span class="detail-value">{{ selectedSchool()!.monitorName || '—' }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Telephone</span>
-              <span class="detail-value">{{ selectedSchool()!.monitorPhone || '—' }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="detail-section">
-          <span class="detail-label">Identifiant</span>
-          <span class="detail-value detail-value--mono">{{ selectedSchool()!.id }}</span>
-        </div>
-
-        <div class="detail-actions">
-          @if (selectedSchool()!.drivingSchoolStatus === 'PENDING') {
-            <button class="btn btn-green btn-full" (click)="onApprove(selectedSchool()!.id)">
-              Approuver cette auto-ecole
-            </button>
-            <button class="btn btn-danger btn-full" (click)="onReject(selectedSchool()!.id)">
-              Rejeter cette auto-ecole
-            </button>
-          } @else if (selectedSchool()!.drivingSchoolStatus === 'ACTIVE' || selectedSchool()!.drivingSchoolStatus === 'APPROVED') {
-            <button class="btn btn-amber btn-full" (click)="onSuspend(selectedSchool()!.id)">
-              Suspendre cette auto-ecole
-            </button>
-          } @else if (selectedSchool()!.drivingSchoolStatus === 'SUSPENDED') {
-            <button class="btn btn-green btn-full" (click)="onReactivate(selectedSchool()!.id)">
-              Activer cette auto-ecole
-            </button>
-          }
-          <button class="btn btn-outline btn-full" (click)="onDelete(selectedSchool()!.id)">
-            Supprimer
-          </button>
-        </div>
-      }
-    </div>
-  </aside>
+<!-- Confirmation des actions sensibles -->
+@if (pendingAction()) {
+  <bo-confirm [title]="confirmText().title" [message]="confirmText().message" [confirmLabel]="confirmText().label"
+              [tone]="confirmText().tone" [busy]="isActing()"
+              (confirmed)="confirmPendingAction()" (cancelled)="pendingAction.set(null)" />
 }

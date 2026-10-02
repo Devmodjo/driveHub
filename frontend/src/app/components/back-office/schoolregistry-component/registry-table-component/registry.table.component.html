@@ -1,205 +1,142 @@
-<div class="table-section">
-  <div class="table-header">
-    <h3 class="table-title">Liste des Auto-ecoles</h3>
+<section class="bo-card overflow-hidden">
+  <!-- En-tête : titre, filtres par statut, recherche -->
+  <div class="p-4 sm:p-5 space-y-4 border-b border-black/5 dark:border-white/10">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h3 class="bo-section-title">Liste des auto-écoles</h3>
+      <span class="text-xs font-semibold text-black/50 dark:text-white/50">{{ totalElements }} au total</span>
+    </div>
 
-    <div class="table-toolbar">
-      <div class="filter-tabs">
-        <button
-          class="filter-tab"
-          [class.filter-tab--active]="activeFilter === undefined"
-          (click)="applyFilter(undefined)">
-          Tous
-        </button>
-        <button
-          class="filter-tab"
-          [class.filter-tab--active]="activeFilter === 'ACTIVE'"
-          (click)="applyFilter('ACTIVE')">
-          Actives
-        </button>
-        <button
-          class="filter-tab"
-          [class.filter-tab--active]="activeFilter === 'APPROVED'"
-          (click)="applyFilter('APPROVED')">
-          Approuvees
-        </button>
-        <button
-          class="filter-tab filter-tab--badge"
-          [class.filter-tab--active]="activeFilter === 'PENDING'"
-          (click)="applyFilter('PENDING')">
-          En attente
-          @if (pendingCount > 0) {
-            <span class="tab-badge">{{ pendingCount }}</span>
+    <!-- Filtres : la rangée défile horizontalement sur mobile (bords collés à la carte) -->
+    <div class="-mx-4 sm:mx-0 px-4 sm:px-0 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" role="tablist" aria-label="Filtrer par statut">
+      @for (tab of tabs; track tab.label) {
+        <button type="button" role="tab" class="bo-chip" [class.bo-chip-active]="activeFilter === tab.value"
+                [attr.aria-selected]="activeFilter === tab.value" (click)="applyFilter(tab.value)">
+          {{ tab.label }}
+          @if (tab.value === 'PENDING' && pendingCount > 0) {
+            <span class="min-w-5 h-5 px-1.5 rounded-full bg-amber-500 text-white text-[11px] font-black flex items-center justify-center">{{ pendingCount }}</span>
           }
         </button>
-        <button
-          class="filter-tab"
-          [class.filter-tab--active]="activeFilter === 'SUSPENDED'"
-          (click)="applyFilter('SUSPENDED')">
-          Suspendues
-        </button>
-        <button
-          class="filter-tab"
-          [class.filter-tab--active]="activeFilter === 'REJECTED'"
-          (click)="applyFilter('REJECTED')">
-          Rejetees
-        </button>
-      </div>
+      }
+    </div>
 
-      <div class="search-area">
-        <input
-          class="search-input"
-          type="text"
-          placeholder="Rechercher..."
-          [ngModel]="searchQuery()"
-          (ngModelChange)="onSearch($event)" />
-      </div>
+    <div class="relative">
+      <svg [lucideIcon]="icons.Search" [size]="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40 pointer-events-none" />
+      <input class="field-input pl-11!" type="search" placeholder="Rechercher sur cette page (nom, ville)" aria-label="Rechercher une auto-école"
+             [ngModel]="searchQuery()" (ngModelChange)="onSearch($event)" />
     </div>
   </div>
 
-  <div class="table-scroll">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Ref.</th>
-          <th>Auto-ecole</th>
-          <th>Ville</th>
-          <th>Responsable</th>
-          <th>Statut</th>
-          <th>Enregistre le</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        @if (isLoading) {
-          <tr>
-            <td colspan="5">
-              <div class="empty-state">Chargement...</div>
-            </td>
-          </tr>
-        }
+  @if (isLoading) {
+    <p class="px-5 py-12 text-center text-sm text-black/50 dark:text-white/50">Chargement...</p>
+  } @else if (filteredSchools().length === 0) {
+    <div class="px-5 py-12 text-center">
+      <svg [lucideIcon]="icons.Inbox" [size]="32" class="mx-auto text-black/25 dark:text-white/25" />
+      <p class="mt-3 text-sm text-black/50 dark:text-white/50">Aucune auto-école trouvée.</p>
+    </div>
+  } @else {
+    <!-- MOBILE (moins de md:) : une carte par auto-école -->
+    <ul class="md:hidden divide-y divide-black/5 dark:divide-white/10">
+      @for (school of filteredSchools(); track school.id) {
+        <li class="p-4">
+          <div class="flex items-start justify-between gap-3">
+            <button type="button" class="min-w-0 text-left" (click)="viewDetail.emit(school.id)">
+              <p class="font-bold text-black dark:text-white truncate">{{ school.schoolName }}</p>
+              <p class="text-sm text-black/50 dark:text-white/50 truncate">
+                {{ school.city || 'Ville non renseignée' }} · {{ school.monitorName || 'Responsable inconnu' }}
+              </p>
+              <p class="text-xs text-black/40 dark:text-white/40 mt-0.5">Inscrite le {{ school.createdAt | date:'dd/MM/yyyy' }}</p>
+            </button>
+            <span class="shrink-0" [class]="statusClass(school.drivingSchoolStatus)">{{ statusLabel(school.drivingSchoolStatus) }}</span>
+          </div>
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <button type="button" class="bo-btn bo-btn-outline" (click)="viewDetail.emit(school.id)">Voir</button>
+            @if (school.drivingSchoolStatus === 'PENDING') {
+              <button type="button" class="bo-btn bo-btn-green" (click)="approve.emit(school.id)">Approuver</button>
+              <button type="button" class="bo-btn bo-btn-outline text-red-600! dark:text-red-400!" (click)="reject.emit(school.id)">Rejeter</button>
+            } @else if (school.drivingSchoolStatus === 'ACTIVE' || school.drivingSchoolStatus === 'APPROVED') {
+              <button type="button" class="bo-btn bo-btn-amber" (click)="suspend.emit(school.id)">Suspendre</button>
+            } @else if (school.drivingSchoolStatus === 'SUSPENDED') {
+              <button type="button" class="bo-btn bo-btn-green" (click)="reactivate.emit(school.id)">Réactiver</button>
+            }
+            <button type="button" class="bo-btn bo-btn-ghost-red" (click)="deleteSchool.emit(school.id)">
+              <svg [lucideIcon]="icons.Trash" [size]="16" /> Supprimer
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
 
-        @else if (filteredSchools().length === 0) {
+    <!-- À PARTIR DE md: : tableau (défilement horizontal si l'écran est juste trop étroit) -->
+    <div class="hidden md:block overflow-x-auto">
+      <table class="data-table">
+        <thead>
           <tr>
-            <td colspan="5">
-              <div class="empty-state">Aucune auto-ecole trouvee.</div>
-            </td>
+            <th>Auto-école</th>
+            <th class="hidden lg:table-cell">Ville</th>
+            <th class="hidden xl:table-cell">Responsable</th>
+            <th>Statut</th>
+            <th class="hidden lg:table-cell">Inscrite le</th>
+            <th class="text-right">Actions</th>
           </tr>
-        }
-
-        @else {
+        </thead>
+        <tbody>
           @for (school of filteredSchools(); track school.id) {
-            <tr>
-              <td class="cell-muted detail-value--mono">{{ school.id.substring(0, 8) | uppercase }}</td>
-              <td>
-                <div class="school-cell">
-                  <span class="school-name">{{ school.schoolName }}</span>
-                  @if (school.description) {
-                    <span class="school-desc">{{ school.description }}</span>
-                  }
-                </div>
+            <tr class="hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
+              <td class="max-w-64">
+                <button type="button" class="text-left min-w-0 max-w-full" (click)="viewDetail.emit(school.id)">
+                  <span class="block font-bold text-black dark:text-white truncate hover:text-[#0070f3]">{{ school.schoolName }}</span>
+                  <span class="block text-xs text-black/40 dark:text-white/40 font-mono">{{ school.id.substring(0, 8) | uppercase }}</span>
+                </button>
               </td>
-
-              <td class="cell-muted">{{ school.city || '—' }}</td>
-
-              <td class="cell-muted">{{ school.monitorName || '—' }}</td>
-
+              <td class="hidden lg:table-cell">{{ school.city || '—' }}</td>
+              <td class="hidden xl:table-cell">{{ school.monitorName || '—' }}</td>
+              <td><span [class]="statusClass(school.drivingSchoolStatus)">{{ statusLabel(school.drivingSchoolStatus) }}</span></td>
+              <td class="hidden lg:table-cell whitespace-nowrap">{{ school.createdAt | date:'dd/MM/yyyy' }}</td>
               <td>
-                <span [class]="getStatusClass(school.drivingSchoolStatus)">
-                  {{ getStatusLabel(school.drivingSchoolStatus) }}
-                </span>
-              </td>
-
-              <td class="cell-muted">{{ school.createdAt | date:'dd/MM/yyyy' }}</td>
-
-              <td>
-                <div class="action-group">
-                  <button
-                    class="btn btn-outline"
-                    title="Voir les details"
-                    (click)="viewDetail.emit(school.id)">
-                    Voir
-                  </button>
+                <div class="flex items-center justify-end gap-2">
+                  <button type="button" class="bo-btn bo-btn-outline" (click)="viewDetail.emit(school.id)">Voir</button>
                   @if (school.drivingSchoolStatus === 'PENDING') {
-                    <button
-                      class="btn btn-green"
-                      title="Approuver l'inscription"
-                      (click)="approve.emit(school.id)">
-                      Approuver
-                    </button>
-                    <button
-                      class="btn btn-danger"
-                      title="Rejeter l'inscription"
-                      (click)="reject.emit(school.id)">
-                      Rejeter
-                    </button>
+                    <button type="button" class="bo-btn bo-btn-green" (click)="approve.emit(school.id)">Approuver</button>
+                    <button type="button" class="bo-btn bo-btn-outline text-red-600! dark:text-red-400!" (click)="reject.emit(school.id)">Rejeter</button>
                   } @else if (school.drivingSchoolStatus === 'ACTIVE' || school.drivingSchoolStatus === 'APPROVED') {
-                    <button
-                      class="btn btn-amber"
-                      title="Suspendre l'auto-ecole"
-                      (click)="suspend.emit(school.id)">
-                      Suspendre
-                    </button>
+                    <button type="button" class="bo-btn bo-btn-amber" (click)="suspend.emit(school.id)">Suspendre</button>
                   } @else if (school.drivingSchoolStatus === 'SUSPENDED') {
-                    <button
-                      class="btn btn-green"
-                      title="Reactiver l'auto-ecole"
-                      (click)="reactivate.emit(school.id)">
-                      Activer
-                    </button>
+                    <button type="button" class="bo-btn bo-btn-green" (click)="reactivate.emit(school.id)">Réactiver</button>
                   }
-                  <button
-                    class="btn btn-icon"
-                    title="Supprimer"
-                    (click)="deleteSchool.emit(school.id)">
-                    X
+                  <button type="button" class="bo-icon-btn md:w-9 md:h-9 bo-btn-ghost-red" (click)="deleteSchool.emit(school.id)"
+                          aria-label="Supprimer l'auto-école" title="Supprimer">
+                    <svg [lucideIcon]="icons.Trash" [size]="16" />
                   </button>
                 </div>
               </td>
             </tr>
           }
-        }
-      </tbody>
-    </table>
-  </div>
+        </tbody>
+      </table>
+    </div>
+  }
 
+  <!-- Pagination -->
   @if (totalPages > 1) {
-    <div class="pagination">
-      <span class="page-info">
-        {{ startIndex }} a {{ endIndex }} sur {{ totalElements }} auto-ecoles
-      </span>
-      <div class="page-controls">
-        <button
-          class="page-btn"
-          [disabled]="currentPage === 0"
-          (click)="goToPage(currentPage - 1)">
-          &lt;
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-black/5 dark:border-white/10">
+      <span class="text-sm text-black/50 dark:text-white/50">{{ startIndex }} à {{ endIndex }} sur {{ totalElements }}</span>
+      <div class="flex items-center gap-1">
+        <button type="button" class="bo-icon-btn md:w-9 md:h-9" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)" aria-label="Page précédente">
+          <svg [lucideIcon]="icons.ChevronLeft" [size]="18" />
         </button>
-
+        <!-- Mobile : simple indicateur « 2 / 5 » ; numéros de page à partir de sm: -->
+        <span class="sm:hidden px-3 text-sm font-bold">{{ currentPage + 1 }} / {{ totalPages }}</span>
         @for (p of pageNumbers; track p) {
-          <button
-            class="page-btn"
-            [class.page-btn--active]="p === currentPage"
-            (click)="goToPage(p)">
+          <button type="button" class="hidden sm:inline-flex items-center justify-center w-11 h-11 md:w-9 md:h-9 rounded-xl text-sm font-bold transition-colors"
+                  [class]="p === currentPage ? 'bg-[#0070f3] text-white' : 'text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/5'"
+                  [attr.aria-current]="p === currentPage ? 'page' : null" (click)="goToPage(p)">
             {{ p + 1 }}
           </button>
         }
-
-        @if (totalPages > 5 && pageNumbers[pageNumbers.length - 1] < totalPages - 1) {
-          <span class="page-ellipsis">...</span>
-          <button
-            class="page-btn"
-            (click)="goToPage(totalPages - 1)">
-            {{ totalPages }}
-          </button>
-        }
-
-        <button
-          class="page-btn"
-          [disabled]="currentPage >= totalPages - 1"
-          (click)="goToPage(currentPage + 1)">
-          &gt;
+        <button type="button" class="bo-icon-btn md:w-9 md:h-9" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(currentPage + 1)" aria-label="Page suivante">
+          <svg [lucideIcon]="icons.ChevronRight" [size]="18" />
         </button>
       </div>
     </div>
   }
-</div>
+</section>

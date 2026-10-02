@@ -1,27 +1,29 @@
 import { Component, Input } from '@angular/core';
 
+/**
+ * Carte d'indicateur (KPI) de la vue d'ensemble : un titre, un chiffre et une icône.
+ * L'icône est passée entre les balises (<dashboard-kpi ...><svg ... /></dashboard-kpi>).
+ *
+ * Mobile : deux cartes par ligne (texte compact) ; la grille parente gère la disposition.
+ */
 @Component({
   selector: 'dashboard-kpi',
-  imports: [],
   template: `
-    <div class="kpi-card">
-      <div class="kpi-header">
-        <div class="flex flex-col gap-1">
-          <h3 class="kpi-title">{{ KpiTitle }}</h3>
-          <span class="kpi-result" [style.color]="KpiColor">{{ KpiResult ?? '0' }}</span>
-        </div>
-        <div class="kpi-icon-wrapper" [style.color]="KpiColor" [style.backgroundColor]="KpiBgColor">
-          <ng-content></ng-content>
-        </div>
+    <div class="bo-card h-full p-4 sm:p-5 flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-[11px] sm:text-xs font-bold uppercase tracking-[0.12em] text-black/50 dark:text-white/50 leading-snug">{{ KpiTitle }}</p>
+        <p class="mt-2 font-display text-2xl sm:text-3xl font-black tracking-tight" [style.color]="KpiColor">{{ KpiResult ?? '0' }}</p>
+      </div>
+      <div class="hidden sm:flex w-11 h-11 shrink-0 items-center justify-center rounded-xl"
+           [style.color]="KpiColor" [style.backgroundColor]="KpiBgColor">
+        <ng-content></ng-content>
       </div>
     </div>
   `,
-  styleUrl: './dashboard.kpi.component.css',
 })
 export class DashboardKpiComponent {
   @Input() KpiTitle?: string;
   @Input() KpiResult?: number | string;
-  @Input() KpiColor?: string = 'var(--text-primary)';
+  @Input() KpiColor?: string = 'currentColor';
   @Input() KpiBgColor?: string = 'transparent';
 }
-

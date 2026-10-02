@@ -19,3 +19,27 @@ export function errorMessage(error: unknown, fallback = 'Une erreur est survenue
   }
   return fallback;
 }
+
+/**
+ * Erreurs par champ renvoyées par le backend, sous la forme { fieldErrors: { email: "...", ... } }.
+ *
+ * Le backend ne fournit pas toujours cette table : on renvoie alors un objet vide.
+ * Utilisation dans un gabarit : @if (errors().email) { <p>{{ errors().email }}</p> }
+ */
+export function fieldErrors(error: unknown): Record<string, string> {
+  if (!(error instanceof HttpErrorResponse)) {
+    return {};
+  }
+  const raw = error.error?.fieldErrors;
+  if (!raw || typeof raw !== 'object') {
+    return {};
+  }
+  // On ne garde que les messages texte (sécurité si le backend renvoie autre chose)
+  const result: Record<string, string> = {};
+  for (const [field, message] of Object.entries(raw)) {
+    if (typeof message === 'string' && message) {
+      result[field] = message;
+    }
+  }
+  return result;
+}
