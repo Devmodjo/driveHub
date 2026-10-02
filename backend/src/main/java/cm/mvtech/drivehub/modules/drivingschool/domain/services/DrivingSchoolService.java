@@ -34,4 +34,7 @@ public interface DrivingSchoolService {
 
     SchoolRegistryStatsResponse getRegistryStats();
 
+    /** Demande d'auto-école du moniteur connecté (statut PENDING, APPROVED...), vide s'il n'en a pas. */
+    java.util.Optional<DrivingSchoolRegistryPageDTO> getMyRegistry(UUID userId);
+
 }

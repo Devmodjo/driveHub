@@ -55,5 +55,17 @@ L'architecture n'a pas changé : un schéma PostgreSQL par auto-école, tenant t
 ## 5. Ajouté pour compléter le backend
 
 Services et contrôleurs `students`, `monitors`, `vehicles`, `courses`, `exams` (avec inscriptions),
-`reservations` et `payments` (voir le README). Script `scripts/e2e-multitenant.sh` : 43 vérifications
+`reservations` et `payments` (voir le README). Script `scripts/e2e-multitenant.sh` : 47 vérifications
 de bout en bout, isolation entre auto-écoles comprise.
+
+## 6. Paiement, endpoints pour le frontend, détails
+
+- Paiement Mobile Money par Campay derrière une interface `PaymentGateway` (passerelle `SIMULATED` en
+  développement, `CAMPAY` en production) ; webhook signé `/api/webhooks/campay` ; `POST /api/payments/{id}/refresh`.
+- `POST /api/auth/refresh-token` : nouveau jeton qui contient le tenant dès que l'auto-école (ou l'adhésion)
+  est validée, sans se déconnecter.
+- `GET /api/driving-schools/me` (statut de la demande du moniteur) et `GET /api/join-school/me`
+  (statut des demandes d'adhésion) pour l'écran d'accueil du dashboard.
+- `EmailService` : l'URL du frontend était écrite en dur (`https://localhost:4200`) et les liens du
+  back-office pointaient vers des pages inexistantes ; elle vient maintenant de `app.frontend-url`.
+- Migration `V9` : reprise des auto-écoles validées avec l'ancien code (pas besoin de supprimer la base).

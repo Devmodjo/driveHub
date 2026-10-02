@@ -376,6 +376,14 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
         );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<DrivingSchoolRegistryPageDTO> getMyRegistry(UUID userId) {
+        return userRepository.findById(userId)
+                .flatMap(drivingSchoolRegistryRepository::findByAdmin)
+                .map(this::toPageDTO);
+    }
+
     private DrivingSchoolRegistryPageDTO toPageDTO(DrivingSchoolRegistry registry) {
         User admin = registry.getAdmin();
         Monitor monitor = admin.getMonitors().stream().findFirst().orElse(null);

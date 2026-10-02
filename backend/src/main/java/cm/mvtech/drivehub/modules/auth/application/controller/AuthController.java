@@ -1,6 +1,7 @@
 package cm.mvtech.drivehub.modules.auth.application.controller;
 
 
+import cm.mvtech.drivehub.modules.auth.application.dto.AuthResponse;
 import cm.mvtech.drivehub.modules.auth.application.dto.CurrentUserResponse;
 import cm.mvtech.drivehub.modules.auth.application.dto.ForgotPasswordRequest;
 import cm.mvtech.drivehub.modules.auth.application.dto.ResetPasswordRequest;
@@ -74,6 +75,14 @@ public class AuthController {
     public ResponseEntity<ApiResponse> registerMonitor(@Valid @RequestBody MonitorRegisterRequest registerRequest) {
         authService.registerMonitor(registerRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(true, "Inscription de l'encadreur réussie. En attente de validation par l'admin."));
+    }
+
+    @Operation(summary = "renouveler le jeton",
+            description = "à appeler après l'approbation d'une adhésion : le nouveau jeton porte le tenant de l'auto-école")
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthResponse> refreshToken(Authentication authentication) {
+        return ResponseEntity.ok(authService.refreshToken(authentication.getName()));
     }
 
     @Operation(summary = "Vérification email",

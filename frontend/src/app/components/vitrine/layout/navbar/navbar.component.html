@@ -1,0 +1,87 @@
+<nav
+  class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+  [class]="scrolled() ? 'bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-black/10 dark:border-white/10 py-2' : 'bg-transparent py-4'"
+>
+  <div class="container mx-auto px-6 flex items-center justify-between">
+    <a routerLink="/" class="flex items-center gap-3 group transition-transform hover:scale-[1.02] active:scale-95">
+      <div class="relative w-12 h-12 rounded-xl overflow-hidden shadow-lg shadow-[#0070f3]/20 border border-black/5 dark:border-white/10 bg-black">
+        <img src="/dh_icon.png" alt="DH Icon" class="absolute inset-0 w-full h-full object-cover" />
+      </div>
+      <div class="flex flex-col">
+        <span class="text-2xl font-black italic tracking-tighter leading-none">
+          <span class="text-[#0070f3]">Drive</span>
+          <span class="text-black dark:text-white" style="-webkit-text-stroke: 1px currentColor; color: transparent">Hub</span>
+        </span>
+        <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0070f3]/80 leading-none">Management Hub</span>
+      </div>
+    </a>
+
+    <!-- Navigation bureau -->
+    <div class="hidden md:flex items-center gap-8">
+      @for (link of navLinks; track link.fragment) {
+        <a routerLink="/" [fragment]="link.fragment"
+           class="text-black/70 dark:text-white/70 hover:text-[#0070f3] dark:hover:text-[#0070f3] transition-colors font-medium">
+          {{ i18n.dict().Navbar[link.key] }}
+        </a>
+      }
+    </div>
+
+    <div class="hidden md:flex items-center gap-4">
+      <button (click)="i18n.toggleLocale()"
+              class="flex items-center gap-2 p-2 px-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-black dark:text-white font-medium text-sm">
+        <lucide-icon [img]="icons.Globe" [size]="18" />
+        {{ i18n.locale().toUpperCase() }}
+      </button>
+
+      <button (click)="theme.toggle()" aria-label="Changer de thème"
+              class="p-2 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-black dark:text-white">
+        <lucide-icon [img]="theme.isDark() ? icons.Sun : icons.Moon" [size]="20" />
+      </button>
+      <a routerLink="/connexion"
+         class="inline-flex items-center justify-center rounded-full transition-all active:scale-95 px-6 py-3 text-base text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 font-medium">
+        {{ i18n.dict().Navbar.btn_login }}
+      </a>
+      <a routerLink="/inscription"
+         class="inline-flex items-center justify-center rounded-full transition-all active:scale-95 py-3 text-base bg-[#0070f3] hover:bg-[#0070f3]/90 text-white shadow-lg shadow-[#0070f3]/25 font-bold px-6">
+        {{ i18n.dict().Navbar.btn_signup }}
+      </a>
+    </div>
+
+    <!-- Bouton du menu mobile -->
+    <div class="flex md:hidden items-center gap-4">
+      <button (click)="theme.toggle()" aria-label="Changer de thème" class="p-2 rounded-lg bg-black/5 dark:bg-white/5 text-black dark:text-white">
+        <lucide-icon [img]="theme.isDark() ? icons.Sun : icons.Moon" [size]="20" />
+      </button>
+      <button class="text-black dark:text-white" (click)="isOpen.set(!isOpen())" aria-label="Menu">
+        <lucide-icon [img]="isOpen() ? icons.X : icons.Menu" [size]="28" />
+      </button>
+    </div>
+  </div>
+
+  <!-- Navigation mobile -->
+  @if (isOpen()) {
+    <div class="md:hidden bg-white dark:bg-black border-b border-black/10 dark:border-white/10 overflow-hidden animate-expand">
+      <div class="container mx-auto px-6 py-6 flex flex-col gap-4">
+        @for (link of navLinks; track link.fragment) {
+          <a routerLink="/" [fragment]="link.fragment" (click)="isOpen.set(false)" class="text-lg font-medium py-2 text-black dark:text-white">
+            {{ i18n.dict().Navbar[link.key] }}
+          </a>
+        }
+        <div class="flex flex-col gap-3 mt-4">
+          <button (click)="i18n.toggleLocale(); isOpen.set(false)"
+                  class="flex justify-center items-center gap-2 p-3 bg-black/5 dark:bg-white/5 rounded-xl font-bold text-black dark:text-white">
+            <lucide-icon [img]="icons.Globe" [size]="18" /> {{ i18n.locale().toUpperCase() }}
+          </button>
+          <a routerLink="/connexion" (click)="isOpen.set(false)"
+             class="inline-flex items-center justify-center rounded-full px-6 py-3 w-full text-black border border-black/20 dark:text-white dark:border-white/20 font-medium">
+            {{ i18n.dict().Navbar.btn_login }}
+          </a>
+          <a routerLink="/inscription" (click)="isOpen.set(false)"
+             class="inline-flex items-center justify-center w-full bg-[#0070f3] text-white font-bold rounded-full py-3 shadow-lg shadow-[#0070f3]/25">
+            {{ i18n.dict().Navbar.btn_signup }}
+          </a>
+        </div>
+      </div>
+    </div>
+  }
+</nav>

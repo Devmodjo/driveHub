@@ -3,6 +3,7 @@ package cm.mvtech.drivehub.modules.monitor.application.controller;
 
 import cm.mvtech.drivehub.modules.messageapi.ApiPageResponse;
 import cm.mvtech.drivehub.modules.messageapi.ApiResponse;
+import cm.mvtech.drivehub.modules.messageapi.MyJoinRequestResponse;
 import cm.mvtech.drivehub.modules.messageapi.JoinSchoolRequestDto;
 import cm.mvtech.drivehub.modules.messageapi.PendingJoinRequestResponse;
 import cm.mvtech.drivehub.modules.auth.infrastructure.repository.UserRepository;
@@ -28,6 +29,14 @@ public class JoinSchoolRequestController {
     private final SchoolJoinRequestService schoolJoinRequestService;
     private final AdminJoinApprovalService adminJoinApprovalService;
     private final UserRepository userRepository;
+
+    /** Mes demandes d'adhésion et leur statut. */
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('STUDENT','MONITOR')")
+    public ResponseEntity<java.util.List<MyJoinRequestResponse>> myRequests(
+            @AuthenticationPrincipal(expression = "username") String email) {
+        return ResponseEntity.ok(schoolJoinRequestService.myRequests(email));
+    }
 
     @PostMapping("/public")
     @PreAuthorize("hasAnyRole('STUDENT','MONITOR')")

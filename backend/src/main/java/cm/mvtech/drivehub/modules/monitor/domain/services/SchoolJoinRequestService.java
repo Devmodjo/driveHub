@@ -14,6 +14,7 @@ import cm.mvtech.drivehub.modules.exception.BadRequestException;
 import cm.mvtech.drivehub.modules.exception.ConflictException;
 import cm.mvtech.drivehub.modules.exception.ResourceNotFoundException;
 import cm.mvtech.drivehub.modules.messageapi.JoinSchoolRequestDto;
+import cm.mvtech.drivehub.modules.messageapi.MyJoinRequestResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -78,5 +79,24 @@ public class SchoolJoinRequestService {
         request.setRequestedRole(user.getRoles());
         request.setJoinStatus(JoinStatus.PENDING);
         joinRequestRepository.save(request);
+    }
+
+    /** Demandes d'adhésion de l'utilisateur connecté, avec le nom de l'auto-école. */
+    @Transactional(readOnly = true)
+    public java.util.List<MyJoinRequestResponse> myRequests(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User introuvable"));
+        return joinRequestRepository.findAllByUserOrderByCreatedOnDesc(user).stream()
+                .map(request -> {
+                    var registry = registryRepository.findById(request.getDrivingSchoolId()).orElse(null);
+                    return new MyJoinRequestResponse(
+                            request.getId(),
+                            request.getDrivingSchoolId(),
+                            registry == null ? null : registry.getSchoolName(),
+                            registry == null ? null : registry.getCity(),
+                            request.getJoinStatus(),
+                            request.getCreatedOn());
+                })
+                .toList();
     }
 }

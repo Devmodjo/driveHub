@@ -9,6 +9,9 @@ public interface AuthService {
 
     AuthResponse login(LoginRequest request);
 
+    /** Nouveau jeton pour l'utilisateur connecté (ex : après l'approbation de son adhésion, le tenant change). */
+    AuthResponse refreshToken(String email);
+
     void registerStudent(StudentRegisterRequest request);
 
     void registerMonitor(MonitorRegisterRequest request);

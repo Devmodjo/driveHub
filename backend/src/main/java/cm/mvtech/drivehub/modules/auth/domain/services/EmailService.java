@@ -31,7 +31,8 @@ public class EmailService {
     @Value("${app.mail.from-name}")
     private String fromName;
 
-    private String frontendUrl = "https://localhost:4200";
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @Async
     public void sendVerificationEmail(String toEmail, String name,
@@ -116,9 +117,9 @@ public class EmailService {
             context.setVariable("reason", reason);
             context.setVariable("registeredAt", registeredAt);
             context.setVariable("activateUrl",
-                    frontendUrl + "/backoffice/admin/" + adminId + "/activate");
+                    frontendUrl + "/backoffice/dashboard/admins");
             context.setVariable("backofficeUrl",
-                    frontendUrl + "/backoffice/admins/pending");
+                    frontendUrl + "/backoffice/dashboard/admins");
 
             String html = templateEngine.process(
                     "emails/admin-new-registration", context);

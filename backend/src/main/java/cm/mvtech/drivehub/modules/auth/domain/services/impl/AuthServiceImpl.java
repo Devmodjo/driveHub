@@ -82,10 +82,23 @@ public class AuthServiceImpl implements AuthService {
             throw new DisabledException("Ce compte est suspendu");
         }
 
-        // Le tenant (schéma de l'auto-école) est calculé par le SERVEUR et inscrit dans le JWT.
+        return authenticated(user);
+    }
+
+    @Override
+    public AuthResponse refreshToken(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadCredentialsException(INVALID_CREDENTIALS));
+        if (BLOCKED_STATUSES.contains(user.getProfileStatus())) {
+            throw new DisabledException("Ce compte est suspendu");
+        }
+        return authenticated(user);
+    }
+
+    /** Le tenant (schéma de l'auto-école) est calculé par le SERVEUR et inscrit dans le JWT. */
+    private AuthResponse authenticated(User user) {
         String tenant = userTenantResolver.resolveTenant(user).orElse(null);
         String token = jwtService.generateToken(user, tenant);
-
         return new AuthResponse(
                 user.getId(),
                 token,

@@ -23,4 +23,6 @@ public interface SchoolJoinRequestRepository extends JpaRepository<SchoolJoinReq
 
     /** Dernière adhésion acceptée : détermine l'auto-école (tenant) de l'utilisateur à la connexion. */
     Optional<SchoolJoinRequest> findFirstByUserAndJoinStatusOrderByCreatedOnDesc(User user, JoinStatus status);
+
+    java.util.List<SchoolJoinRequest> findAllByUserOrderByCreatedOnDesc(User user);
 }

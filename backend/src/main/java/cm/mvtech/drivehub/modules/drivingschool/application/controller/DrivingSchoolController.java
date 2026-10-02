@@ -4,6 +4,7 @@ package cm.mvtech.drivehub.modules.drivingschool.application.controller;
 import cm.mvtech.drivehub.modules.auth.domain.model.UserPrincipal;
 import cm.mvtech.drivehub.modules.messageapi.ApiResponse;
 import cm.mvtech.drivehub.modules.drivingschool.application.dto.DrivingSchoolPendingRequestDTO;
+import cm.mvtech.drivehub.modules.drivingschool.application.dto.DrivingSchoolRegistryPageDTO;
 import cm.mvtech.drivehub.modules.drivingschool.application.dto.DrivingSchoolRequestDto;
 import cm.mvtech.drivehub.modules.drivingschool.application.dto.DrivingSchoolResponseDto;
 import cm.mvtech.drivehub.modules.drivingschool.domain.services.DrivingSchoolService;
@@ -55,6 +56,15 @@ public class DrivingSchoolController {
                 .body(new ApiResponse(true, "Auto ecole enregistrée en attente de validation"));
     }
 
+
+    @Operation(summary = "ma demande d'auto-école (moniteur connecté)")
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('MONITOR')")
+    public ResponseEntity<DrivingSchoolRegistryPageDTO> myRegistry(@AuthenticationPrincipal UserPrincipal user) {
+        return drivingSchoolService.getMyRegistry(user.getId())
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
+    }
 
     @GetMapping("/public/all")
     public ResponseEntity<List<DrivingSchoolResponseDto>> retreiveSchool() {
