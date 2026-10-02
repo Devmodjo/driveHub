@@ -194,6 +194,10 @@ nouvelle demande d'adhésion (au responsable), adhésion acceptée ou refusée (
 | `GET` | `/api/platform/admin/{id}/activate` | ROOT | Activer un admin |
 | `GET` | `/api/platform/admin/me` | JWT Admin | Profil admin connecté |
 | `POST` | `/api/platform/admin/logout` | JWT Admin | Déconnexion admin |
+| `POST` | `/api/platform/emails` | ROOT / SUPER_ADMIN | Envoyer un email (toutes les auto-écoles, tous les moniteurs, tous les élèves, membres d'une auto-école, adresses choisies) |
+| `GET` | `/api/platform/emails` | ROOT / SUPER_ADMIN | Historique des envois |
+| `GET` | `/api/platform/emails/audience-count` | ROOT / SUPER_ADMIN | Nombre de destinataires avant l'envoi |
+| `GET` | `/api/platform/emails/recipients?q=` | ROOT / SUPER_ADMIN | Recherche de destinataires |
 | `GET` | `/api/platform/registries/pending` | REVIEWER/ROOT | Auto-écoles en attente |
 | `PATCH` | `/api/platform/registries/{id}/approve` | REVIEWER/ROOT | Approuver une auto-école |
 
@@ -304,7 +308,8 @@ frontend/src/app/
 │   │   ├── layout/       barre latérale (menu selon le rôle)
 │   │   └── pages/        bienvenue (création / adhésion), accueil, élèves, demandes,
 │   │                     véhicules, réservations, cours, examens, paiements
-│   └── back-office/      administrateurs de la plateforme — /backoffice
+│   └── back-office/      propriétaire de la plateforme — /backoffice (mobile d'abord) : vue d'ensemble,
+│                         auto-écoles, demandes en attente, administrateurs, envoi d'emails, profil
 ├── services/             SessionService (moniteur / élève), SchoolApiService, AuthService (admins), ThemeService
 ├── interceptors/         jeton + X-Tenant-ID ajoutés automatiquement
 ├── guards/               sessionGuard, tenantGuard, monitorGuard, authGuardGuard (admins)
@@ -472,16 +477,38 @@ src/main/resources/db/migration/
 │   ├── V5 … V7                              ← tokens admin, motif, statuts
 │   ├── V8__join_request_references_registry.sql
 │   ├── V9__reprise_donnees_tenants_existants.sql   ← reprise des données de l'ancien code
-│   └── V10__revoked_tokens.sql                     ← déconnexion (jetons révoqués)
+│   ├── V10__revoked_tokens.sql                     ← déconnexion (jetons révoqués)
+│   ├── V11__textes_longs.sql                       ← présentation d'auto-école en TEXT
+│   ├── V12__consentement_confidentialite.sql       ← preuve du consentement
+│   └── V13__envois_emails_plateforme.sql           ← historique des emails du back-office
 └── tenant/                                  ← appliquées à CHAQUE schéma d'auto-école
     ├── V2__init_tenant_schema_template.sql
     ├── V3__corrections_champs_metier.sql
-    └── V4__paiement_mobile_money.sql
+    ├── V4__paiement_mobile_money.sql
+    └── V5__textes_longs.sql                        ← contenu des cours, présentation en TEXT
 ```
 
 Les migrations `tenant/` sont exécutées par Flyway à la création d'une auto-école **et** au démarrage
 pour toutes les auto-écoles existantes (`TenantMigrationRunner`). Pour faire évoluer les tables métier :
-créer `tenant/V5__....sql` — ne jamais modifier une migration déjà appliquée.
+créer `tenant/V6__....sql` — ne jamais modifier une migration déjà appliquée.
+
+## Données personnelles et vérification des auto-écoles
+
+- **Consentement obligatoire à l'inscription** (`acceptPrivacyPolicy`) : date et version acceptées enregistrées
+  sur le compte. Politique publiée sur `/confidentialite` ; texte et points à faire valider par un juriste :
+  [docs/POLITIQUE-CONFIDENTIALITE.md](docs/POLITIQUE-CONFIDENTIALITE.md) (loi n° 2024/017 du 23 décembre 2024).
+- **Documents qui prouvent qu'une auto-école est en règle au Cameroun** et proposition de vérification :
+  [docs/VERIFICATION-AUTO-ECOLES.md](docs/VERIFICATION-AUTO-ECOLES.md).
+- Délai de validation annoncé aux utilisateurs : **48 à 72 heures** (`ValidationDelay` côté backend,
+  `VALIDATION_DELAY` côté frontend).
+
+## Erreurs renvoyées par l'API
+
+Toutes les erreurs ont la forme `{ status, error, message, path, fieldErrors? }` :
+`message` est une phrase affichable telle quelle ; `fieldErrors` (formulaire invalide) donne le message de chaque
+champ, affiché sous le champ concerné par le frontend. Les erreurs SQL sont traduites (valeur trop longue,
+doublon de nom d'auto-école, d'email ou d'immatriculation...). 400 = donnée invalide, 401 = pas de jeton valide,
+403 = rôle insuffisant, 404 = introuvable, 409 = conflit.
 
 ## Tester
 
@@ -489,9 +516,9 @@ créer `tenant/V5__....sql` — ne jamais modifier une migration déjà appliqu�
 payer, se déconnecter, avec les emails attendus à chaque étape) : [docs/GUIDE-TEST-SWAGGER.md](docs/GUIDE-TEST-SWAGGER.md).
 
 ```bash
-cd backend && mvn test                                  # 115 tests unitaires et d'intégration
+cd backend && mvn test                                  # 299 tests unitaires et d'intégration (PostgreSQL local)
 ./scripts/e2e-multitenant.sh http://localhost:8082 \
-   "postgresql://postgres:root@localhost:5432/drivehubDB"  # parcours complet sur l'API lancée (52 vérifications)
+   "postgresql://postgres:root@localhost:5432/drivehubDB"  # parcours complet sur l'API lancée (55 vérifications)
 ```
 
 ---
