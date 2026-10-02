@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { Vehicle, VehicleRequest } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
 import { errorMessage } from '../../../../shared/http-error';
@@ -11,10 +11,10 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
 /** Parc de véhicules de l'auto-école (moniteur). */
 @Component({
   selector: 'app-vehicles',
-  imports: [FormsModule, LucideAngularModule, PageHeaderComponent, StatusBadgeComponent],
+  imports: [FormsModule, LucideDynamicIcon, PageHeaderComponent, StatusBadgeComponent],
   template: `
     <app-page-header title="Véhicules" subtitle="Seuls les véhicules disponibles peuvent être réservés pour une leçon.">
-      <button class="btn-primary" (click)="startCreate()"><lucide-icon [img]="icons.Plus" [size]="16" /> Ajouter</button>
+      <button class="btn-primary" (click)="startCreate()"><svg [lucideIcon]="icons.Plus" [size]="16" /> Ajouter</button>
     </app-page-header>
     @if (error()) { <div class="alert-error mb-6">{{ error() }}</div> }
 
@@ -43,8 +43,8 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
             <tr>
               <td class="font-semibold">{{ v.matriculation }}</td><td>{{ v.model }}</td><td><app-status-badge [value]="v.state" /></td>
               <td class="whitespace-nowrap text-right">
-                <button class="btn-small hover:bg-black/5 dark:hover:bg-white/5" (click)="startEdit(v)" aria-label="Modifier"><lucide-icon [img]="icons.Pencil" [size]="15" /></button>
-                <button class="btn-small text-red-600 hover:bg-red-500/10" (click)="remove(v)" aria-label="Supprimer"><lucide-icon [img]="icons.Trash2" [size]="15" /></button>
+                <button class="btn-small hover:bg-black/5 dark:hover:bg-white/5" (click)="startEdit(v)" aria-label="Modifier"><svg [lucideIcon]="icons.Pencil" [size]="15" /></button>
+                <button class="btn-small text-red-600 hover:bg-red-500/10" (click)="remove(v)" aria-label="Supprimer"><svg [lucideIcon]="icons.Trash" [size]="15" /></button>
               </td>
             </tr>
           } @empty {

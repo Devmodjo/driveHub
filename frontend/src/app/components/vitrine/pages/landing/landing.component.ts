@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { ICONS } from '../../../../shared/icons';
 import { I18nService } from '../../i18n/i18n.service';
 import { AboutComponent } from '../../sections/about.component';
@@ -14,7 +14,7 @@ import { PricingComponent } from '../../sections/pricing.component';
 @Component({
   selector: 'app-landing',
   imports: [
-    RouterLink, LucideAngularModule, HeroComponent, HowItWorksComponent, FeaturesComponent, AboutComponent,
+    RouterLink, LucideDynamicIcon, HeroComponent, HowItWorksComponent, FeaturesComponent, AboutComponent,
     PricingComponent, FaqComponent,
   ],
   template: `
@@ -40,7 +40,7 @@ import { PricingComponent } from '../../sections/pricing.component';
           <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a routerLink="/inscription"
                class="w-full sm:w-auto bg-[#0070f3] text-white hover:bg-[#0070f3]/90 px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-[#0070f3]/25 flex items-center justify-center gap-2">
-              {{ i18n.dict().CTA.btn1 }} <lucide-icon [img]="icons.ArrowRight" [size]="20" />
+              {{ i18n.dict().CTA.btn1 }} <svg [lucideIcon]="icons.ArrowRight" [size]="20" />
             </a>
             <a routerLink="/auto-ecoles"
                class="w-full sm:w-auto bg-black/5 dark:bg-white/5 text-black dark:text-white border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-8 py-4 rounded-full font-medium text-lg transition-all backdrop-blur-sm">

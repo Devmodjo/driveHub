@@ -26,6 +26,12 @@
               }
             ],
             "styles": [
+              "node_modules/@fontsource/lato/100.css",
+              "node_modules/@fontsource/lato/300.css",
+              "node_modules/@fontsource/lato/400.css",
+              "node_modules/@fontsource/lato/700.css",
+              "node_modules/@fontsource/lato/900.css",
+              "node_modules/@fontsource-variable/plus-jakarta-sans/wght.css",
               "src/styles.css"
             ]
           },

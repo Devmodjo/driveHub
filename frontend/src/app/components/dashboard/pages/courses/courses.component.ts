@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { Course, CourseRequest } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
 import { SessionService } from '../../../../services/session-service/session.service';
@@ -12,11 +12,11 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
 /** Cours théoriques : le moniteur les publie, les élèves les consultent. */
 @Component({
   selector: 'app-courses',
-  imports: [FormsModule, LucideAngularModule, PageHeaderComponent],
+  imports: [FormsModule, LucideDynamicIcon, PageHeaderComponent],
   template: `
     <app-page-header title="Cours" [subtitle]="isMonitor ? 'Supports de cours partagés avec vos élèves.' : 'Les supports publiés par votre auto-école.'">
       @if (isMonitor) {
-        <button class="btn-primary" (click)="startCreate()"><lucide-icon [img]="icons.Plus" [size]="16" /> Nouveau cours</button>
+        <button class="btn-primary" (click)="startCreate()"><svg [lucideIcon]="icons.Plus" [size]="16" /> Nouveau cours</button>
       }
     </app-page-header>
     @if (error()) { <div class="alert-error mb-6">{{ error() }}</div> }
@@ -41,8 +41,8 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
             <h3 class="text-lg font-bold tracking-tight">{{ c.title }}</h3>
             @if (isMonitor) {
               <div class="flex shrink-0">
-                <button class="btn-small hover:bg-black/5 dark:hover:bg-white/5" (click)="startEdit(c)" aria-label="Modifier"><lucide-icon [img]="icons.Pencil" [size]="15" /></button>
-                <button class="btn-small text-red-600 hover:bg-red-500/10" (click)="remove(c)" aria-label="Supprimer"><lucide-icon [img]="icons.Trash2" [size]="15" /></button>
+                <button class="btn-small hover:bg-black/5 dark:hover:bg-white/5" (click)="startEdit(c)" aria-label="Modifier"><svg [lucideIcon]="icons.Pencil" [size]="15" /></button>
+                <button class="btn-small text-red-600 hover:bg-red-500/10" (click)="remove(c)" aria-label="Supprimer"><svg [lucideIcon]="icons.Trash" [size]="15" /></button>
               </div>
             }
           </div>

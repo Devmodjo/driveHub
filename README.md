@@ -274,9 +274,22 @@ valider ou rejeter à la main un paiement en attente.
 
 ## Frontend (une seule application Angular)
 
-L'ancienne landing Next.js (React) a été convertie à l'identique en Angular : mêmes sections, mêmes
-classes Tailwind, mêmes textes FR / EN, mêmes images, thème clair / sombre. Les animations
-`framer-motion` sont remplacées par la directive `appReveal` (IntersectionObserver).
+Le projet est **100 % Angular** : il n'y a plus de React ni de Next.js. L'ancienne landing Next.js a été
+convertie à l'identique dans `components/vitrine` :
+
+- mêmes sections, mêmes classes Tailwind, mêmes textes FR / EN, mêmes images, thème clair / sombre ;
+- mêmes polices, servies par l'application (`@fontsource/lato`, `@fontsource-variable/plus-jakarta-sans`),
+  comme `next/font` : aucun appel à Google Fonts ;
+- mêmes icônes : `@lucide/angular`, même version que `lucide-react` (`<svg [lucideIcon]="icons.X">`) ;
+- animations `framer-motion` remplacées par la directive `appReveal` (IntersectionObserver).
+
+Contrôle : la page Next.js d'origine et la vitrine Angular ont été comparées pixel par pixel
+(1440 px clair et sombre, 390 px mobile, menu mobile ouvert, FAQ ouverte) : mêmes hauteurs de
+sections, aucune différence visible.
+
+Styles : Tailwind CSS pour la mise en page (classes dans les templates) et `src/styles.css` pour le
+thème (variables de couleurs) et les quelques classes partagées (`.premium-card`, `.field-input`, `.btn-primary`...).
+Tailwind ne génère que les classes réellement utilisées, ce qui garde les fichiers CSS légers.
 
 ```
 frontend/src/app/

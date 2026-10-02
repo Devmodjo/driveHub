@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { RevealDirective } from '../../../../directives/reveal.directive';
 import { PublicSchool } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
@@ -15,7 +15,7 @@ import { ICONS } from '../../../../shared/icons';
  */
 @Component({
   selector: 'app-schools',
-  imports: [FormsModule, RouterLink, LucideAngularModule, RevealDirective],
+  imports: [FormsModule, RouterLink, LucideDynamicIcon, RevealDirective],
   template: `
     <section class="pt-36 pb-24 bg-white dark:bg-black min-h-screen">
       <div class="container mx-auto px-6">
@@ -29,7 +29,7 @@ import { ICONS } from '../../../../shared/icons';
         </div>
 
         <div class="relative max-w-xl mb-12">
-          <lucide-icon [img]="icons.Search" [size]="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40" />
+          <svg [lucideIcon]="icons.Search" [size]="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40" />
           <input class="field-input pl-11" type="search" placeholder="Nom de l'auto-école ou ville"
                  [ngModel]="query()" (ngModelChange)="query.set($event)" />
         </div>
@@ -48,16 +48,16 @@ import { ICONS } from '../../../../shared/icons';
             @for (school of filtered(); track school.id) {
               <article class="premium-card rounded-[28px] p-8 flex flex-col">
                 <div class="w-12 h-12 rounded-2xl bg-[#0070f3]/10 text-[#0070f3] flex items-center justify-center mb-6">
-                  <lucide-icon [img]="icons.School" [size]="24" [strokeWidth]="1.5" />
+                  <svg [lucideIcon]="icons.School" [size]="24" [strokeWidth]="1.5" />
                 </div>
                 <h3 class="text-xl font-bold text-black dark:text-white mb-3 tracking-tight">{{ school.name }}</h3>
                 <ul class="space-y-2 text-sm text-black/60 dark:text-white/60 font-light mb-8 grow">
-                  <li class="flex items-center gap-2"><lucide-icon [img]="icons.MapPin" [size]="15" /> {{ school.address }}, {{ school.city }}</li>
+                  <li class="flex items-center gap-2"><svg [lucideIcon]="icons.MapPin" [size]="15" /> {{ school.address }}, {{ school.city }}</li>
                   @if (school.phoneNumber) {
-                    <li class="flex items-center gap-2"><lucide-icon [img]="icons.Phone" [size]="15" /> {{ school.phoneNumber }}</li>
+                    <li class="flex items-center gap-2"><svg [lucideIcon]="icons.Phone" [size]="15" /> {{ school.phoneNumber }}</li>
                   }
                   @if (school.email) {
-                    <li class="flex items-center gap-2"><lucide-icon [img]="icons.Mail" [size]="15" /> {{ school.email }}</li>
+                    <li class="flex items-center gap-2"><svg [lucideIcon]="icons.Mail" [size]="15" /> {{ school.email }}</li>
                   }
                 </ul>
                 <button class="btn-primary w-full" [disabled]="sending() === school.id" (click)="join(school)">

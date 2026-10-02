@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { LucideAngularModule, LucideIconData } from 'lucide-angular';
+import { LucideDynamicIcon, LucideIcon } from '@lucide/angular';
 import { SessionService } from '../../../services/session-service/session.service';
 import { ThemeService } from '../../../services/theme-service/theme.service';
 import { ICONS } from '../../../shared/icons';
@@ -8,7 +8,7 @@ import { ICONS } from '../../../shared/icons';
 interface NavItem {
   label: string;
   path: string;
-  icon: LucideIconData;
+  icon: LucideIcon;
 }
 
 /**
@@ -17,13 +17,13 @@ interface NavItem {
  */
 @Component({
   selector: 'app-dashboard-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideDynamicIcon],
   template: `
     <div class="min-h-screen bg-[#fafafa] dark:bg-[#080808] text-black dark:text-white font-sans">
       <!-- Barre du haut (mobile) -->
       <header class="lg:hidden sticky top-0 z-40 flex items-center justify-between px-5 py-3 bg-white/90 dark:bg-black/90 backdrop-blur border-b border-black/5 dark:border-white/5">
         <a routerLink="/" class="font-black italic tracking-tighter text-xl"><span class="text-[#0070f3]">Drive</span>Hub</a>
-        <button (click)="menuOpen.set(!menuOpen())" aria-label="Menu"><lucide-icon [img]="menuOpen() ? icons.X : icons.Menu" [size]="26" /></button>
+        <button (click)="menuOpen.set(!menuOpen())" aria-label="Menu"><svg [lucideIcon]="menuOpen() ? icons.X : icons.Menu" [size]="26" /></button>
       </header>
 
       <div class="flex">
@@ -41,7 +41,7 @@ interface NavItem {
               <a [routerLink]="item.path" routerLinkActive="bg-[#0070f3]/10 text-[#0070f3]" [routerLinkActiveOptions]="{ exact: true }"
                  (click)="menuOpen.set(false)"
                  class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                <lucide-icon [img]="item.icon" [size]="18" /> {{ item.label }}
+                <svg [lucideIcon]="item.icon" [size]="18" /> {{ item.label }}
               </a>
             }
           </nav>
@@ -53,10 +53,10 @@ interface NavItem {
             </div>
             <div class="flex gap-2">
               <button class="btn-small bg-black/5 dark:bg-white/5" (click)="theme.toggle()" aria-label="Changer de thème">
-                <lucide-icon [img]="theme.isDark() ? icons.Sun : icons.Moon" [size]="16" />
+                <svg [lucideIcon]="theme.isDark() ? icons.Sun : icons.Moon" [size]="16" />
               </button>
               <button class="btn-small bg-black/5 dark:bg-white/5 grow" (click)="logout()">
-                <lucide-icon [img]="icons.LogOut" [size]="16" /> Déconnexion
+                <svg [lucideIcon]="icons.LogOut" [size]="16" /> Déconnexion
               </button>
             </div>
           </div>

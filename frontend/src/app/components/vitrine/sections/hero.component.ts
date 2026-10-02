@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { RevealDirective } from '../../../directives/reveal.directive';
 import { ICONS } from '../../../shared/icons';
 import { I18nService } from '../i18n/i18n.service';
@@ -8,7 +8,7 @@ import { I18nService } from '../i18n/i18n.service';
 /** Section d'accueil (conversion de Hero.tsx). */
 @Component({
   selector: 'app-hero',
-  imports: [RouterLink, LucideAngularModule, RevealDirective],
+  imports: [RouterLink, LucideDynamicIcon, RevealDirective],
   template: `
     <section class="relative min-h-[90vh] flex items-center pt-32 pb-20 overflow-hidden">
       <img src="/images/hero-bg-2.jpg" alt="Arrière-plan conducteur" class="absolute inset-0 w-full h-full object-cover" />
@@ -37,11 +37,11 @@ import { I18nService } from '../i18n/i18n.service';
           <div appReveal [revealDelay]="300" class="flex flex-col sm:flex-row gap-4 justify-center items-center w-full sm:w-auto">
             <a routerLink="/inscription"
                class="w-full sm:w-auto bg-[#0070f3] text-white px-10 py-5 rounded-full font-black text-lg transition-all duration-200 shadow-[0_0_40px_rgba(0,112,243,0.5)] hover:shadow-[0_0_60px_rgba(0,112,243,0.7)] hover:bg-[#0051af] hover:scale-105 hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-3 backdrop-blur-md">
-              {{ i18n.dict().Hero.btn_manage }} <lucide-icon [img]="icons.ArrowRight" [size]="22" [strokeWidth]="3" />
+              {{ i18n.dict().Hero.btn_manage }} <svg [lucideIcon]="icons.ArrowRight" [size]="22" [strokeWidth]="3" />
             </a>
             <a routerLink="/auto-ecoles"
                class="w-full sm:w-auto px-10 py-5 border-2 border-white/40 hover:border-white/60 hover:bg-white/15 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] text-white rounded-full font-bold text-lg transition-all duration-200 flex items-center justify-center gap-3 backdrop-blur-md">
-              {{ i18n.dict().Hero.btn_find }} <lucide-icon [img]="icons.Search" [size]="22" [strokeWidth]="2.5" />
+              {{ i18n.dict().Hero.btn_find }} <svg [lucideIcon]="icons.Search" [size]="22" [strokeWidth]="2.5" />
             </a>
           </div>
         </div>

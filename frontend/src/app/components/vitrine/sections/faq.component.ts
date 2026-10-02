@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { RevealDirective } from '../../../directives/reveal.directive';
 import { ICONS } from '../../../shared/icons';
 import { I18nService } from '../i18n/i18n.service';
@@ -7,7 +7,7 @@ import { I18nService } from '../i18n/i18n.service';
 /** Section « Questions fréquentes » (conversion de FAQ.tsx). */
 @Component({
   selector: 'app-faq',
-  imports: [LucideAngularModule, RevealDirective],
+  imports: [LucideDynamicIcon, RevealDirective],
   template: `
     <section id="faq" class="py-24 bg-white dark:bg-black">
       <div class="container mx-auto px-6">
@@ -24,7 +24,7 @@ import { I18nService } from '../i18n/i18n.service';
                 <span class="font-display font-black text-lg text-black dark:text-white group-hover:text-[#0070f3] transition-colors">{{ faq.question }}</span>
                 <div class="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 shrink-0 transition-transform duration-300"
                      [class]="activeIndex() === $index ? 'rotate-180 bg-[#0070f3] text-white' : 'text-black/50 dark:text-white/50'">
-                  <lucide-icon [img]="icons.ChevronDown" [size]="18" />
+                  <svg [lucideIcon]="icons.ChevronDown" [size]="18" />
                 </div>
               </button>
               @if (activeIndex() === $index) {

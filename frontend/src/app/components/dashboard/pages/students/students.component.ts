@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { LicenseCategory, Student } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
 import { errorMessage } from '../../../../shared/http-error';
@@ -11,7 +11,7 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
 /** Élèves de l'auto-école (moniteur) : catégorie de permis, pièces d'identité, retrait. */
 @Component({
   selector: 'app-students',
-  imports: [FormsModule, LucideAngularModule, PageHeaderComponent],
+  imports: [FormsModule, LucideDynamicIcon, PageHeaderComponent],
   template: `
     <app-page-header title="Élèves" subtitle="Les élèves arrivent par les demandes d'adhésion que vous approuvez." />
     @if (error()) { <div class="alert-error mb-6">{{ error() }}</div> }
@@ -43,8 +43,8 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
               <td class="font-semibold">{{ s.firstname }} {{ s.lastname }}</td><td>{{ s.email }}</td><td>{{ s.phoneNumber }}</td>
               <td>{{ s.residenceCity }}</td><td>{{ s.licenseCategory ?? '-' }}</td><td>{{ formatDate(s.createdOn) }}</td>
               <td class="whitespace-nowrap text-right">
-                <button class="btn-small hover:bg-black/5 dark:hover:bg-white/5" (click)="edit(s)" aria-label="Modifier"><lucide-icon [img]="icons.Pencil" [size]="15" /></button>
-                <button class="btn-small text-red-600 hover:bg-red-500/10" (click)="remove(s)" aria-label="Retirer"><lucide-icon [img]="icons.Trash2" [size]="15" /></button>
+                <button class="btn-small hover:bg-black/5 dark:hover:bg-white/5" (click)="edit(s)" aria-label="Modifier"><svg [lucideIcon]="icons.Pencil" [size]="15" /></button>
+                <button class="btn-small text-red-600 hover:bg-red-500/10" (click)="remove(s)" aria-label="Retirer"><svg [lucideIcon]="icons.Trash" [size]="15" /></button>
               </td>
             </tr>
           } @empty {

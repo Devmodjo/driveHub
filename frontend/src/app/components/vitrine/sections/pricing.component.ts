@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { RevealDirective } from '../../../directives/reveal.directive';
 import { ICONS } from '../../../shared/icons';
 import { I18nService } from '../i18n/i18n.service';
@@ -8,7 +8,7 @@ import { I18nService } from '../i18n/i18n.service';
 /** Section « Tarifs » (conversion de Pricing.tsx). */
 @Component({
   selector: 'app-pricing',
-  imports: [RouterLink, LucideAngularModule, RevealDirective],
+  imports: [RouterLink, LucideDynamicIcon, RevealDirective],
   template: `
     <section id="pricing" class="py-32 bg-white dark:bg-black border-y border-black/5 dark:border-white/5 relative overflow-hidden">
       <div class="container mx-auto px-6 relative z-10">
@@ -44,7 +44,7 @@ import { I18nService } from '../i18n/i18n.service';
                 <ul class="space-y-6 mb-16 flex-grow w-full">
                   @for (feature of plan.features; track $index) {
                     <li class="flex items-start gap-4 text-base text-black/60 dark:text-white/60 font-light">
-                      <lucide-icon [img]="icons.Check" [size]="22" [strokeWidth]="3" class="text-[#0070f3] shrink-0 mt-0.5" />
+                      <svg [lucideIcon]="icons.Check" [size]="22" [strokeWidth]="3" class="text-[#0070f3] shrink-0 mt-0.5" />
                       <span>{{ feature }}</span>
                     </li>
                   }

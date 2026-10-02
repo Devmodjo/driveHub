@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { Payment, PaymentMethod, PaymentMotif, PaymentSummary, Student } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
 import { SessionService } from '../../../../services/session-service/session.service';
@@ -19,11 +19,11 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
  */
 @Component({
   selector: 'app-payments',
-  imports: [FormsModule, LucideAngularModule, PageHeaderComponent, StatusBadgeComponent],
+  imports: [FormsModule, LucideDynamicIcon, PageHeaderComponent, StatusBadgeComponent],
   template: `
     <app-page-header title="Paiements" [subtitle]="isMonitor ? 'Encaissements de votre auto-école.' : 'Réglez vos frais par Mobile Money.'">
       <button class="btn-primary" (click)="formOpen.set(!formOpen())">
-        <lucide-icon [img]="icons.CreditCard" [size]="16" /> {{ isMonitor ? 'Enregistrer un paiement' : 'Payer' }}
+        <svg [lucideIcon]="icons.CreditCard" [size]="16" /> {{ isMonitor ? 'Enregistrer un paiement' : 'Payer' }}
       </button>
     </app-page-header>
     @if (info()) { <div class="alert-success mb-6">{{ info() }}</div> }
@@ -79,7 +79,7 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
               <td class="text-right whitespace-nowrap space-x-2">
                 @if (p.paymentStatus === 'PENDING') {
                   @if (p.provider !== 'MANUAL') {
-                    <button class="btn-small hover:bg-black/5 dark:hover:bg-white/5" (click)="refresh(p)" aria-label="Actualiser"><lucide-icon [img]="icons.RefreshCw" [size]="15" /> Actualiser</button>
+                    <button class="btn-small hover:bg-black/5 dark:hover:bg-white/5" (click)="refresh(p)" aria-label="Actualiser"><svg [lucideIcon]="icons.RefreshCw" [size]="15" /> Actualiser</button>
                   }
                   @if (isMonitor) {
                     <button class="btn-small bg-[#0070f3] text-white" (click)="validate(p)">Valider</button>
