@@ -267,3 +267,76 @@ export interface PaymentSummary {
   totalValidated: number;
   totalPending: number;
 }
+
+// ─── Justificatifs (pièce d'identité, CAPEC) ────────────────────────
+// Contrat : docs/API-JUSTIFICATIFS.md
+
+/** CNI : pièce d'identité (CNI ou passeport). CAPEC : certificat d'aptitude à l'enseignement de la conduite. */
+export type DocumentType = 'CNI' | 'CAPEC';
+/** PENDING : en vérification, VERIFIED : vérifié, REJECTED : refusé (voir reviewComment). */
+export type DocumentStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+
+/** Un justificatif envoyé par un utilisateur (DocumentResponse du backend). */
+export interface UserDocument {
+  id: string;
+  type: DocumentType;
+  status: DocumentStatus;
+  /** Numéro masqué (ex : « ••••4521 »), null si l'utilisateur ne l'a pas renseigné. */
+  documentNumberMasked: string | null;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+  /** Motif du refus, null sauf si le document a été refusé. */
+  reviewComment: string | null;
+}
+
+/** GET /api/documents/requirements : pièces demandées selon le rôle, et celles qui manquent encore. */
+export interface DocumentRequirements {
+  required: DocumentType[];
+  missing: DocumentType[];
+}
+
+/** Décision du back-office sur un justificatif (commentaire obligatoire en cas de refus). */
+export interface DocumentReview {
+  status: 'VERIFIED' | 'REJECTED';
+  comment: string | null;
+}
+
+// ─── Ajout d'un moniteur par le responsable de l'auto-école ─────────
+/** Partie « monitor » (JSON) du formulaire multipart de POST /api/monitors. */
+export interface MonitorCreateRequest {
+  firstname: string;
+  lastname: string;
+  email: string;
+  phoneNumber: string;
+  gender: Gender;
+  nationality: string;
+  residenceCity: string;
+  dateOfBirth: string; // yyyy-MM-dd
+}
+
+/** POST /api/auth/accept-invitation : le moniteur invité choisit son mot de passe. */
+export interface AcceptInvitationRequest {
+  token: string;
+  password: string;
+  acceptPrivacyPolicy: boolean;
+}
+
+// ─── Abonnement de l'auto-école ─────────────────────────────────────
+/**
+ * Seule la valeur TRIAL (période d'essai) est utilisée par le frontend pour l'instant.
+ * Les autres valeurs seront précisées avec la facturation (docs/ABONNEMENTS-ET-PAIEMENTS.md côté backend).
+ */
+export type SubscriptionStatus = 'TRIAL' | (string & {});
+
+/** GET /api/driving-schools/me/subscription (204 si l'auto-école n'est pas encore validée). */
+export interface SchoolSubscription {
+  planCode: string;
+  planName: string;
+  monthlyPriceFcfa: number;
+  status: SubscriptionStatus;
+  trialEndsAt: string | null;
+  trialDaysLeft: number | null;
+  billingEnabled: boolean;
+}

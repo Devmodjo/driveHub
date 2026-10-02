@@ -9,18 +9,20 @@ import { PendingSchoolRequest } from '../../../../interfaces/PendingSchoolReques
 import { errorMessage } from '../../../../shared/http-error';
 import { ICONS } from '../../../../shared/icons';
 import { BoConfirmComponent } from '../../shared/bo-confirm.component';
+import { BoDrawerComponent } from '../../shared/bo-drawer.component';
+import { BoRegistryDocumentsComponent } from '../../shared/bo-registry-documents.component';
 import { BoToastComponent, BoToastMessage } from '../../shared/bo-toast.component';
 import { initials } from '../../shared/bo-status';
 
 /**
  * Page « Demandes en attente » (/backoffice/dashboard/pending) : tout ce qui attend une décision.
- *  - demandes de création d'auto-école (approuver / rejeter) ;
+ *  - demandes de création d'auto-école (justificatifs du responsable, approuver / rejeter) ;
  *  - comptes administrateurs à activer (ROOT uniquement : pour les autres rôles, l'API refuse
  *    et la section affiche un message explicite).
  */
 @Component({
   selector: 'app-pending',
-  imports: [LucideDynamicIcon, BoConfirmComponent, BoToastComponent],
+  imports: [LucideDynamicIcon, BoConfirmComponent, BoToastComponent, BoDrawerComponent, BoRegistryDocumentsComponent],
   template: `
     <bo-toast [message]="actionMessage()" />
 
@@ -57,6 +59,9 @@ import { initials } from '../../shared/bo-status';
                 </p>
               </div>
               <div class="grid grid-cols-2 md:flex gap-2 shrink-0">
+                <button type="button" class="bo-btn bo-btn-outline col-span-2" (click)="documentsOf.set(school)">
+                  <svg [lucideIcon]="icons.FileText" [size]="15" /> Justificatifs
+                </button>
                 <button type="button" class="bo-btn bo-btn-green" [disabled]="busyId() === school.id" (click)="approveSchool(school.id)">Approuver</button>
                 <button type="button" class="bo-btn bo-btn-outline text-red-600! dark:text-red-400!" [disabled]="busyId() === school.id"
                         (click)="rejectTarget.set(school)">Rejeter</button>
@@ -97,6 +102,21 @@ import { initials } from '../../shared/bo-status';
       }
     </section>
 
+    @if (documentsOf(); as school) {
+      <bo-drawer [title]="'Justificatifs · ' + school.schoolName" (closed)="documentsOf.set(null)">
+        <p class="mb-4 text-sm text-black/60 dark:text-white/60">
+          Responsable : <span class="font-semibold text-black dark:text-white">{{ school.monitorName || '—' }}</span>.
+          Vérifiez sa pièce d'identité et son CAPEC avant d'approuver l'auto-école.
+        </p>
+        <bo-registry-documents [registryId]="school.id" (notify)="showMessage($event.text, $event.type)" />
+        <div class="mt-6 grid grid-cols-2 gap-2">
+          <button type="button" class="bo-btn bo-btn-green" [disabled]="busyId() === school.id" (click)="documentsOf.set(null); approveSchool(school.id)">Approuver</button>
+          <button type="button" class="bo-btn bo-btn-outline text-red-600! dark:text-red-400!" [disabled]="busyId() === school.id"
+                  (click)="documentsOf.set(null); rejectTarget.set(school)">Rejeter</button>
+        </div>
+      </bo-drawer>
+    }
+
     @if (rejectTarget(); as target) {
       <bo-confirm title="Rejeter cette demande ?" [message]="target.schoolName + ' sera informée du rejet de sa demande.'"
                   confirmLabel="Rejeter" tone="danger" [busy]="busyId() === target.id"
@@ -118,6 +138,8 @@ export class PendingComponent implements OnInit {
   protected readonly adminsError = signal('');
   protected readonly busyId = signal<string | null>(null);
   protected readonly rejectTarget = signal<PendingSchoolRequest | null>(null);
+  /** Demande dont les justificatifs sont affichés dans le volet latéral. */
+  protected readonly documentsOf = signal<PendingSchoolRequest | null>(null);
   protected readonly actionMessage = signal<BoToastMessage | null>(null);
 
   ngOnInit(): void {
@@ -174,7 +196,7 @@ export class PendingComponent implements OnInit {
     });
   }
 
-  private showMessage(text: string, type: 'success' | 'error'): void {
+  protected showMessage(text: string, type: 'success' | 'error'): void {
     this.actionMessage.set({ text, type });
     setTimeout(() => this.actionMessage.set(null), 3500);
   }

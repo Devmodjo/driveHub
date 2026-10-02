@@ -11,6 +11,7 @@ import { RegistryChartComponent } from '../../schoolregistry-component/registry-
 import { RegistryTableComponent } from '../../schoolregistry-component/registry-table-component/registry.table.component';
 import { BoConfirmComponent } from '../../shared/bo-confirm.component';
 import { BoDrawerComponent } from '../../shared/bo-drawer.component';
+import { BoRegistryDocumentsComponent } from '../../shared/bo-registry-documents.component';
 import { BoToastComponent, BoToastMessage } from '../../shared/bo-toast.component';
 import { schoolStatusClass, schoolStatusLabel } from '../../shared/bo-status';
 
@@ -29,7 +30,7 @@ interface PendingAction {
   selector: 'app-school',
   imports: [
     DatePipe, RegistryKpiComponent, RegistryChartComponent, RegistryTableComponent,
-    BoConfirmComponent, BoDrawerComponent, BoToastComponent,
+    BoConfirmComponent, BoDrawerComponent, BoToastComponent, BoRegistryDocumentsComponent,
   ],
   templateUrl: './school.component.html',
 })
@@ -220,8 +221,8 @@ export class SchoolComponent implements OnInit {
     return this.schools().find((s) => s.id === id)?.schoolName ?? this.selectedSchool()?.schoolName ?? 'Cette auto-école';
   }
 
-  /** Affiche un message temporaire pendant 3,5 secondes. */
-  private showMessage(text: string, type: 'success' | 'error'): void {
+  /** Affiche un message temporaire pendant 3,5 secondes (aussi utilisé par le bloc des justificatifs). */
+  protected showMessage(text: string, type: 'success' | 'error'): void {
     this.actionMessage.set({ text, type });
     setTimeout(() => this.actionMessage.set(null), 3500);
   }
