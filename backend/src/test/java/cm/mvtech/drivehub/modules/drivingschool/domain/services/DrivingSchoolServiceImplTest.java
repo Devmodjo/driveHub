@@ -37,6 +37,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -134,6 +135,8 @@ class DrivingSchoolServiceImplTest {
 
         verify(userRepository).findById(monitorUser.getId());
         verify(drivingSchoolRegistryRepository).save(any(DrivingSchoolRegistry.class));
+        // Accusé de réception envoyé au moniteur (délai de traitement de 48 à 72 heures)
+        verify(emailService).sendSchoolRequestReceivedEmail(eq(monitorUser.getEmail()), eq(monitorUser.getFirstname()), anyString());
     }
 
     /**

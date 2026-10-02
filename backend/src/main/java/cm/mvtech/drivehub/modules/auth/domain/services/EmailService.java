@@ -1,5 +1,7 @@
 package cm.mvtech.drivehub.modules.auth.domain.services;
 
+import cm.mvtech.drivehub.modules.auth.domain.model.MailRecipient;
+import cm.mvtech.drivehub.modules.messageapi.ValidationDelay;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -181,6 +183,19 @@ public class EmailService {
     //  Tous utilisent le même modèle : templates/emails/notification.html
     // =====================================================================
 
+    /** Au moniteur : accusé de réception de sa demande de création d'auto-école. */
+    @Async
+    public void sendSchoolRequestReceivedEmail(String toEmail, String name, String schoolName) {
+        sendNotification(toEmail, name,
+                "Demande reçue : " + schoolName + " — DriveHub",
+                "Votre demande est bien enregistrée",
+                "Nous avons bien reçu la demande de création de « " + schoolName + " ». "
+                        + "Notre équipe vérifie chaque auto-école avant son ouverture sur DriveHub : "
+                        + "votre demande sera traitée sous " + ValidationDelay.TEXT + ". "
+                        + "Vous recevrez un email dès qu'elle sera validée.",
+                "Suivre ma demande", frontendUrl + "/dashboard/bienvenue");
+    }
+
     /** Au moniteur : sa demande de création d'auto-école est validée par la plateforme. */
     @Async
     public void sendSchoolApprovedEmail(String toEmail, String name, String schoolName) {
@@ -237,15 +252,35 @@ public class EmailService {
     }
 
     /**
+     * Message libre envoyé depuis le back-office (annonce, information) à une liste de destinataires.
+     *
+     * <p>Exécuté en arrière-plan (@Async) : l'administrateur n'attend pas la fin de l'envoi.
+     * Les emails partent un par un (personnalisés « Bonjour {nom} ») pour ménager le serveur SMTP ;
+     * un échec sur une adresse n'empêche pas l'envoi aux suivantes.</p>
+     */
+    @Async
+    public void sendPlatformAnnouncement(java.util.List<MailRecipient> recipients, String subject, String message) {
+        int sent = 0;
+        for (MailRecipient recipient : recipients) {
+            if (sendNotification(recipient.email(), recipient.name(), subject + " — DriveHub", subject, message,
+                    "Ouvrir DriveHub", frontendUrl)) {
+                sent++;
+            }
+        }
+        log.info("Annonce « {} » : {} / {} email(s) envoyé(s)", subject, sent, recipients.size());
+    }
+
+    /**
      * Construit et envoie un email à partir du modèle "notification".
      * Une erreur d'envoi est seulement journalisée : elle ne doit jamais annuler l'action métier
      * (une auto-école validée reste validée même si le serveur mail est indisponible).
      *
      * @param actionLabel texte du bouton (null = pas de bouton)
      * @param actionUrl   lien du bouton (null = pas de bouton)
+     * @return {@code true} si l'email est parti, {@code false} en cas d'échec (journalisé)
      */
-    private void sendNotification(String toEmail, String name, String subject, String title, String message,
-                                  String actionLabel, String actionUrl) {
+    private boolean sendNotification(String toEmail, String name, String subject, String title, String message,
+                                     String actionLabel, String actionUrl) {
         try {
             Context context = new Context();
             context.setVariable("name", name);
@@ -257,8 +292,10 @@ public class EmailService {
             String html = templateEngine.process("emails/notification", context);
             sendHtmlEmail(toEmail, subject, html);
             log.info("Email « {} » envoyé à {}", subject, toEmail);
+            return true;
         } catch (Exception e) {
             log.error("Échec envoi email « {} » à {} : {}", subject, toEmail, e.getMessage());
+            return false;
         }
     }
 

@@ -1,6 +1,8 @@
 package cm.mvtech.drivehub.modules.auth.domain.services.impl;
 
 
+import cm.mvtech.drivehub.modules.auth.domain.model.PrivacyPolicy;
+import cm.mvtech.drivehub.modules.exception.BadRequestException;
 import cm.mvtech.drivehub.modules.auth.application.dto.CurrentUserResponse;
 import cm.mvtech.drivehub.modules.auth.application.dto.ForgotPasswordRequest;
 import cm.mvtech.drivehub.modules.auth.application.dto.ResetPasswordRequest;
@@ -112,7 +114,7 @@ public class AuthServiceImpl implements AuthService {
     public void registerStudent(StudentRegisterRequest request) {
 
         User user = newUser(request.firstname(), request.lastname(), request.email(),
-                request.password(), Role.STUDENT);
+                request.password(), Role.STUDENT, request.acceptPrivacyPolicy());
 
         Student student = new Student();
         student.setUser(user);
@@ -133,7 +135,7 @@ public class AuthServiceImpl implements AuthService {
     public void registerMonitor(MonitorRegisterRequest request) {
 
         User user = newUser(request.firstname(), request.lastname(), request.email(),
-                request.password(), Role.MONITOR);
+                request.password(), Role.MONITOR, request.acceptPrivacyPolicy());
 
         Monitor monitor = new Monitor();
         monitor.setUser(user);
@@ -291,11 +293,17 @@ public class AuthServiceImpl implements AuthService {
     /**
      * Création commune d'un compte (élève ou moniteur) : une seule implémentation (DRY).
      * L'email est stocké en minuscules pour éviter les doublons "Jean@x.cm" / "jean@x.cm".
+     * Le consentement à la politique de confidentialité est obligatoire : sa date et sa version
+     * sont enregistrées (le DTO le vérifie déjà ; ce contrôle protège aussi les autres appelants).
      */
-    private User newUser(String firstname, String lastname, String email, String rawPassword, Role role) {
+    private User newUser(String firstname, String lastname, String email, String rawPassword, Role role,
+                         boolean acceptPrivacyPolicy) {
+        if (!acceptPrivacyPolicy) {
+            throw new BadRequestException("Vous devez accepter la politique de confidentialité pour créer un compte");
+        }
         String normalizedEmail = email.trim().toLowerCase();
         if (userRepository.existsByEmail(normalizedEmail)) {
-            throw new ConflictException("Email déjà utilisé");
+            throw new ConflictException("Un compte existe déjà avec cette adresse email");
         }
         User user = new User();
         user.setFirstname(firstname);
@@ -304,6 +312,8 @@ public class AuthServiceImpl implements AuthService {
         user.setRoles(role);
         user.setPassword(passwordEncoder.encode(rawPassword));
         user.setProfileStatus(ProfileStatus.REGISTERED);
+        user.setPrivacyPolicyAcceptedAt(java.time.LocalDateTime.now());
+        user.setPrivacyPolicyVersion(PrivacyPolicy.CURRENT_VERSION);
         return userRepository.save(user);
     }
 }

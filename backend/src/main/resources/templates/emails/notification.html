@@ -29,7 +29,7 @@
                             Bonjour <span th:text="${name}">Utilisateur</span>,
                         </p>
                         <h1 style="margin:0 0 20px;font-size:22px;color:#111827;" th:text="${title}">Titre</h1>
-                        <p style="margin:0 0 32px;font-size:15px;line-height:1.7;color:#4B5563;" th:text="${message}">Message</p>
+                        <p style="margin:0 0 32px;font-size:15px;line-height:1.7;color:#4B5563;white-space:pre-line;" th:text="${message}">Message</p>
                         <p th:if="${actionUrl != null}" style="margin:0 0 8px;">
                             <a th:href="${actionUrl}" th:text="${actionLabel}"
                                style="display:inline-block;background:#0070F3;color:#FFFFFF;text-decoration:none;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;">

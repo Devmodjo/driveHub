@@ -85,7 +85,8 @@ class AuthControllerIntegrationTest {
                     "gender": "MALE",
                     "nationality": "Cameroonian",
                     "residenceCity": "Douala",
-                    "dateOfBirth": "2000-01-01"
+                    "dateOfBirth": "2000-01-01",
+                    "acceptPrivacyPolicy": true
                 }
                 """;
 
@@ -94,8 +95,7 @@ class AuthControllerIntegrationTest {
                         .content(studentJson))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value(
-                        "Inscription de l'étudiant réussie. En attente de validation par le moniteur."));
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("vérifier votre adresse")));
     }
 
     // ─── REGISTER MONITOR ─────────────────────────────────────────────────────
@@ -114,7 +114,8 @@ class AuthControllerIntegrationTest {
                     "gender": "FEMALE",
                     "nationality": "Cameroonian",
                     "residenceCity": "Yaoundé",
-                    "dateOfBirth": "1990-05-15"
+                    "dateOfBirth": "1990-05-15",
+                    "acceptPrivacyPolicy": true
                 }
                 """;
 
@@ -123,8 +124,72 @@ class AuthControllerIntegrationTest {
                         .content(monitorJson))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("vérifier votre adresse")));
+    }
+
+    /**
+     * Sans acceptation de la politique de confidentialité : 400, avec le message rattaché au champ
+     * (le frontend l'affiche sous la case à cocher) et aucun appel au service.
+     */
+    @Test
+    void registerStudent_WithoutPrivacyConsent_ShouldReturnFieldError() throws Exception {
+        String json = """
+                {
+                    "firstname": "John", "lastname": "Doe", "email": "john.consent@test.com",
+                    "password": "password123", "phoneNumber": "677000000", "gender": "MALE",
+                    "nationality": "Cameroonian", "residenceCity": "Douala", "dateOfBirth": "2000-01-01"
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/register/student")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.acceptPrivacyPolicy").value(
+                        "Vous devez accepter la politique de confidentialité pour créer un compte"))
                 .andExpect(jsonPath("$.message").value(
-                        "Inscription de l'encadreur réussie. En attente de validation par l'admin."));
+                        "Vous devez accepter la politique de confidentialité pour créer un compte"));
+        org.mockito.Mockito.verifyNoInteractions(authService);
+    }
+
+    /** Plusieurs champs invalides : un message par champ dans fieldErrors. */
+    @Test
+    void registerMonitor_WithInvalidFields_ShouldReturnOneMessagePerField() throws Exception {
+        String json = """
+                {
+                    "firstname": "", "email": "pas-un-email", "password": "court",
+                    "phoneNumber": "12", "gender": "MALE", "nationality": "Camerounaise",
+                    "residenceCity": "Douala", "dateOfBirth": "1990-05-15", "acceptPrivacyPolicy": true
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/register/monitor")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.firstname").value("Le prénom est obligatoire"))
+                .andExpect(jsonPath("$.fieldErrors.email").value("L'adresse email n'est pas valide"))
+                .andExpect(jsonPath("$.fieldErrors.password").exists())
+                .andExpect(jsonPath("$.fieldErrors.phoneNumber").exists());
+    }
+
+    /** Valeur de liste inconnue : le message nomme le champ et les valeurs possibles. */
+    @Test
+    void registerStudent_WithUnknownGender_ShouldNameTheField() throws Exception {
+        String json = """
+                {
+                    "firstname": "John", "email": "john.gender@test.com", "password": "password123",
+                    "phoneNumber": "677000000", "gender": "AUTRE", "nationality": "Camerounaise",
+                    "residenceCity": "Douala", "dateOfBirth": "2000-01-01", "acceptPrivacyPolicy": true
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/register/student")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("« gender »")))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("MALE")));
     }
 
     // ─── /ME ──────────────────────────────────────────────────────────────────

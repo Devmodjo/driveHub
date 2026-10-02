@@ -52,6 +52,14 @@ public class User extends EntityBase {
     @CreationTimestamp
     private LocalDate createdAt;
 
+    /** Date d'acceptation de la politique de confidentialité (preuve du consentement). */
+    @Column(name = "privacy_policy_accepted_at")
+    private java.time.LocalDateTime privacyPolicyAcceptedAt;
+
+    /** Version de la politique acceptée (voir PrivacyPolicy.CURRENT_VERSION). */
+    @Column(name = "privacy_policy_version", length = 20)
+    private String privacyPolicyVersion;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<DrivingSchool> drivingSchool;
 

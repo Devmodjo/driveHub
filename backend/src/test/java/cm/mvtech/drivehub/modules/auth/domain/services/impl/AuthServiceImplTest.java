@@ -145,7 +145,7 @@ class AuthServiceImplTest {
     void registerStudent_Success() {
         StudentRegisterRequest request = new StudentRegisterRequest(
                 "Jane", "Doe", "jane.doe@example.com", "password",
-                "123456789", Gender.FEMALE, "Cameroonian", "Douala",new Date(2000, 1, 1)
+                "123456789", Gender.FEMALE, "Cameroonian", "Douala", new Date(2000, 1, 1), true
         );
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
@@ -166,7 +166,7 @@ class AuthServiceImplTest {
     void registerStudent_EmailAlreadyUsed() {
         StudentRegisterRequest request = new StudentRegisterRequest(
                 "Jane", "Doe", "john.doe@example.com", "password",
-                "123456789", Gender.FEMALE, "Cameroonian", "Douala", new Date(2000, 1, 1)
+                "123456789", Gender.FEMALE, "Cameroonian", "Douala", new Date(2000, 1, 1), true
         );
         when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
@@ -179,7 +179,7 @@ class AuthServiceImplTest {
     void registerMonitor_Success() {
         MonitorRegisterRequest request = new MonitorRegisterRequest(
                 "Mike", "Smith", "mike.smith@example.com", "password",
-                "987654321", Gender.MALE, "Nigerian", "Lagos",new java.sql.Date(1990, 5, 10)
+                "987654321", Gender.MALE, "Nigerian", "Lagos", new java.sql.Date(1990, 5, 10), true
         );
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
@@ -198,7 +198,7 @@ class AuthServiceImplTest {
     void registerMonitor_EmailAlreadyUsed() {
         MonitorRegisterRequest request = new MonitorRegisterRequest(
                 "Mike", "Smith", "john.doe@example.com", "password",
-                "987654321", Gender.MALE, "Nigerian", "Lagos", new java.sql.Date(1990, 5, 10)
+                "987654321", Gender.MALE, "Nigerian", "Lagos", new java.sql.Date(1990, 5, 10), true
         );
         when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
@@ -459,5 +459,43 @@ class AuthServiceImplTest {
         assertThrows(IllegalArgumentException.class, () -> authService.resetPassword(request));
         verify(passwordResetTokenRepository, times(1)).findByToken(anyString());
         verifyNoInteractions(passwordEncoder, userRepository);
+    }
+
+    // ─── CONSENTEMENT À LA POLITIQUE DE CONFIDENTIALITÉ ────────────────────────
+
+    /** Sans consentement, aucun compte n'est créé (le service refuse même si le DTO n'a pas été validé). */
+    @Test
+    void registerStudent_WithoutPrivacyConsent_ThrowsBadRequest() {
+        StudentRegisterRequest request = new StudentRegisterRequest(
+                "Jane", "Doe", "jane.doe@example.com", "password",
+                "123456789", Gender.FEMALE, "Cameroonian", "Douala", new Date(2000, 1, 1), false
+        );
+
+        assertThrows(cm.mvtech.drivehub.modules.exception.BadRequestException.class,
+                () -> authService.registerStudent(request));
+        verify(userRepository, never()).save(any(User.class));
+        verifyNoInteractions(studentsRepository, emailService);
+    }
+
+    /** La date et la version de la politique acceptée sont enregistrées sur le compte (preuve du consentement). */
+    @Test
+    void registerMonitor_RecordsPrivacyConsent() {
+        MonitorRegisterRequest request = new MonitorRegisterRequest(
+                "Mike", "Smith", "mike.smith@example.com", "password",
+                "987654321", Gender.MALE, "Nigerian", "Lagos", new java.sql.Date(1990, 5, 10), true
+        );
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+
+        authService.registerMonitor(request);
+
+        org.mockito.ArgumentCaptor<User> saved = org.mockito.ArgumentCaptor.forClass(User.class);
+        verify(userRepository, atLeastOnce()).save(saved.capture());
+        User created = saved.getAllValues().get(0);
+        assertEquals(cm.mvtech.drivehub.modules.auth.domain.model.PrivacyPolicy.CURRENT_VERSION,
+                created.getPrivacyPolicyVersion());
+        assertNotNull(created.getPrivacyPolicyAcceptedAt());
     }
 }

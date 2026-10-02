@@ -1,6 +1,8 @@
 package cm.mvtech.drivehub.modules.drivingschool.application.controller;
 
 
+import jakarta.validation.Valid;
+import cm.mvtech.drivehub.modules.messageapi.ValidationDelay;
 import cm.mvtech.drivehub.modules.auth.domain.model.UserPrincipal;
 import cm.mvtech.drivehub.modules.messageapi.ApiResponse;
 import cm.mvtech.drivehub.modules.drivingschool.application.dto.DrivingSchoolPendingRequestDTO;
@@ -38,7 +40,8 @@ public class DrivingSchoolController {
     @PostMapping("/request")
     @PreAuthorize("hasRole('MONITOR')")
     public ResponseEntity<ApiResponse> createSchool(
-            @RequestBody DrivingSchoolRequestDto dto,
+            // @Valid : sans lui, aucune règle du DTO (champs obligatoires, longueurs) n'était vérifiée
+            @Valid @RequestBody DrivingSchoolRequestDto dto,
             @AuthenticationPrincipal UserPrincipal user) throws IllegalAccessException {
 
         if (user == null) {
@@ -53,7 +56,8 @@ public class DrivingSchoolController {
         drivingSchoolService.createSchool(dto, user);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse(true, "Auto ecole enregistrée en attente de validation"));
+                .body(new ApiResponse(true, "Demande enregistrée. Notre équipe vérifie chaque auto-école : votre demande sera traitée sous "
+                        + ValidationDelay.TEXT + ". Vous recevrez un email dès qu'elle sera validée."));
     }
 
 

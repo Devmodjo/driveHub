@@ -74,20 +74,57 @@ class DrivingSchoolControllerIntegrationTest {
         // donc on doit passer un vrai UserPrincipal dans le SecurityContext
         doNothing().when(drivingSchoolService).createSchool(any(), any());
 
-        DrivingSchoolRequestDto dto = new DrivingSchoolRequestDto(
-                "Auto École Prestige", "Rue 123", "699000000",
-                "prestige@test.cm", "Meilleure école", "www.prestige.cm",
-                "677000000", "Cameroun", "Yaoundé"
+        mockMvc.perform(post("/api/driving-schools/request")
+                        .with(authentication(buildMonitorAuth()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validSchool("Meilleure école"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                // le moniteur est informé du délai de traitement
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(
+                        cm.mvtech.drivehub.modules.messageapi.ValidationDelay.TEXT)));
+    }
+
+    /** Demande valide, champs dans l'ordre du record DrivingSchoolRequestDto. */
+    private static DrivingSchoolRequestDto validSchool(String description) {
+        return new DrivingSchoolRequestDto(
+                "Auto École Prestige",      // name
+                "prestige@test.cm",         // email
+                "Cameroun",                 // country
+                "Yaoundé",                  // city
+                "+237 699 00 00 00",        // phoneNumber
+                "Rue 123, Bastos",          // address
+                description,                // description
+                "https://prestige.cm",      // websiteUrl
+                "677000000"                 // whatsappNumber
         );
+    }
+
+    /**
+     * Non-régression : une présentation de plus de 255 caractères faisait échouer l'insertion
+     * (« value too long for type character varying(255) »). Elle est acceptée jusqu'à 2000 caractères.
+     */
+    @Test
+    void createSchoolRequest_WithLongDescription_ShouldBeAccepted() throws Exception {
+        doNothing().when(drivingSchoolService).createSchool(any(), any());
 
         mockMvc.perform(post("/api/driving-schools/request")
                         .with(authentication(buildMonitorAuth()))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value(
-                        "Auto ecole enregistrée en attente de validation"));
+                        .content(objectMapper.writeValueAsString(validSchool("a".repeat(1500)))))
+                .andExpect(status().isCreated());
+    }
+
+    /** Au-delà de 2000 caractères : 400 avec un message précis sur le champ description. */
+    @Test
+    void createSchoolRequest_WithTooLongDescription_ShouldReturnFieldError() throws Exception {
+        mockMvc.perform(post("/api/driving-schools/request")
+                        .with(authentication(buildMonitorAuth()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validSchool("a".repeat(2001)))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.description").value(
+                        "La présentation ne doit pas dépasser 2000 caractères"));
     }
 
     @Test
@@ -95,10 +132,8 @@ class DrivingSchoolControllerIntegrationTest {
         // Sans token → 401 (non authentifié)
         // Note: /api/driving-schools/** est en permitAll dans SecurityConfig
         // mais @PreAuthorize("hasRole('MONITOR')") bloque sans auth
-        DrivingSchoolRequestDto dto = new DrivingSchoolRequestDto(
-                "Test", "Addr", "123", "a@b.c",
-                "Desc", "www.test.cm", "123", "CM", "Douala"
-        );
+        // Formulaire valide : ce test ne vérifie que les droits d'accès
+        DrivingSchoolRequestDto dto = validSchool("Desc");
 
         mockMvc.perform(post("/api/driving-schools/request")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -110,10 +145,8 @@ class DrivingSchoolControllerIntegrationTest {
     @WithMockUser(roles = "STUDENT")
     void createSchoolRequest_AsStudent_ShouldBeForbidden() throws Exception {
         // @PreAuthorize("hasRole('MONITOR')") bloque les STUDENT
-        DrivingSchoolRequestDto dto = new DrivingSchoolRequestDto(
-                "Test", "Addr", "123", "a@b.c",
-                "Desc", "www.test.cm", "123", "CM", "Douala"
-        );
+        // Formulaire valide : ce test ne vérifie que les droits d'accès
+        DrivingSchoolRequestDto dto = validSchool("Desc");
 
         mockMvc.perform(post("/api/driving-schools/request")
                         .contentType(MediaType.APPLICATION_JSON)

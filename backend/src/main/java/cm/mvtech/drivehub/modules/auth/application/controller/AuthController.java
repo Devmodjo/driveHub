@@ -67,7 +67,7 @@ public class AuthController {
     @PostMapping("/register/student")
     public ResponseEntity<ApiResponse> registerStudent(@Valid @RequestBody StudentRegisterRequest registerRequest) {
         authService.registerStudent(registerRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(true, "Inscription de l'étudiant réussie. En attente de validation par le moniteur."));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(true, "Compte créé. Ouvrez l'email que nous venons de vous envoyer pour vérifier votre adresse, puis connectez-vous pour choisir votre auto-école."));
     }
 
     @Operation(
@@ -77,7 +77,7 @@ public class AuthController {
     @PostMapping("/register/monitor")
     public ResponseEntity<ApiResponse> registerMonitor(@Valid @RequestBody MonitorRegisterRequest registerRequest) {
         authService.registerMonitor(registerRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(true, "Inscription de l'encadreur réussie. En attente de validation par l'admin."));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(true, "Compte créé. Ouvrez l'email que nous venons de vous envoyer pour vérifier votre adresse, puis connectez-vous pour enregistrer votre auto-école."));
     }
 
     @Operation(summary = "renouveler le jeton",

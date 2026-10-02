@@ -80,8 +80,12 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
             }
             DrivingSchoolRegistry dr = getDrivingSchoolRegistry(req, admin);
             drivingSchoolRegistryRepository.save(dr);
+
+            // Accusé de réception : la demande sera examinée sous 48 à 72 heures
+            emailService.sendSchoolRequestReceivedEmail(admin.get().getEmail(), admin.get().getFirstname(), dr.getSchoolName());
         } else {
-            throw new IllegalAccessException("votre email doit être vérifier");
+            throw new IllegalAccessException(
+                    "Vérifiez d'abord votre adresse email : cliquez sur le lien reçu après votre inscription");
         }
     }
 
