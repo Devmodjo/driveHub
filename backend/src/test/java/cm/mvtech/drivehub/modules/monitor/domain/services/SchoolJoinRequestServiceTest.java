@@ -1,5 +1,6 @@
 package cm.mvtech.drivehub.modules.monitor.domain.services;
 
+import cm.mvtech.drivehub.modules.document.domain.services.DocumentService;
 import cm.mvtech.drivehub.modules.auth.domain.model.User;
 import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
 import cm.mvtech.drivehub.modules.auth.infrastructure.repository.UserRepository;
@@ -49,6 +50,7 @@ class SchoolJoinRequestServiceTest {
     @Mock private DrivingSchoolRegistryRepository registryRepository;
     @Mock private UserRepository userRepository;
     @Mock private EmailService emailService;
+    @Mock private DocumentService documentService;
 
     @InjectMocks
     private SchoolJoinRequestService service;

@@ -251,6 +251,32 @@ public class EmailService {
                 "Voir les auto-écoles", frontendUrl + "/auto-ecoles");
     }
 
+    /** Au titulaire : un de ses justificatifs a été refusé par l'équipe DriveHub. */
+    @Async
+    public void sendDocumentRejectedEmail(String toEmail, String name, String documentLabel, String reason) {
+        sendNotification(toEmail, name,
+                "Justificatif à renvoyer — DriveHub",
+                "Un justificatif doit être renvoyé",
+                "Nous n'avons pas pu valider " + documentLabel + ". Raison : " + reason + "\n\n"
+                        + "Envoyez un nouveau fichier depuis votre espace : la vérification reprendra aussitôt.",
+                "Envoyer un nouveau fichier", frontendUrl + "/dashboard/bienvenue");
+    }
+
+    /**
+     * Au moniteur ajouté par le responsable d'une auto-école : lien pour choisir son mot de passe
+     * et accepter la politique de confidentialité (valable 72 heures).
+     */
+    @Async
+    public void sendMonitorInvitationEmail(String toEmail, String name, String schoolName, String token) {
+        sendNotification(toEmail, name,
+                "Invitation : " + schoolName + " — DriveHub",
+                "Vous êtes invité à rejoindre " + schoolName,
+                "Le responsable de « " + schoolName + " » vous a ajouté comme moniteur sur DriveHub. "
+                        + "Choisissez votre mot de passe pour accéder à votre espace : planning, élèves, cours et examens. "
+                        + "Ce lien est valable 72 heures.",
+                "Activer mon compte", frontendUrl + "/invitation?token=" + token);
+    }
+
     /**
      * Message libre envoyé depuis le back-office (annonce, information) à une liste de destinataires.
      *

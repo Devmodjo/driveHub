@@ -1,6 +1,7 @@
 package cm.mvtech.drivehub.modules.auth.application.controller;
 
 
+import cm.mvtech.drivehub.modules.auth.application.dto.AcceptInvitationRequest;
 import cm.mvtech.drivehub.modules.auth.application.dto.AuthResponse;
 import cm.mvtech.drivehub.modules.auth.application.dto.CurrentUserResponse;
 import cm.mvtech.drivehub.modules.auth.application.dto.ForgotPasswordRequest;
@@ -8,6 +9,7 @@ import cm.mvtech.drivehub.modules.auth.application.dto.ResetPasswordRequest;
 import cm.mvtech.drivehub.modules.messageapi.ApiResponse;
 import cm.mvtech.drivehub.modules.auth.application.dto.LoginRequest;
 import cm.mvtech.drivehub.modules.monitor.application.dto.MonitorRegisterRequest;
+import cm.mvtech.drivehub.modules.monitor.domain.services.MonitorInvitationService;
 import cm.mvtech.drivehub.modules.student.application.dto.StudentRegisterRequest;
 
 import cm.mvtech.drivehub.modules.auth.domain.services.AuthService;
@@ -35,6 +37,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final TokenRevocationService tokenRevocationService;
+    private final MonitorInvitationService monitorInvitationService;
 
     @Operation(
             summary = "login des users",
@@ -134,5 +137,14 @@ public class AuthController {
         authService.resetPassword(request);
         return ResponseEntity.ok(
                 new ApiResponse(true, "Mot de passe réinitialisé avec succès."));
+    }
+
+    @Operation(summary = "Accepter une invitation (moniteur ajouté par son auto-école)",
+            description = "Le moniteur choisit son mot de passe et accepte la politique de confidentialité ; "
+                    + "le jeton vient du lien reçu par email (valable 72 heures).")
+    @PostMapping("/accept-invitation")
+    public ResponseEntity<ApiResponse> acceptInvitation(@Valid @RequestBody AcceptInvitationRequest request) {
+        monitorInvitationService.acceptInvitation(request);
+        return ResponseEntity.ok(new ApiResponse(true, "Compte activé : vous pouvez maintenant vous connecter."));
     }
 }

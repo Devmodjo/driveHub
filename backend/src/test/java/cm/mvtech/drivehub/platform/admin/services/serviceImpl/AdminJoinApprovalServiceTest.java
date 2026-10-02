@@ -1,5 +1,6 @@
 package cm.mvtech.drivehub.platform.admin.services.serviceImpl;
 
+import cm.mvtech.drivehub.modules.document.domain.services.DocumentService;
 import cm.mvtech.drivehub.core.infrastructure.TenantExecutor;
 import cm.mvtech.drivehub.modules.auth.domain.model.User;
 import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
@@ -64,6 +65,7 @@ class AdminJoinApprovalServiceTest {
     @Mock private DrivingSchoolRegistryRepository drivingSchoolRegistryRepository;
     @Mock private TenantExecutor tenantExecutor;
     @Mock private EmailService emailService;
+    @Mock private DocumentService documentService;
 
     @InjectMocks
     private AdminJoinApprovalService service;

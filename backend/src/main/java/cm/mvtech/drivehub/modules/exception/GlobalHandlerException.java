@@ -193,6 +193,23 @@ public class GlobalHandlerException {
                 "Valeur invalide pour le paramètre « " + ex.getName() + " »", request);
     }
 
+    /** Fichier envoyé trop lourd (limite spring.servlet.multipart.max-file-size). */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponseError> handleMaxUpload(Exception ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST,
+                "Le fichier dépasse 5 Mo : réduisez la taille de la photo ou du PDF", request);
+    }
+
+    /** Champ obligatoire absent d'une requête multipart ou d'un paramètre (ex : fichier non joint). */
+    @ExceptionHandler({org.springframework.web.multipart.support.MissingServletRequestPartException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class})
+    public ResponseEntity<ApiResponseError> handleMissingPart(Exception ex, HttpServletRequest request) {
+        String name = ex instanceof org.springframework.web.multipart.support.MissingServletRequestPartException part
+                ? part.getRequestPartName()
+                : ((org.springframework.web.bind.MissingServletRequestParameterException) ex).getParameterName();
+        return build(HttpStatus.BAD_REQUEST, "Champ obligatoire manquant : « " + name + " »", request);
+    }
+
     /**
      * Toute autre erreur : on la journalise, mais on ne renvoie JAMAIS son message au client
      * (il peut contenir du SQL, des noms de tables, des chemins de fichiers...).

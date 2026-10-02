@@ -46,8 +46,11 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.mock.web.MockMultipartFile;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -92,6 +95,10 @@ class BusinessRoutesIntegrationTest {
 
     @MockitoBean
     private EmailService emailService;
+
+    /** Plus petite image PNG valide : la signature binaire est vérifiée à l'envoi. */
+    private static final byte[] TINY_PNG = java.util.Base64.getDecoder().decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
 
     /** Suffixe unique de cette exécution (ex : "3f9a1c2b"). */
     private final String run = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
@@ -174,10 +181,14 @@ class BusinessRoutesIntegrationTest {
             quietly("DELETE FROM public.school_join_request WHERE user_id = ?", userId);
         }
         if (registryId != null) {
+            quietly("DELETE FROM public.school_subscriptions WHERE registry_id = ?", registryId);
             quietly("DELETE FROM public.school_join_request WHERE driving_school_id = ?", registryId);
             quietly("DELETE FROM public.driving_school_registry WHERE id = ?", registryId);
         }
         for (UUID userId : createdUserIds) {
+            quietly("DELETE FROM public.document_access_logs WHERE document_id IN "
+                    + "(SELECT id FROM public.user_documents WHERE user_id = ?)", userId);
+            quietly("DELETE FROM public.user_documents WHERE user_id = ?", userId);
             quietly("DELETE FROM public.monitors WHERE user_id = ?", userId);
             quietly("DELETE FROM public.students WHERE user_id = ?", userId);
             quietly("DELETE FROM public.email_verification_tokens WHERE user_id = ?", userId);
@@ -448,6 +459,7 @@ class BusinessRoutesIntegrationTest {
         assertNull(jwtService.extractTenant(publicToken), "pas encore de tenant avant l'adhésion");
 
         String body = "{\"drivingSchoolId\":\"" + registryId + "\",\"role\":\"STUDENT\"}";
+        uploadCni(publicToken);
         perform(post("/api/join-school/public"), publicToken, body, false).andExpect(status().isOk());
         perform(post("/api/join-school/public"), publicToken, body, false).andExpect(status().isConflict());
 
@@ -481,6 +493,7 @@ class BusinessRoutesIntegrationTest {
     void joinSchool_RejectByOwner() throws Exception {
         User applicant = newUser(Role.STUDENT, "it-reject");
         String publicToken = tokenFor(applicant);
+        uploadCni(publicToken);
         perform(post("/api/join-school/public"), publicToken,
                 "{\"drivingSchoolId\":\"" + registryId + "\",\"role\":\"STUDENT\"}", false)
                 .andExpect(status().isOk());
@@ -553,6 +566,190 @@ class BusinessRoutesIntegrationTest {
     //  Outils
     // =====================================================================
 
+    // =====================================================================
+    //  Justificatifs (CNI, CAPEC) et abonnement
+    // =====================================================================
+
+    /**
+     * La CNI envoyée par l'élève (avant son adhésion) : il la retrouve à l'identique, le responsable de son
+     * auto-école aussi ; personne d'autre. Vérifiée à l'approbation, elle ne peut plus être supprimée.
+     */
+    @Test
+    void documents_StudentCni_VisibleToOwnerOnly() throws Exception {
+        JsonNode mine = json(perform(get("/api/documents/me"), studentToken, null, false).andExpect(status().isOk()));
+        assertEquals(1, mine.size());
+        assertEquals("CNI", mine.get(0).get("type").asText());
+        assertEquals("VERIFIED", mine.get(0).get("status").asText(), "vérifiée par le responsable à l'approbation");
+        String documentId = mine.get(0).get("id").asText();
+
+        byte[] own = perform(get("/api/documents/" + documentId + "/file"), studentToken, null, false)
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")))
+                .andReturn().getResponse().getContentAsByteArray();
+        assertArrayEquals(TINY_PNG, own, "le fichier déchiffré est identique à l'original");
+
+        // Un autre utilisateur ne peut pas le lire par la route « mes documents »
+        perform(get("/api/documents/" + documentId + "/file"), monitorToken, null, false).andExpect(status().isNotFound());
+
+        // Le responsable de l'auto-école le voit dans la fiche de l'élève
+        JsonNode viaSchool = json(perform(get("/api/students/" + studentId + "/documents"), monitorToken)
+                .andExpect(status().isOk()));
+        assertEquals(documentId, viaSchool.get(0).get("id").asText());
+        byte[] viaOwner = perform(get("/api/students/" + studentId + "/documents/" + documentId + "/file"), monitorToken)
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        assertArrayEquals(TINY_PNG, viaOwner);
+        // ... mais pas l'élève lui-même par cette route réservée au responsable
+        perform(get("/api/students/" + studentId + "/documents"), studentToken).andExpect(status().isForbidden());
+
+        perform(delete("/api/documents/" + documentId), studentToken, null, false).andExpect(status().isConflict());
+        perform(get("/api/documents/requirements"), studentToken, null, false)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.missing").isEmpty());
+
+        Integer logged = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM public.document_access_logs WHERE document_id = ?::uuid", Integer.class, documentId);
+        assertTrue(logged != null && logged >= 2, "chaque consultation est journalisée");
+
+        // Le fichier est chiffré dans le stockage et en base, le nom du fichier aussi
+        String fileNameInDb = jdbcTemplate.queryForObject(
+                "SELECT file_name_enc FROM public.user_documents WHERE id = ?::uuid", String.class, documentId);
+        assertTrue(fileNameInDb.startsWith("v1:"));
+    }
+
+    /** Sans pièce d'identité, la demande d'adhésion est refusée avec un message qui dit quoi faire. */
+    @Test
+    void documents_JoinWithoutCni_IsRefused() throws Exception {
+        User newcomer = newUser(Role.STUDENT, "it-nocni");
+        perform(post("/api/join-school/public"), tokenFor(newcomer),
+                "{\"drivingSchoolId\":\"" + registryId + "\",\"role\":\"STUDENT\"}", false)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("CNI")));
+
+        // Le CAPEC n'est pas demandé à un élève, et un fichier qui n'est pas une image/PDF est refusé
+        mockMvc.perform(multipart("/api/documents")
+                        .file(new MockMultipartFile("file", "capec.png", "image/png", TINY_PNG))
+                        .param("type", "CAPEC")
+                        .header("Authorization", "Bearer " + tokenFor(newcomer)))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(multipart("/api/documents")
+                        .file(new MockMultipartFile("file", "cni.png", "image/png", "<html>".repeat(5).getBytes()))
+                        .param("type", "CNI")
+                        .header("Authorization", "Bearer " + tokenFor(newcomer)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Format")));
+    }
+
+    /**
+     * Le responsable ajoute un moniteur avec sa CNI et son CAPEC ; le moniteur active son compte avec le lien
+     * d'invitation, se connecte et arrive directement dans l'auto-école.
+     */
+    @Test
+    void monitors_OwnerAddsMonitor_InvitationActivatesAccount() throws Exception {
+        String email = "it-invite-" + run + "@test.cm";
+        MockMultipartFile monitorPart = new MockMultipartFile("monitor", "", MediaType.APPLICATION_JSON_VALUE,
+                ("{\"firstname\":\"Paul\",\"lastname\":\"Invite\",\"email\":\"" + email + "\","
+                        + "\"phoneNumber\":\"+237690000001\",\"gender\":\"MALE\",\"nationality\":\"Camerounaise\","
+                        + "\"residenceCity\":\"Douala\",\"dateOfBirth\":\"1990-01-01\"}").getBytes(StandardCharsets.UTF_8));
+        MockMultipartFile cni = new MockMultipartFile("cni", "cni.png", "image/png", TINY_PNG);
+        MockMultipartFile capec = new MockMultipartFile("capec", "capec.png", "image/png", TINY_PNG);
+
+        // Un élève ne peut pas ajouter de moniteur
+        mockMvc.perform(multipart("/api/monitors").file(monitorPart).file(cni).file(capec)
+                        .header("Authorization", "Bearer " + studentToken).header("X-Tenant-ID", schema))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(multipart("/api/monitors").file(monitorPart).file(cni).file(capec)
+                        .header("Authorization", "Bearer " + monitorToken).header("X-Tenant-ID", schema))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.email").value(email));
+        User invited = userRepository.findByEmail(email).orElseThrow();
+        createdUserIds.add(invited.getId());
+        assertEquals(ProfileStatus.REGISTERED, invited.getProfileStatus());
+
+        // Même adresse une seconde fois : 409
+        mockMvc.perform(multipart("/api/monitors").file(monitorPart).file(cni).file(capec)
+                        .header("Authorization", "Bearer " + monitorToken).header("X-Tenant-ID", schema))
+                .andExpect(status().isConflict());
+
+        Integer verified = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM public.user_documents WHERE user_id = ? AND status = 'VERIFIED'", Integer.class,
+                invited.getId());
+        assertEquals(2, verified, "CNI et CAPEC vérifiés par le responsable");
+        String invitation = jdbcTemplate.queryForObject(
+                "SELECT token FROM public.password_reset_tokens WHERE user_id = ?", String.class, invited.getId());
+        org.mockito.Mockito.verify(emailService).sendMonitorInvitationEmail(
+                org.mockito.ArgumentMatchers.eq(email), org.mockito.ArgumentMatchers.eq("Paul"),
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.eq(invitation));
+
+        // Avant l'invitation, impossible de se connecter
+        perform(post("/api/auth/login"), null,
+                "{\"email\":\"" + email + "\",\"password\":\"MonMotDePasse1\"}", false)
+                .andExpect(status().isUnauthorized());
+
+        perform(post("/api/auth/accept-invitation"), null,
+                "{\"token\":\"" + invitation + "\",\"password\":\"MonMotDePasse1\",\"acceptPrivacyPolicy\":true}", false)
+                .andExpect(status().isOk());
+        perform(post("/api/auth/accept-invitation"), null,
+                "{\"token\":\"" + invitation + "\",\"password\":\"MonMotDePasse1\",\"acceptPrivacyPolicy\":true}", false)
+                .andExpect(status().isBadRequest());
+
+        JsonNode login = json(perform(post("/api/auth/login"), null,
+                "{\"email\":\"" + email + "\",\"password\":\"MonMotDePasse1\"}", false)
+                .andExpect(status().isAccepted()));
+        String token = login.get("token").asText();
+        assertEquals(schema, jwtService.extractTenant(token), "le moniteur invité arrive dans son auto-école");
+        perform(get("/api/monitors/me"), token).andExpect(status().isOk());
+    }
+
+    /** Back-office : justificatifs du fondateur (consultation, refus motivé) et période d'essai de 15 jours. */
+    @Test
+    void platform_FounderDocumentsReview_AndTrialSubscription() throws Exception {
+        String documentId = json(mockMvc.perform(multipart("/api/documents")
+                        .file(new MockMultipartFile("file", "cni.png", "image/png", TINY_PNG))
+                        .param("type", "CNI")
+                        .param("documentNumber", "IT123456")
+                        .header("Authorization", "Bearer " + monitorToken))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.documentNumberMasked").value("••••3456"))).get("id").asText();
+
+        var admin = org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+                .user("reviewer@drivehub.cm").roles("REVIEWER");
+
+        mockMvc.perform(get("/api/platform/registries/" + registryId + "/documents").with(admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(documentId));
+        byte[] content = mockMvc.perform(get("/api/platform/documents/" + documentId + "/file").with(admin))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        assertArrayEquals(TINY_PNG, content);
+
+        // Refus sans motif : 400 ; avec motif : l'utilisateur est prévenu par email
+        mockMvc.perform(patch("/api/platform/documents/" + documentId + "/review").with(admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"REJECTED\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(patch("/api/platform/documents/" + documentId + "/review").with(admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"REJECTED\",\"comment\":\"Photo floue\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REJECTED"));
+        org.mockito.Mockito.verify(emailService).sendDocumentRejectedEmail(
+                org.mockito.ArgumentMatchers.eq(monitorUser.getEmail()), org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.eq("Photo floue"));
+        perform(get("/api/documents/requirements"), monitorToken, null, false)
+                .andExpect(jsonPath("$.missing[0]").value("CNI"));
+
+        // Un utilisateur ordinaire n'accède pas au back-office
+        perform(get("/api/platform/documents/" + documentId + "/file"), studentToken, null, false)
+                .andExpect(status().isForbidden());
+
+        // Période d'essai démarrée à l'approbation de l'auto-école (aucune facturation)
+        perform(get("/api/driving-schools/me/subscription"), monitorToken, null, false)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("TRIAL"))
+                .andExpect(jsonPath("$.trialDaysLeft").value(15))
+                .andExpect(jsonPath("$.billingEnabled").value(false));
+    }
+
     /** Crée un compte (email vérifié) et son profil public, comme après une inscription. */
     private User newUser(Role role, String prefix) {
         User user = new User();
@@ -596,6 +793,7 @@ class BusinessRoutesIntegrationTest {
 
     /** Parcours complet d'adhésion d'un élève, puis jeton portant le tenant. */
     private String joinSchoolAndGetToken(User student) throws Exception {
+        uploadCni(tokenFor(student));   // justificatif exigé avant la demande d'adhésion
         perform(post("/api/join-school/public"), tokenFor(student),
                 "{\"drivingSchoolId\":\"" + registryId + "\",\"role\":\"STUDENT\"}", false)
                 .andExpect(status().isOk());
@@ -605,6 +803,15 @@ class BusinessRoutesIntegrationTest {
         String token = tokenFor(student);
         assertEquals(schema, jwtService.extractTenant(token));
         return token;
+    }
+
+    /** Envoie une pièce d'identité (petite image PNG) pour l'utilisateur du jeton. */
+    private void uploadCni(String token) throws Exception {
+        mockMvc.perform(multipart("/api/documents")
+                        .file(new MockMultipartFile("file", "cni.png", "image/png", TINY_PNG))
+                        .param("type", "CNI")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isCreated());
     }
 
     /** Identifiant de la demande en attente de l'utilisateur, vue par le moniteur responsable. */
@@ -640,7 +847,9 @@ class BusinessRoutesIntegrationTest {
      */
     private ResultActions perform(MockHttpServletRequestBuilder request, String token, String body,
                                   boolean withTenant) throws Exception {
-        request.header("Authorization", "Bearer " + token);
+        if (token != null) {
+            request.header("Authorization", "Bearer " + token);
+        }
         if (withTenant) {
             request.header("X-Tenant-ID", schema);
         }

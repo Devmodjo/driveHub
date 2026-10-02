@@ -1,5 +1,7 @@
 package cm.mvtech.drivehub.modules.drivingschool.domain.services;
 
+import cm.mvtech.drivehub.modules.document.domain.services.DocumentService;
+import cm.mvtech.drivehub.modules.subscription.domain.services.SubscriptionService;
 import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
 import cm.mvtech.drivehub.core.domain.service.TenantProvisioningService;
 import cm.mvtech.drivehub.core.infrastructure.TenantContext;
@@ -61,6 +63,8 @@ class DrivingSchoolServiceImplTest {
     @Mock private TenantExecutor tenantExecutor;
     @Mock private MonitorsRepository monitorsRepository;
     @Mock private EmailService emailService;
+    @Mock private DocumentService documentService;
+    @Mock private SubscriptionService subscriptionService;
 
     @InjectMocks
     private DrivingSchoolServiceImpl service;

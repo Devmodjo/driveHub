@@ -1,5 +1,7 @@
 package cm.mvtech.drivehub.modules.drivingschool.domain.services;
 
+import cm.mvtech.drivehub.modules.document.domain.services.DocumentService;
+import cm.mvtech.drivehub.modules.subscription.domain.services.SubscriptionService;
 import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
 import cm.mvtech.drivehub.modules.drivingschool.application.dto.*;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.DrivingSchool;
@@ -47,6 +49,8 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
     private final TenantExecutor tenantExecutor;
     private final MonitorsRepository monitorsRepository;
     private final EmailService emailService;
+    private final DocumentService documentService;
+    private final SubscriptionService subscriptionService;
 
     /**
      * Soumet une demande de création d'auto-école au nom de l'utilisateur authentifié. La méthode
@@ -78,6 +82,8 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
             if (drivingSchoolRegistryRepository.existsBySchoolNameIgnoreCase(req.name().trim())) {
                 throw new ConflictException("Une auto-école porte déjà ce nom");
             }
+            // Lutte contre les auto-écoles clandestines : pièce d'identité et CAPEC du dirigeant obligatoires
+            documentService.assertRequiredDocuments(admin.get(), "avant d'envoyer votre demande de création d'auto-école");
             DrivingSchoolRegistry dr = getDrivingSchoolRegistry(req, admin);
             drivingSchoolRegistryRepository.save(dr);
 
@@ -186,7 +192,11 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
         schoolRegistry.setDrivingSchoolStatus(DrivingSchoolStatus.APPROVED);
         drivingSchoolRegistryRepository.save(schoolRegistry);
 
-        // 4. Prévenir le moniteur (envoi asynchrone : n'annule rien en cas d'échec)
+        // 4. Justificatifs du fondateur vérifiés par l'équipe DriveHub ; début de la période d'essai
+        documentService.markPendingAsVerified(monitor, "Équipe DriveHub");
+        subscriptionService.startTrial(schoolRegistry);
+
+        // 5. Prévenir le moniteur (envoi asynchrone : n'annule rien en cas d'échec)
         emailService.sendSchoolApprovedEmail(monitor.getEmail(), monitor.getFirstname(), schoolRegistry.getSchoolName());
     }
 

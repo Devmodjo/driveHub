@@ -1,5 +1,10 @@
 package cm.mvtech.drivehub.modules.student.application.controller;
 
+import java.util.List;
+import org.springframework.http.ResponseEntity;
+import cm.mvtech.drivehub.modules.document.domain.services.SchoolDocumentAccessService;
+import cm.mvtech.drivehub.modules.document.application.dto.DocumentResponse;
+import cm.mvtech.drivehub.modules.document.application.controller.DocumentHttp;
 import cm.mvtech.drivehub.modules.messageapi.ApiPageResponse;
 import cm.mvtech.drivehub.modules.messageapi.ApiResponse;
 import cm.mvtech.drivehub.modules.student.application.dto.StudentsRequestDto;
@@ -24,6 +29,7 @@ import java.util.UUID;
 @Tag(name = "STUDENT API", description = "gestion des élèves de l'auto-école (tenant)")
 public class StudentController {
 
+    private final SchoolDocumentAccessService schoolDocumentAccessService;
     private final StudentService studentService;
 
     @Operation(summary = "liste paginée des élèves")
@@ -61,5 +67,20 @@ public class StudentController {
     public ApiResponse delete(@PathVariable UUID id) {
         studentService.delete(id);
         return new ApiResponse(true, "Élève retiré de l'auto-école");
+    }
+
+    @Operation(summary = "Justificatifs d'un élève", description = "Réservé au responsable de l'auto-école")
+    @GetMapping("/{id}/documents")
+    @PreAuthorize("hasRole('MONITOR')")
+    public List<DocumentResponse> documents(@PathVariable UUID id) {
+        return schoolDocumentAccessService.studentDocuments(id);
+    }
+
+    @Operation(summary = "Voir un justificatif d'un élève", description = "Réservé au responsable ; consultation journalisée")
+    @GetMapping("/{id}/documents/{documentId}/file")
+    @PreAuthorize("hasRole('MONITOR')")
+    public ResponseEntity<byte[]> documentFile(@PathVariable UUID id, @PathVariable UUID documentId) {
+        return DocumentHttp.file(
+                schoolDocumentAccessService.studentDocumentFile(id, documentId));
     }
 }

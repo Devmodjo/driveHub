@@ -1,5 +1,6 @@
 package cm.mvtech.drivehub.modules.monitor.domain.services;
 
+import cm.mvtech.drivehub.modules.document.domain.services.DocumentService;
 import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
 import cm.mvtech.drivehub.modules.monitor.infrastructure.repository.SchoolJoinRequestRepository;
 
@@ -34,6 +35,7 @@ public class SchoolJoinRequestService {
     private final DrivingSchoolRegistryRepository registryRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final DocumentService documentService;
 
     /**
      * icic on enregistrer les requete permettant aux
@@ -74,6 +76,8 @@ public class SchoolJoinRequestService {
         if (joinRequestRepository.existsByUserAndDrivingSchoolIdAndJoinStatus(user, registry.getId(), JoinStatus.PENDING)) {
             throw new ConflictException("Une demande est déjà en attente pour cette auto-école");
         }
+        // Élève : pièce d'identité ; moniteur : pièce d'identité et CAPEC (vérifiés par le responsable)
+        documentService.assertRequiredDocuments(user, "avant de demander à rejoindre une auto-école");
 
         SchoolJoinRequest request = new SchoolJoinRequest();
         request.setUser(user);

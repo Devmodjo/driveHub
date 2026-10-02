@@ -54,6 +54,12 @@ spring:
     encoding: UTF-8
     cache: false   # true en production
 
+  # Envoi de fichiers (justificatifs) : 5 Mo par fichier, 12 Mo par requête (ajout d'un moniteur : 2 fichiers)
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 12MB
+
 server:
   port: 8082
 
@@ -83,6 +89,41 @@ payment:
     username: ${CAMPAY_USERNAME:}
     password: ${CAMPAY_PASSWORD:}
     webhook-key: ${CAMPAY_WEBHOOK_KEY:}
+
+# ------------------------------------------------------------------
+#  Chiffrement des données sensibles (justificatifs, numéros de documents)
+#  DATA_ENCRYPTION_KEY : 32 octets aléatoires encodés en Base64, générés une seule fois :
+#      openssl rand -base64 32
+#  À conserver précieusement (gestionnaire de secrets) : sans elle, les données chiffrées sont illisibles.
+#  Ne jamais la mettre dans Git. Vérifiée au démarrage.
+# ------------------------------------------------------------------
+security:
+  encryption:
+    master-key: ${DATA_ENCRYPTION_KEY:}
+
+# ------------------------------------------------------------------
+#  Stockage des justificatifs
+#  provider : LOCAL (développement : dossier sur le disque) ou R2 (production : Cloudflare R2)
+#  Les fichiers sont chiffrés AVANT d'être envoyés, quel que soit le stockage.
+# ------------------------------------------------------------------
+storage:
+  provider: ${STORAGE_PROVIDER:LOCAL}
+  local:
+    directory: ${STORAGE_LOCAL_DIR:./data/documents}
+  r2:
+    account-id: ${R2_ACCOUNT_ID:}
+    access-key-id: ${R2_ACCESS_KEY_ID:}
+    secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+    bucket: ${R2_BUCKET:drivehub-documents}
+
+# ------------------------------------------------------------------
+#  Abonnements des auto-écoles (environnement préparé, facturation DÉSACTIVÉE)
+#  Voir docs/ABONNEMENTS-ET-PAIEMENTS.md avant d'activer quoi que ce soit.
+# ------------------------------------------------------------------
+billing:
+  enabled: ${BILLING_ENABLED:false}
+  trial-days: ${BILLING_TRIAL_DAYS:15}
+  default-plan: ESSENTIEL
 
 jwt:
   secret: ${JWT_SECRET_KEY}          # 32 caractères minimum (vérifié au démarrage)
