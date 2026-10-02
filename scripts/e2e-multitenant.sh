@@ -43,11 +43,12 @@ verify_email() { # email -> valide le compte via le jeton stocké en base
 }
 login() { body "$(call POST /api/auth/login "" "" "{\"email\":\"$1\",\"password\":\"Password123\"}")" | jq -r .token; }
 register() { # role email
-  local profile="\"firstname\":\"Test\",\"lastname\":\"$1\",\"email\":\"$2\",\"password\":\"Password123\",\"phoneNumber\":\"+237699000000\",\"gender\":\"MALE\",\"nationality\":\"Camerounaise\",\"residenceCity\":\"Douala\",\"dateOfBirth\":\"1995-04-12\""
+  local profile="\"firstname\":\"Test\",\"lastname\":\"$1\",\"email\":\"$2\",\"password\":\"Password123\",\"phoneNumber\":\"+237699000000\",\"gender\":\"MALE\",\"nationality\":\"Camerounaise\",\"residenceCity\":\"Douala\",\"dateOfBirth\":\"1995-04-12\",\"acceptPrivacyPolicy\":true"
   expect 201 "$(call POST "/api/auth/register/$1" "" "" "{$profile}")" "Inscription $1 $2"
 }
-create_school() { # jeton nom
-  expect 201 "$(call POST /api/driving-schools/request "$1" "" "{\"name\":\"$2\",\"email\":\"contact-$RUN@ecole.cm\",\"country\":\"Cameroun\",\"city\":\"Douala\",\"phoneNumber\":\"+237699111222\",\"address\":\"Akwa\",\"description\":\"Test\",\"websiteUrl\":null,\"whatsappNumber\":null}")" "Demande de création : $2"
+create_school() { # jeton nom — présentation de 1500 caractères (non-régression : limite de 255 en base)
+  local long_desc; long_desc=$(printf 'a%.0s' $(seq 1 1500))
+  expect 201 "$(call POST /api/driving-schools/request "$1" "" "{\"name\":\"$2\",\"email\":\"contact-$RUN@ecole.cm\",\"country\":\"Cameroun\",\"city\":\"Douala\",\"phoneNumber\":\"+237699111222\",\"address\":\"Akwa\",\"description\":\"$long_desc\",\"websiteUrl\":null,\"whatsappNumber\":null}")" "Demande de création (présentation de 1500 caractères) : $2"
 }
 
 echo "1. Moniteurs et demandes d'auto-école"
@@ -132,6 +133,13 @@ expect 401 "$(call GET /api/auth/me "$TB")" "Jeton refusé après la déconnexio
 expect 401 "$(call GET /api/students "$TB" "$SB")" "Jeton refusé aussi sur les routes du tenant"
 TB=$(login "$MB")
 expect 200 "$(call GET /api/students "$TB" "$SB")" "Nouvelle connexion : nouveau jeton valide"
+
+
+echo "7. Emails du back-office"
+R=$(call POST /api/platform/emails "$ROOT" "" "{\"audience\":\"SCHOOL_MEMBERS\",\"schoolId\":\"$RA\",\"subject\":\"Test e2e $RUN\",\"message\":\"Bonjour, ceci est un message de test.\"}")
+expect 202 "$R" "Email aux membres de l'auto-école A"
+[[ $(body "$R" | jq -r .recipientCount) == 2 ]] && ok "Destinataires : le moniteur A et l'élève accepté" || fail "Nombre de destinataires inattendu : $(body "$R")"
+expect 400 "$(call POST /api/auth/register/student "" "" '{"firstname":"X","email":"x-'$RUN'@test.cm","password":"Password123","phoneNumber":"+237699000000","gender":"MALE","nationality":"Camerounaise","residenceCity":"Douala","dateOfBirth":"1995-04-12"}')" "Inscription refusée sans consentement"
 
 echo
 echo "Tous les tests sont passés ($PASS vérifications)."

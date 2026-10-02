@@ -6,7 +6,8 @@ import { LucideDynamicIcon } from '@lucide/angular';
 import { MyJoinRequest, MySchoolRegistry, SchoolRequest } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
 import { SessionService } from '../../../../services/session-service/session.service';
-import { errorMessage } from '../../../../shared/http-error';
+import { errorMessage, fieldErrorsOf } from '../../../../shared/http-error';
+import { VALIDATION_DELAY } from '../../../../utils/UTILS';
 import { ICONS } from '../../../../shared/icons';
 import { PageHeaderComponent } from '../../shared/page-header.component';
 import { StatusBadgeComponent } from '../../shared/status-badge.component';
@@ -25,7 +26,7 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
   template: `
     <app-page-header badge="Bienvenue" title="Configurons votre espace"
                      [subtitle]="session.isMonitor()
-                       ? 'Inscrivez votre auto-école. Notre équipe vérifie chaque établissement avant son activation.'
+                       ? 'Inscrivez votre auto-école. Notre équipe vérifie chaque établissement avant son activation, sous ' + validationDelay + '.'
                        : 'Choisissez votre auto-école : elle validera votre inscription.'">
       <button class="btn-ghost" (click)="refreshAccess()" [disabled]="refreshing()">
         <svg [lucideIcon]="icons.RefreshCw" [size]="16" /> Accéder à mon espace
@@ -44,36 +45,77 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
           </div>
           <p class="text-black/60 dark:text-white/60 font-light mb-6">{{ reg.address }}, {{ reg.city }} - {{ reg.country }}</p>
           @switch (reg.drivingSchoolStatus) {
-            @case ('PENDING') { <p class="text-sm">Votre demande est en cours d'examen par l'équipe DriveHub. Vous recevrez un email dès qu'elle sera traitée.</p> }
+            @case ('PENDING') {
+              <p class="text-sm">
+                Votre demande est en cours d'examen par l'équipe DriveHub : elle sera traitée sous <strong>{{ validationDelay }}</strong>.
+                Vous recevrez un email dès qu'elle sera validée.
+              </p>
+            }
             @case ('APPROVED') { <p class="text-sm">Votre auto-école est approuvée. Cliquez sur « Accéder à mon espace » pour commencer.</p> }
             @case ('ACTIVE') { <p class="text-sm">Votre auto-école est active. Cliquez sur « Accéder à mon espace » pour commencer.</p> }
             @default { <p class="text-sm">Votre auto-école n'est pas active. Contactez le support DriveHub.</p> }
           }
         </div>
       } @else if (!loading()) {
-        <form class="premium-card rounded-[28px] p-8 max-w-3xl space-y-5" (ngSubmit)="submitSchool()">
+        @let e = fieldErrors();
+        <!-- Limites (maxlength) identiques à celles du backend (DrivingSchoolRequestDto) -->
+        <form class="premium-card rounded-[28px] p-5 sm:p-8 max-w-3xl space-y-5" (ngSubmit)="submitSchool()" novalidate>
           <h3 class="text-xl font-bold tracking-tight">Mon auto-école</h3>
+          <p class="text-sm text-black/60 dark:text-white/60">
+            Après l'envoi, notre équipe vérifie votre établissement sous {{ validationDelay }}. Vous serez prévenu par email.
+          </p>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div><label class="field-label" for="name">Nom de l'établissement</label>
-              <input id="name" class="field-input" name="name" required [(ngModel)]="school.name" /></div>
-            <div><label class="field-label" for="phone">Téléphone</label>
-              <input id="phone" class="field-input" name="phone" required [(ngModel)]="school.phoneNumber" /></div>
-            <div><label class="field-label" for="email">Email</label>
-              <input id="email" class="field-input" type="email" name="email" [(ngModel)]="school.email" /></div>
-            <div><label class="field-label" for="whatsapp">WhatsApp</label>
-              <input id="whatsapp" class="field-input" name="whatsapp" [(ngModel)]="school.whatsappNumber" /></div>
-            <div><label class="field-label" for="country">Pays</label>
-              <input id="country" class="field-input" name="country" [(ngModel)]="school.country" /></div>
-            <div><label class="field-label" for="city">Ville</label>
-              <input id="city" class="field-input" name="city" [(ngModel)]="school.city" /></div>
-            <div class="md:col-span-2"><label class="field-label" for="address">Adresse</label>
-              <input id="address" class="field-input" name="address" required [(ngModel)]="school.address" /></div>
-            <div class="md:col-span-2"><label class="field-label" for="website">Site web</label>
-              <input id="website" class="field-input" name="website" [(ngModel)]="school.websiteUrl" /></div>
-            <div class="md:col-span-2"><label class="field-label" for="description">Présentation</label>
-              <textarea id="description" class="field-input min-h-28" name="description" [(ngModel)]="school.description"></textarea></div>
+            <div>
+              <label class="field-label" for="name">Nom de l'établissement</label>
+              <input id="name" class="field-input" [class.field-input-error]="e['name']" name="name" maxlength="150" required [(ngModel)]="school.name" />
+              @if (e['name']) { <p class="field-error">{{ e['name'] }}</p> }
+            </div>
+            <div>
+              <label class="field-label" for="phone">Téléphone</label>
+              <input id="phone" class="field-input" [class.field-input-error]="e['phoneNumber']" name="phone" type="tel" maxlength="20" placeholder="+237 6XX XX XX XX" required [(ngModel)]="school.phoneNumber" />
+              @if (e['phoneNumber']) { <p class="field-error">{{ e['phoneNumber'] }}</p> }
+            </div>
+            <div>
+              <label class="field-label" for="email">Email</label>
+              <input id="email" class="field-input" [class.field-input-error]="e['email']" type="email" name="email" maxlength="150" [(ngModel)]="school.email" />
+              @if (e['email']) { <p class="field-error">{{ e['email'] }}</p> }
+            </div>
+            <div>
+              <label class="field-label" for="whatsapp">WhatsApp</label>
+              <input id="whatsapp" class="field-input" [class.field-input-error]="e['whatsappNumber']" name="whatsapp" type="tel" maxlength="20" [(ngModel)]="school.whatsappNumber" />
+              @if (e['whatsappNumber']) { <p class="field-error">{{ e['whatsappNumber'] }}</p> }
+            </div>
+            <div>
+              <label class="field-label" for="country">Pays</label>
+              <input id="country" class="field-input" [class.field-input-error]="e['country']" name="country" maxlength="100" [(ngModel)]="school.country" />
+              @if (e['country']) { <p class="field-error">{{ e['country'] }}</p> }
+            </div>
+            <div>
+              <label class="field-label" for="city">Ville</label>
+              <input id="city" class="field-input" [class.field-input-error]="e['city']" name="city" maxlength="100" [(ngModel)]="school.city" />
+              @if (e['city']) { <p class="field-error">{{ e['city'] }}</p> }
+            </div>
+            <div class="md:col-span-2">
+              <label class="field-label" for="address">Adresse</label>
+              <input id="address" class="field-input" [class.field-input-error]="e['address']" name="address" maxlength="255" required [(ngModel)]="school.address" />
+              @if (e['address']) { <p class="field-error">{{ e['address'] }}</p> }
+            </div>
+            <div class="md:col-span-2">
+              <label class="field-label" for="website">Site web</label>
+              <input id="website" class="field-input" [class.field-input-error]="e['websiteUrl']" name="website" type="url" maxlength="255" placeholder="https://" [(ngModel)]="school.websiteUrl" />
+              @if (e['websiteUrl']) { <p class="field-error">{{ e['websiteUrl'] }}</p> }
+            </div>
+            <div class="md:col-span-2">
+              <div class="flex items-baseline justify-between">
+                <label class="field-label" for="description">Présentation</label>
+                <span class="text-xs text-black/40 dark:text-white/40">{{ school.description.length }} / {{ descriptionMax }}</span>
+              </div>
+              <textarea id="description" class="field-input min-h-28" [class.field-input-error]="e['description']" name="description"
+                        [maxlength]="descriptionMax" [(ngModel)]="school.description"></textarea>
+              @if (e['description']) { <p class="field-error">{{ e['description'] }}</p> }
+            </div>
           </div>
-          <button type="submit" class="btn-primary" [disabled]="sending()">Envoyer la demande</button>
+          <button type="submit" class="btn-primary w-full sm:w-auto" [disabled]="sending()">Envoyer la demande</button>
         </form>
 
         <p class="mt-8 text-sm text-black/50 dark:text-white/50">
@@ -115,6 +157,11 @@ export class WelcomeComponent {
   protected readonly sending = signal(false);
   protected readonly refreshing = signal(false);
   protected readonly info = signal('');
+  /** Message d'erreur de chaque champ du formulaire, renvoyé par le backend. */
+  protected readonly fieldErrors = signal<Record<string, string>>({});
+  protected readonly validationDelay = VALIDATION_DELAY;
+  /** Longueur maximale de la présentation (même valeur que le backend). */
+  protected readonly descriptionMax = 2000;
   protected readonly error = signal('');
 
   protected school: SchoolRequest = {
@@ -141,9 +188,14 @@ export class WelcomeComponent {
   protected submitSchool(): void {
     this.sending.set(true);
     this.error.set('');
+    this.fieldErrors.set({});
     this.api.requestSchool(this.school).subscribe({
       next: (res) => { this.sending.set(false); this.info.set(res.message); this.load(); },
-      error: (err) => { this.sending.set(false); this.error.set(errorMessage(err)); },
+      error: (err) => {
+        this.sending.set(false);
+        this.error.set(errorMessage(err));
+        this.fieldErrors.set(fieldErrorsOf(err));
+      },
     });
   }
 
@@ -158,7 +210,7 @@ export class WelcomeComponent {
         if (this.session.tenant()) {
           this.router.navigate(['/dashboard/accueil']);
         } else {
-          this.info.set('Votre accès n\'est pas encore ouvert : la demande est toujours en attente de validation.');
+          this.info.set(`Votre accès n'est pas encore ouvert : la demande est en cours de vérification (délai habituel : ${VALIDATION_DELAY}).`);
         }
       },
       error: (err) => { this.refreshing.set(false); this.error.set(errorMessage(err)); },

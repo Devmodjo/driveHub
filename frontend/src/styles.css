@@ -222,3 +222,11 @@
 .data-table td {
   @apply px-4 py-3 border-b border-black/5 dark:border-white/5 text-black/80 dark:text-white/80 align-middle;
 }
+
+/* Erreur rattachée à un champ de formulaire (message renvoyé par le backend dans fieldErrors) */
+.field-error {
+  @apply mt-1.5 text-sm text-red-600 dark:text-red-400;
+}
+.field-input-error {
+  @apply border-red-500/60 focus:border-red-500 focus:ring-red-500/20;
+}

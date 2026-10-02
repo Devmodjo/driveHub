@@ -21,9 +21,9 @@ import { StatusBadgeComponent } from '../../shared/status-badge.component';
     @if (formOpen()) {
       <form class="premium-card rounded-[24px] p-6 mb-8 grid grid-cols-1 md:grid-cols-4 gap-4 items-end" (ngSubmit)="save()">
         <div><label class="field-label" for="mat">Immatriculation</label>
-          <input id="mat" class="field-input" name="mat" required [(ngModel)]="form.matriculation" /></div>
+          <input id="mat" class="field-input" name="mat" maxlength="20" required [(ngModel)]="form.matriculation" /></div>
         <div><label class="field-label" for="model">Modèle</label>
-          <input id="model" class="field-input" name="model" required [(ngModel)]="form.model" /></div>
+          <input id="model" class="field-input" name="model" maxlength="100" required [(ngModel)]="form.model" /></div>
         <div><label class="field-label" for="state">État</label>
           <select id="state" class="field-input" name="state" [(ngModel)]="form.state">
             <option value="DISPOSABLE">Disponible</option><option value="MAINTENANCE">En maintenance</option><option value="PANNE">En panne</option>

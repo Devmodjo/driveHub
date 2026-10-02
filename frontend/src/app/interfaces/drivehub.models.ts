@@ -64,6 +64,8 @@ export interface RegisterRequest {
   nationality: string;
   residenceCity: string;
   dateOfBirth: string; // yyyy-MM-dd
+  /** Acceptation de la politique de confidentialité : obligatoire (sinon le backend refuse l'inscription). */
+  acceptPrivacyPolicy: boolean;
 }
 
 // ─── Auto-écoles (schéma public) ────────────────────────────────────
