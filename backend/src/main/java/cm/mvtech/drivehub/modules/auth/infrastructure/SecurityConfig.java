@@ -51,6 +51,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/error",                    // page d'erreur Spring : sinon un 401/400 envoyé par un filtre devient un 403 vide
                                 "/api/auth/**",              // Login/Register users normaux
+                                "/api/webhooks/**",          // Webhooks Campay (vérifiés par signature)
                                 "/api/driving-schools/**",   // Liste publique des écoles
                                 "/api/platform/admin/login", // Login admin platform
                                 "/api/platform/admin/register" // Register admin platform

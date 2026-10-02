@@ -72,6 +72,18 @@ logging:
     org.springframework.security: INFO
     org.springdoc: INFO
     org.springframework.web: INFO
+# ------------------------------------------------------------------
+#  Paiement Mobile Money
+#  provider : SIMULATED (développement, aucun argent ne circule) ou CAMPAY
+# ------------------------------------------------------------------
+payment:
+  provider: ${PAYMENT_PROVIDER:SIMULATED}
+  campay:
+    base-url: ${CAMPAY_BASE_URL:https://demo.campay.net/api}   # production : https://www.campay.net/api
+    username: ${CAMPAY_USERNAME:}
+    password: ${CAMPAY_PASSWORD:}
+    webhook-key: ${CAMPAY_WEBHOOK_KEY:}
+
 jwt:
   secret: ${JWT_SECRET_KEY}          # 32 caractères minimum (vérifié au démarrage)
   expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}

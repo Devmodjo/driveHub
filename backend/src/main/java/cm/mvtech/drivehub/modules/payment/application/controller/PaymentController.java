@@ -27,7 +27,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    @Operation(summary = "élève : déclarer un paiement Mobile Money ; moniteur : enregistrer un paiement reçu")
+    @Operation(summary = "élève : payer par Mobile Money (Campay) ; moniteur : enregistrer un paiement reçu")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('MONITOR','STUDENT')")
@@ -48,6 +48,13 @@ public class PaymentController {
     @PreAuthorize("hasRole('MONITOR')")
     public PaymentSummaryDto summary() {
         return paymentService.summary();
+    }
+
+    @Operation(summary = "vérifier auprès de l'agrégateur l'état d'un paiement Mobile Money en attente")
+    @PostMapping("/{id}/refresh")
+    @PreAuthorize("hasAnyRole('MONITOR','STUDENT')")
+    public PaymentResponseDto refresh(@PathVariable UUID id) {
+        return paymentService.refresh(id);
     }
 
     @PatchMapping("/{id}/validate")

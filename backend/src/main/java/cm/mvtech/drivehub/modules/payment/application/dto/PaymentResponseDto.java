@@ -2,6 +2,7 @@ package cm.mvtech.drivehub.modules.payment.application.dto;
 
 import cm.mvtech.drivehub.modules.enums.PaymentMethod;
 import cm.mvtech.drivehub.modules.enums.PaymentMotif;
+import cm.mvtech.drivehub.modules.enums.PaymentProvider;
 import cm.mvtech.drivehub.modules.enums.PaymentStatus;
 
 import java.math.BigDecimal;
@@ -17,6 +18,10 @@ public record PaymentResponseDto(
         PaymentMethod method,
         PaymentMotif motif,
         PaymentStatus paymentStatus,
+        PaymentProvider provider,
+        String phoneNumber,
+        String externalReference,
+        String gatewayMessage,
         LocalDate datePayment
 ) {
 }

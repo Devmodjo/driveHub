@@ -13,7 +13,7 @@
 #   1. deux moniteurs s'inscrivent, vérifient leur email et demandent la création d'une auto-école ;
 #   2. le ROOT approuve : un schéma PostgreSQL est créé pour chaque auto-école ;
 #   3. un élève s'inscrit et rejoint l'auto-école A ; le moniteur A approuve ;
-#   4. gestion métier dans le tenant A : véhicule, cours, examen, réservation, paiement ;
+#   4. gestion métier dans le tenant A : véhicule, cours, examen, réservation, paiement Mobile Money ;
 #   5. isolation : le moniteur B ne peut pas lire les données de A, même en changeant X-Tenant-ID.
 # =====================================================================
 set -euo pipefail
@@ -103,11 +103,19 @@ R=$(call POST /api/reservations "$TS" "$SA" "$SLOT"); expect 201 "$R" "L'élève
 [[ $(body "$R" | jq -r .reservationStatus) == PENDING ]] && ok "Réservation de l'élève en attente" || fail "Statut inattendu"
 expect 409 "$(call POST /api/reservations "$TA" "$SA" "{\"studentId\":\"$STUDENT_ID\",${SLOT:1}")" "Créneau déjà pris refusé"
 expect 200 "$(call PATCH "/api/reservations/$(body "$R" | jq -r .id)/confirm" "$TA" "$SA")" "Le moniteur confirme la réservation"
-R=$(call POST /api/payments "$TS" "$SA" '{"amount":50000,"method":"MOMO","motif":"INSCRIPTION"}'); expect 201 "$R" "L'élève déclare un paiement Mobile Money"
-[[ $(body "$R" | jq -r .paymentStatus) == PENDING ]] && ok "Paiement élève en attente de validation" || fail "Statut paiement inattendu"
+# Paiement Mobile Money (passerelle SIMULATED : même déroulé que Campay, sans argent réel)
+R=$(call POST /api/payments "$TS" "$SA" '{"amount":50000,"method":"MOMO","motif":"INSCRIPTION","phoneNumber":"+237 677 11 22 33"}')
+expect 201 "$R" "L'élève paie 50 000 FCFA par Mobile Money"
+PAY_ID=$(body "$R" | jq -r .id)
+[[ $(body "$R" | jq -r .paymentStatus) == PENDING ]] && ok "Paiement en attente de validation sur le téléphone" || fail "Statut initial inattendu"
+[[ $(body "$(call POST "/api/payments/$PAY_ID/refresh" "$TS" "$SA")" | jq -r .paymentStatus) == VALIDATE ]] && ok "Vérification : paiement confirmé" || fail "Paiement non confirmé"
+R=$(call POST /api/payments "$TS" "$SA" '{"amount":10000,"method":"OM","motif":"EXAMS","phoneNumber":"+237 699 00 0000"}')
+[[ $(body "$(call POST "/api/payments/$(body "$R" | jq -r .id)/refresh" "$TS" "$SA")" | jq -r .paymentStatus) == REJECTED ]] && ok "Numéro finissant par 0000 : paiement refusé (simulation)" || fail "Refus simulé non appliqué"
+expect 400 "$(call POST /api/payments "$TS" "$SA" '{"amount":1000,"method":"MOMO","motif":"EXAMS"}')" "Numéro Mobile Money obligatoire"
 expect 400 "$(call POST /api/payments "$TS" "$SA" '{"amount":1000,"method":"CASH","motif":"EXAMS"}')" "Paiement espèces refusé côté élève"
-expect 200 "$(call PATCH "/api/payments/$(body "$R" | jq -r .id)/validate" "$TA" "$SA")" "Le moniteur valide le paiement"
-[[ $(body "$(call GET /api/payments/summary "$TA" "$SA")" | jq -r .totalValidated) == 50000* ]] && ok "Total encaissé : 50 000" || fail "Total incorrect"
+expect 201 "$(call POST /api/payments "$TA" "$SA" "{\"studentsId\":\"$STUDENT_ID\",\"amount\":25000,\"method\":\"CASH\",\"motif\":\"INSCRIPTION\"}")" "Le moniteur enregistre 25 000 FCFA reçus en espèces"
+expect 200 "$(call GET "/api/webhooks/campay?status=SUCCESSFUL&reference=x&external_reference=$SA:$PAY_ID&signature=faux")" "Webhook non signé : accepté sans effet"
+[[ $(body "$(call GET /api/payments/summary "$TA" "$SA")" | jq -r .totalValidated) == 75000* ]] && ok "Total encaissé : 75 000 FCFA" || fail "Total incorrect"
 
 echo "5. Sécurité et isolation des tenants"
 expect 401 "$(call GET /api/students "$TB" "$SA")" "Moniteur B avec X-Tenant-ID de A : refusé"
