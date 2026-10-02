@@ -1,0 +1,275 @@
+<header class="mb-6">
+  <h1 class="bo-page-title">Emails</h1>
+  <p class="bo-page-subtitle">Écrivez aux auto-écoles, aux moniteurs et aux élèves, en groupe ou individuellement.</p>
+</header>
+
+<!-- ═══════════════ NOUVEAU MESSAGE ═══════════════ -->
+<section class="bo-card p-4 sm:p-6 mb-6" aria-labelledby="composer-title">
+  <h2 id="composer-title" class="bo-section-title mb-1">Nouveau message</h2>
+  <p class="text-sm text-black/50 dark:text-white/50 mb-5">Le message est envoyé en texte brut ; les retours à la ligne sont conservés.</p>
+
+  @if (!canSend()) {
+    <div class="mb-5 flex items-start gap-2 rounded-xl border border-[#0070f3]/20 bg-[#0070f3]/5 px-4 py-3 text-sm text-black/70 dark:text-white/70" role="note">
+      <svg [lucideIcon]="icons.Info" [size]="18" class="shrink-0 mt-0.5 text-[#0070f3]" />
+      <p>Votre rôle (Reviewer) permet de consulter l'historique, mais seuls les administrateurs ROOT et SUPER_ADMIN peuvent envoyer des emails.</p>
+    </div>
+  }
+
+  @if (sendSuccess()) {
+    <div class="alert-success mb-5 flex items-start gap-2" role="status">
+      <svg [lucideIcon]="icons.CircleCheck" [size]="18" class="shrink-0 mt-0.5" />
+      <span>{{ sendSuccess() }}</span>
+    </div>
+  }
+  @if (sendError()) {
+    <div class="alert-error mb-5 flex items-start gap-2" role="alert">
+      <svg [lucideIcon]="icons.TriangleAlert" [size]="18" class="shrink-0 mt-0.5" />
+      <span>{{ sendError() }}</span>
+    </div>
+  }
+
+  <form class="space-y-6" (submit)="$event.preventDefault(); review()" novalidate>
+
+    <!-- 1. Audience : cartes-radio (2 par ligne sur mobile, 5 sur grand écran) -->
+    <fieldset>
+      <legend class="field-label">Destinataires</legend>
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
+        @for (option of audienceOptions; track option.value; let last = $last) {
+          <label class="relative flex cursor-pointer flex-col gap-2 rounded-2xl border p-3 sm:p-4 min-h-24 transition-colors
+                        border-black/10 dark:border-white/10 hover:border-[#0070f3]/50
+                        has-checked:border-[#0070f3] has-checked:bg-[#0070f3]/5 dark:has-checked:bg-[#0070f3]/10
+                        has-focus-visible:ring-2 has-focus-visible:ring-[#0070f3]/40"
+                 [class]="last ? 'col-span-2 lg:col-span-1' : ''">
+            <input type="radio" name="audience" class="sr-only" [value]="option.value"
+                   [checked]="audience() === option.value" (change)="selectAudience(option.value)" />
+            <span class="flex items-center justify-between gap-2">
+              <svg [lucideIcon]="option.icon" [size]="20" [class]="audience() === option.value ? 'text-[#0070f3]' : 'text-black/50 dark:text-white/50'" />
+              <span class="w-4 h-4 shrink-0 rounded-full border-2 flex items-center justify-center"
+                    [class]="audience() === option.value ? 'border-[#0070f3]' : 'border-black/20 dark:border-white/25'">
+                @if (audience() === option.value) { <span class="w-2 h-2 rounded-full bg-[#0070f3]"></span> }
+              </span>
+            </span>
+            <span class="text-sm font-bold leading-snug text-black dark:text-white">{{ option.label }}</span>
+            <span class="hidden sm:block text-xs text-black/50 dark:text-white/50 leading-snug">{{ option.hint }}</span>
+          </label>
+        }
+      </div>
+      @if (serverErrors()['audience']) { <p class="bo-field-error">{{ serverErrors()['audience'] }}</p> }
+    </fieldset>
+
+    <!-- 2a. Choix de l'auto-école (SCHOOL_MEMBERS) -->
+    @if (audience() === 'SCHOOL_MEMBERS') {
+      <div>
+        <label class="field-label" for="email-school">Auto-école</label>
+        <select id="email-school" class="field-input" [value]="schoolId()" (change)="selectSchool($any($event.target).value)"
+                [disabled]="schoolsLoading()" [attr.aria-invalid]="!!errorFor('schoolId')">
+          <option value="">{{ schoolsLoading() ? 'Chargement des auto-écoles...' : 'Choisissez une auto-école' }}</option>
+          @for (school of schools(); track school.id) {
+            <option [value]="school.id">{{ school.name }}{{ school.city ? ' (' + school.city + ')' : '' }}</option>
+          }
+        </select>
+        @if (schoolsError()) { <p class="bo-field-error">{{ schoolsError() }}</p> }
+        @else if (errorFor('schoolId')) { <p class="bo-field-error">{{ errorFor('schoolId') }}</p> }
+        @else if (!schoolsLoading() && schools().length === 0) {
+          <p class="mt-1.5 text-sm text-black/50 dark:text-white/50">Aucune auto-école active ou approuvée pour le moment.</p>
+        }
+      </div>
+    }
+
+    <!-- 2b. Destinataires choisis (INDIVIDUAL) : puces + recherche -->
+    @if (audience() === 'INDIVIDUAL') {
+      <div>
+        <label class="field-label" for="email-recipient-input">Adresses ({{ recipients().length }} / {{ limits.RECIPIENTS_MAX }})</label>
+        <div class="relative">
+          <div class="flex flex-wrap items-center gap-2 rounded-xl border bg-white dark:bg-[#0a0a0a] p-2 transition-colors
+                      focus-within:border-[#0070f3] focus-within:ring-2 focus-within:ring-[#0070f3]/20"
+               [class]="errorFor('recipients') || chipError() ? 'border-red-500/60' : 'border-black/10 dark:border-white/10'">
+            @for (chip of recipients(); track chip.email) {
+              <span class="inline-flex max-w-full items-center gap-1 rounded-full bg-[#0070f3]/10 py-1 pl-3 pr-1 text-sm font-semibold text-[#0070f3] dark:text-[#5ea8ff]">
+                <span class="truncate" [title]="chip.email">{{ chip.fullName || chip.email }}</span>
+                <button type="button" class="inline-flex w-7 h-7 shrink-0 items-center justify-center rounded-full hover:bg-[#0070f3]/15"
+                        (click)="removeRecipient(chip.email)" [attr.aria-label]="'Retirer ' + chip.email">
+                  <svg [lucideIcon]="icons.X" [size]="14" />
+                </button>
+              </span>
+            }
+            <input id="email-recipient-input" type="text" inputmode="email" autocomplete="off" role="combobox"
+                   aria-autocomplete="list" aria-controls="email-suggestions" [attr.aria-expanded]="recipientFocused() && suggestions().length > 0"
+                   class="min-w-40 grow bg-transparent px-2 py-2 text-base text-black dark:text-white outline-none placeholder:text-black/35 dark:placeholder:text-white/35"
+                   placeholder="Nom ou adresse email" [value]="recipientQuery()"
+                   (input)="onRecipientInput($any($event.target).value)" (keydown)="onRecipientKeydown($event)"
+                   (focus)="recipientFocused.set(true)" (blur)="recipientFocused.set(false)" />
+          </div>
+
+          <!-- Suggestions (au moins 2 caractères) -->
+          @if (recipientFocused() && (suggestions().length > 0 || searching())) {
+            <ul id="email-suggestions" role="listbox"
+                class="absolute inset-x-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#111] p-1 shadow-xl">
+              @if (searching() && suggestions().length === 0) {
+                <li class="px-3 py-3 text-sm text-black/50 dark:text-white/50">Recherche...</li>
+              }
+              @for (s of suggestions(); track s.email; let i = $index) {
+                <li role="option" [attr.aria-selected]="i === activeSuggestion()">
+                  <button type="button" class="flex w-full min-h-12 items-center gap-3 rounded-lg px-3 py-2 text-left"
+                          [class]="i === activeSuggestion() ? 'bg-[#0070f3]/10' : 'hover:bg-black/5 dark:hover:bg-white/5'"
+                          (mousedown)="$event.preventDefault()" (click)="pickSuggestion(s)">
+                    <span class="min-w-0 grow">
+                      <span class="block truncate text-sm font-bold text-black dark:text-white">{{ s.fullName }}</span>
+                      <span class="block truncate text-xs text-black/50 dark:text-white/50">{{ s.email }}{{ s.schoolName ? ' · ' + s.schoolName : '' }}</span>
+                    </span>
+                    <span class="badge shrink-0 bg-black/5 text-black/60 dark:bg-white/10 dark:text-white/60">{{ recipientTypeLabel(s.type) }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+        @if (chipError()) { <p class="bo-field-error">{{ chipError() }}</p> }
+        @else if (errorFor('recipients')) { <p class="bo-field-error">{{ errorFor('recipients') }}</p> }
+        @else {
+          <p class="mt-1.5 text-xs text-black/50 dark:text-white/50">Tapez au moins 2 lettres pour chercher, ou saisissez une adresse puis Entrée.</p>
+        }
+      </div>
+    }
+
+    <!-- 3. Objet -->
+    <div>
+      <div class="flex items-baseline justify-between gap-3">
+        <label class="field-label" for="email-subject">Objet</label>
+        <span class="text-xs tabular-nums" [class]="subject().length > limits.SUBJECT_MAX ? 'text-red-600 dark:text-red-400 font-bold' : 'text-black/40 dark:text-white/40'">
+          {{ subject().length }} / {{ limits.SUBJECT_MAX }}
+        </span>
+      </div>
+      <input id="email-subject" class="field-input" type="text" placeholder="Ex. Nouvelle fonctionnalité disponible"
+             [value]="subject()" (input)="subject.set($any($event.target).value)" [attr.aria-invalid]="!!errorFor('subject')" />
+      @if (errorFor('subject')) { <p class="bo-field-error">{{ errorFor('subject') }}</p> }
+    </div>
+
+    <!-- 4. Message -->
+    <div>
+      <div class="flex items-baseline justify-between gap-3">
+        <label class="field-label" for="email-message">Message</label>
+        <span class="text-xs tabular-nums" [class]="message().length > limits.MESSAGE_MAX ? 'text-red-600 dark:text-red-400 font-bold' : 'text-black/40 dark:text-white/40'">
+          {{ message().length }} / {{ limits.MESSAGE_MAX }}
+        </span>
+      </div>
+      <textarea id="email-message" class="field-input min-h-48 resize-y leading-relaxed" rows="9"
+                placeholder="Bonjour,&#10;&#10;Votre message..."
+                [value]="message()" (input)="message.set($any($event.target).value)" [attr.aria-invalid]="!!errorFor('message')"></textarea>
+      @if (errorFor('message')) { <p class="bo-field-error">{{ errorFor('message') }}</p> }
+    </div>
+
+    <!-- 5. Nombre de destinataires + bouton -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] p-4">
+      <p class="flex items-start gap-2 text-sm text-black/70 dark:text-white/70" aria-live="polite">
+        <svg [lucideIcon]="icons.Users" [size]="18" class="shrink-0 mt-0.5 text-[#0070f3]" />
+        @if (countLoading()) {
+          <span>Calcul du nombre de destinataires...</span>
+        } @else if (countError() && audience() !== 'INDIVIDUAL') {
+          <span>{{ countError() }}</span>
+        } @else if (recipientCount() !== null) {
+          <span>Ce message sera envoyé à <strong class="text-black dark:text-white">{{ plural(recipientCount()!) }}</strong>.</span>
+        } @else {
+          <span>Choisissez une auto-école pour connaître le nombre de destinataires.</span>
+        }
+      </p>
+      <button type="submit" class="btn-primary w-full md:w-auto min-h-12 shrink-0" [disabled]="!canSend() || sending()">
+        <svg [lucideIcon]="icons.Send" [size]="18" /> Vérifier et envoyer
+      </button>
+    </div>
+  </form>
+</section>
+
+<!-- ═══════════════ HISTORIQUE ═══════════════ -->
+<section class="bo-card overflow-hidden" aria-labelledby="history-title">
+  <div class="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-black/5 dark:border-white/10">
+    <div class="min-w-0">
+      <h2 id="history-title" class="bo-section-title">Historique des envois</h2>
+      @if (history(); as h) { <p class="text-xs text-black/50 dark:text-white/50">{{ h.totalElements }} envoi(s), du plus récent au plus ancien</p> }
+    </div>
+    <button type="button" class="bo-icon-btn" (click)="loadHistory(historyPage())" [disabled]="historyLoading()" aria-label="Actualiser l'historique">
+      <svg [lucideIcon]="icons.RefreshCw" [size]="18" [class.animate-spin]="historyLoading()" />
+    </button>
+  </div>
+
+  @if (historyError()) {
+    <p class="px-5 py-8 text-sm text-red-600 dark:text-red-400">{{ historyError() }}</p>
+  } @else if (historyLoading() && !history()) {
+    <p class="px-5 py-12 text-center text-sm text-black/50 dark:text-white/50">Chargement...</p>
+  } @else if (!history()?.content?.length) {
+    <div class="px-5 py-12 text-center">
+      <svg [lucideIcon]="icons.Inbox" [size]="32" class="mx-auto text-black/25 dark:text-white/25" />
+      <p class="mt-3 text-sm text-black/50 dark:text-white/50">Aucun email envoyé pour le moment.</p>
+    </div>
+  } @else {
+    <ul class="divide-y divide-black/5 dark:divide-white/10">
+      @for (item of history()!.content; track item.id) {
+        <li>
+          <!-- <details> : le message complet se déplie au toucher, sans JavaScript -->
+          <details class="group">
+            <summary class="flex cursor-pointer list-none items-start gap-3 px-4 sm:px-6 py-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] [&::-webkit-details-marker]:hidden">
+              <span class="mt-0.5 flex w-10 h-10 shrink-0 items-center justify-center rounded-xl bg-[#0070f3]/10 text-[#0070f3]">
+                <svg [lucideIcon]="icons.Mail" [size]="18" />
+              </span>
+              <span class="min-w-0 grow">
+                <span class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 sm:gap-3">
+                  <span class="font-bold text-black dark:text-white break-words">{{ item.subject }}</span>
+                  <span class="shrink-0 text-xs text-black/50 dark:text-white/50 tabular-nums">{{ item.sentAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                </span>
+                <span class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  <span class="badge bg-[#0070f3]/10 text-[#0070f3] dark:text-[#5ea8ff]">{{ historyAudienceLabel(item.audience) }}</span>
+                  @if (item.schoolName) {
+                    <span class="badge bg-black/5 text-black/60 dark:bg-white/10 dark:text-white/60 max-w-full truncate">{{ item.schoolName }}</span>
+                  }
+                  <span class="text-xs font-semibold text-black/60 dark:text-white/60">{{ plural(item.recipientCount) }}</span>
+                </span>
+                <span class="mt-1 block truncate text-xs text-black/40 dark:text-white/40">Par {{ item.sentByEmail }}</span>
+              </span>
+              <svg [lucideIcon]="icons.ChevronDown" [size]="18" class="mt-1 shrink-0 text-black/40 dark:text-white/40 transition-transform group-open:rotate-180" />
+            </summary>
+            <div class="px-4 sm:px-6 pb-5 sm:pl-[4.75rem]">
+              <p class="whitespace-pre-line break-words rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4 text-sm leading-relaxed text-black/80 dark:text-white/80">{{ item.message }}</p>
+            </div>
+          </details>
+        </li>
+      }
+    </ul>
+
+    @if (history()!.totalPages > 1) {
+      <div class="flex items-center justify-between gap-3 p-4 border-t border-black/5 dark:border-white/10">
+        <button type="button" class="bo-btn bo-btn-outline" [disabled]="historyPage() === 0 || historyLoading()" (click)="loadHistory(historyPage() - 1)">
+          <svg [lucideIcon]="icons.ChevronLeft" [size]="16" /> Plus récents
+        </button>
+        <span class="text-sm font-semibold text-black/60 dark:text-white/60">{{ historyPage() + 1 }} / {{ history()!.totalPages }}</span>
+        <button type="button" class="bo-btn bo-btn-outline" [disabled]="history()!.last || historyLoading()" (click)="loadHistory(historyPage() + 1)">
+          Plus anciens <svg [lucideIcon]="icons.ChevronRight" [size]="16" />
+        </button>
+      </div>
+    }
+  }
+</section>
+
+<!-- ═══════════════ CONFIRMATION ═══════════════ -->
+@if (confirmOpen()) {
+  <bo-confirm [title]="confirmTitle()" confirmLabel="Confirmer l'envoi" [busy]="sending()"
+              (confirmed)="send()" (cancelled)="confirmOpen.set(false)">
+    <dl class="mt-4 space-y-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] p-4 text-sm">
+      <div>
+        <dt class="field-label mb-0.5!">Destinataires</dt>
+        <dd class="text-black dark:text-white">
+          {{ audienceLabel() }}@if (audience() === 'SCHOOL_MEMBERS') { : {{ selectedSchoolName() }} }
+        </dd>
+        @if (audience() === 'INDIVIDUAL') {
+          <dd class="mt-1 text-xs text-black/60 dark:text-white/60 break-all line-clamp-3">
+            @for (chip of recipients(); track chip.email; let last = $last) { {{ chip.email }}{{ last ? '' : ', ' }} }
+          </dd>
+        }
+      </div>
+      <div>
+        <dt class="field-label mb-0.5!">Objet</dt>
+        <dd class="text-black dark:text-white break-words">{{ subject().trim() }}</dd>
+      </div>
+    </dl>
+    <p class="mt-3 text-xs text-black/50 dark:text-white/50">L'envoi part en arrière-plan et ne peut pas être annulé.</p>
+  </bo-confirm>
+}

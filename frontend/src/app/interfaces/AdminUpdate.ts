@@ -4,7 +4,8 @@ export interface AdminUpdate {
     name: string,
     email:string,
     role : Role,
-    password:string,
+    /** Facultatif : le mot de passe se change via PATCH /admin/me/password. */
+    password?:string,
     residence:string,
     phoneNumber:string
 }
