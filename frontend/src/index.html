@@ -7,6 +7,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="DriveHub : la plateforme de gestion des auto-écoles en Afrique. Élèves, planning, paiements Mobile Money et examens au même endroit.">
   <link rel="icon" type="image/png" href="dh_icon.png">
+  <!-- Photo du haut de la page d'accueil : téléchargée en même temps que le code de l'application
+       (sinon elle n'est découverte qu'après son exécution). Le navigateur choisit la taille adaptée. -->
+  <link rel="preload" as="image" fetchpriority="high"
+        imagesrcset="/images/optimized/hero-bg-2-640.webp 640w, /images/optimized/hero-bg-2-1280.webp 1280w, /images/optimized/hero-bg-2-1920.webp 1920w, /images/optimized/hero-bg-2-2880.webp 2880w"
+        imagesizes="100vw">
 </head>
 <body>
   <app-root></app-root>

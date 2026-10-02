@@ -11,7 +11,13 @@ import { I18nService } from '../i18n/i18n.service';
   imports: [RouterLink, LucideDynamicIcon, RevealDirective],
   template: `
     <section class="relative min-h-[90vh] flex items-center pt-32 pb-20 overflow-hidden">
-      <img src="/images/hero-bg-2.jpg" alt="Arrière-plan conducteur" class="absolute inset-0 w-full h-full object-cover" />
+      <!-- Image du haut de page : versions WebP légères (npm run images), le navigateur choisit la taille adaptée.
+           fetchpriority="high" : c'est le premier élément visible, il est téléchargé en priorité. -->
+      <img src="/images/optimized/hero-bg-2-1920.webp"
+           srcset="/images/optimized/hero-bg-2-640.webp 640w, /images/optimized/hero-bg-2-1280.webp 1280w,
+                   /images/optimized/hero-bg-2-1920.webp 1920w, /images/optimized/hero-bg-2-2880.webp 2880w"
+           sizes="100vw" width="1920" height="1281" fetchpriority="high" decoding="async"
+           alt="Arrière-plan conducteur" class="absolute inset-0 w-full h-full object-cover" />
       <div class="absolute inset-0 z-0 bg-gradient-to-t from-black via-black/60 to-black/10"></div>
 
       <div class="container mx-auto px-6 relative z-10">
