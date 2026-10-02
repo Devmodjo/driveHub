@@ -3,14 +3,14 @@ package cm.mvtech.drivehub.modules.drivingschool.domain.model;
 
 
 import cm.mvtech.drivehub.core.domain.entities.EntityBase;
-import cm.mvtech.drivehub.modules.reservation.Reservation;
-import cm.mvtech.drivehub.modules.vehicle.Vehicle;
+import cm.mvtech.drivehub.modules.reservation.domain.model.Reservation;
+import cm.mvtech.drivehub.modules.vehicle.domain.model.Vehicle;
 import cm.mvtech.drivehub.modules.enums.DrivingSchoolStatus;
 import cm.mvtech.drivehub.modules.auth.domain.model.User;
 import cm.mvtech.drivehub.modules.course.domain.model.Course;
-import cm.mvtech.drivehub.modules.exam.Exam;
+import cm.mvtech.drivehub.modules.exam.domain.model.Exam;
 import cm.mvtech.drivehub.modules.monitor.domain.model.Monitor;
-import cm.mvtech.drivehub.modules.payment.Payment;
+import cm.mvtech.drivehub.modules.payment.domain.model.Payment;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,7 +25,7 @@ import java.util.Set;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "driving_school", schema = "public")
+@Table(name = "driving_school") // pas de schéma fixe : stockée dans le schéma de l'auto-école
 public class DrivingSchool extends EntityBase {
 
     @Column(nullable = false)

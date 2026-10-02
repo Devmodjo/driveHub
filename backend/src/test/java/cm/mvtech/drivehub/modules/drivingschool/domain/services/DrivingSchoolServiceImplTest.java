@@ -1,7 +1,11 @@
 package cm.mvtech.drivehub.modules.drivingschool.domain.services;
 
+import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
 import cm.mvtech.drivehub.core.domain.service.TenantProvisioningService;
 import cm.mvtech.drivehub.core.infrastructure.TenantContext;
+import cm.mvtech.drivehub.core.infrastructure.TenantExecutor;
+import cm.mvtech.drivehub.modules.monitor.infrastructure.repository.MonitorsRepository;
+import org.mockito.ArgumentCaptor;
 import cm.mvtech.drivehub.modules.auth.domain.model.User;
 import cm.mvtech.drivehub.modules.auth.domain.model.UserPrincipal;
 import cm.mvtech.drivehub.modules.auth.infrastructure.repository.UserRepository;
@@ -33,6 +37,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -52,6 +57,9 @@ class DrivingSchoolServiceImplTest {
     @Mock private UserRepository userRepository;
     @Mock private DrivingSchoolRegistryRepository drivingSchoolRegistryRepository;
     @Mock private DrivingSchoolMapper mapper;
+    @Mock private TenantExecutor tenantExecutor;
+    @Mock private MonitorsRepository monitorsRepository;
+    @Mock private EmailService emailService;
 
     @InjectMocks
     private DrivingSchoolServiceImpl service;
@@ -177,14 +185,16 @@ class DrivingSchoolServiceImplTest {
      */
     @Test
     void retreiveSchool_ReturnsMappedDtoList() {
-        when(drivingSchoolRepository.findAll()).thenReturn(List.of(drivingSchool));
+        // Le catalogue public est lu dans le registre (schéma public) : driving_school est dans chaque tenant.
+        registry.setDrivingSchoolStatus(DrivingSchoolStatus.APPROVED);
+        when(drivingSchoolRegistryRepository.findAllByDrivingSchoolStatusIn(any())).thenReturn(List.of(registry));
 
         List<DrivingSchoolResponseDto> result = service.retreiveSchool();
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(drivingSchool.getName(), result.get(0).name());
-        verify(drivingSchoolRepository).findAll();
+        assertEquals(registry.getSchoolName(), result.get(0).name());
+        verifyNoInteractions(drivingSchoolRepository);
     }
 
     /**
@@ -192,7 +202,7 @@ class DrivingSchoolServiceImplTest {
      */
     @Test
     void retreiveSchool_WhenNoSchools_ReturnsEmptyList() {
-        when(drivingSchoolRepository.findAll()).thenReturn(Collections.emptyList());
+        when(drivingSchoolRegistryRepository.findAllByDrivingSchoolStatusIn(any())).thenReturn(Collections.emptyList());
 
         List<DrivingSchoolResponseDto> result = service.retreiveSchool();
 
@@ -213,15 +223,25 @@ class DrivingSchoolServiceImplTest {
                 .thenReturn(Optional.of(registry));
         when(drivingSchoolRepository.save(any(DrivingSchool.class))).thenReturn(drivingSchool);
         when(drivingSchoolRegistryRepository.save(any(DrivingSchoolRegistry.class))).thenReturn(registry);
+        // Le TenantExecutor simulé exécute directement le code demandé.
+        doAnswer(invocation -> {
+            invocation.<Runnable>getArgument(1).run();
+            return null;
+        }).when(tenantExecutor).runInTenant(eq(registry.getSchemaName()), any(Runnable.class));
 
         service.approveRegistry(registry.getId());
 
         verify(tenantProvisioningService).createTenantSchema(registry.getSchemaName());
+        verify(tenantExecutor).runInTenant(eq(registry.getSchemaName()), any(Runnable.class));
         verify(drivingSchoolRepository).save(any(DrivingSchool.class));
+        // Le moniteur fondateur est aussi créé dans le schéma de son auto-école.
+        verify(monitorsRepository).save(any(Monitor.class));
         verify(drivingSchoolRegistryRepository).save(registry);
         assertEquals(ProfileStatus.ACTIVE, monitorUser.getProfileStatus());
         assertEquals(DrivingSchoolStatus.APPROVED, registry.getDrivingSchoolStatus());
         assertNull(TenantContext.getTenantId());
+        // Le moniteur est prévenu par email.
+        verify(emailService).sendSchoolApprovedEmail(monitorUser.getEmail(), monitorUser.getFirstname(), registry.getSchoolName());
     }
 
     /**
@@ -305,6 +325,7 @@ class DrivingSchoolServiceImplTest {
 
         assertEquals(DrivingSchoolStatus.REJECTED, registry.getDrivingSchoolStatus());
         verify(drivingSchoolRegistryRepository).save(registry);
+        verify(emailService).sendSchoolRejectedEmail(monitorUser.getEmail(), monitorUser.getFirstname(), registry.getSchoolName());
     }
 
     /**

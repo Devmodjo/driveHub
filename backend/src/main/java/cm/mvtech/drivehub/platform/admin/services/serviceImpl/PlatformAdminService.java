@@ -105,9 +105,9 @@ public class PlatformAdminService implements AdminerService {
         admin.setPhoneNumber(request.phoneNumber());
         admin.setResidence(request.residence());
         admin.setReason(request.reason());
-        adminRepository.save(admin);
-
-        sendAdminVerificationEmail(admin.getEmail());
+        // On réutilise l'entité sauvegardée : relire l'admin par email juste après l'avoir créé
+        // était inutile (requête en plus) et faisait échouer le test unitaire adminerRegistry_Success.
+        sendAdminVerificationEmail(adminRepository.save(admin));
 //        emailService.sendNewAdminRegistrationNotification(
 //                rootEmail, admin.getName(),
 //                admin.getEmail(), admin.getRole().toString(), admin.getResidence(),
@@ -290,7 +290,10 @@ public class PlatformAdminService implements AdminerService {
         PlatformAdmin admin = adminRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Admin introuvable : " + email));
+        sendAdminVerificationEmail(admin);
+    }
 
+    private void sendAdminVerificationEmail(PlatformAdmin admin) {
         adminEmailTokenRepository.deleteAllByAdminId(admin.getId());
 
         String token = UUID.randomUUID().toString();

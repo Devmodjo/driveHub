@@ -127,11 +127,11 @@ class PlatformAdminControllerIntegrationTest {
     }
 
     @Test
-    void activateAdmin_WithoutAuth_ShouldBeForbidden() throws Exception {
+    void activateAdmin_WithoutAuth_ShouldBeUnauthorized() throws Exception {
         UUID adminId = UUID.randomUUID();
 
         mockMvc.perform(patch("/api/platform/admin/" + adminId + "/activate"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     // ─── APPROVE REGISTRY ─────────────────────────────────────────────────────

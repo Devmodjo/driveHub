@@ -18,7 +18,7 @@ import java.time.LocalDate;
 @Table(name = "courses")
 public class Course extends EntityBase {
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "driving_school_id")
     @JsonIgnore
     private DrivingSchool drivingSchool;

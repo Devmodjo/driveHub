@@ -2,26 +2,28 @@ package cm.mvtech.drivehub.modules.monitor.application.dto;
 
 import cm.mvtech.drivehub.modules.enums.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.*;
 
 import java.sql.Date;
 
 public record MonitorRegisterRequest(
         @Schema(defaultValue = "john")
-        String firstname,
+        @NotBlank String firstname,
         @Schema(defaultValue = "Doe")
         String lastname,
         @Schema(defaultValue = "john.doe@gmail.com")
-        String email,
-        @Schema(defaultValue = "pass123")
-        String password,
+        @NotBlank @Email String email,
+        @Schema(defaultValue = "Pass1234")
+        @NotBlank @Size(min = 8, message = "le mot de passe doit contenir au moins 8 caractères") String password,
         @Schema(defaultValue = "+237689078576")
-        String phoneNumber,
+        @NotBlank String phoneNumber,
         @Schema(defaultValue = "MALE")
-        Gender gender,
+        @NotNull Gender gender,
         @Schema(defaultValue = "Cameroon")
-        String nationality,
+        @NotBlank String nationality,
         @Schema(defaultValue = "Yaoundé, Bastos")
-        String residenceCity,
+        @NotBlank String residenceCity,
         @Schema(defaultValue = "1999-01-01")
-        Date dateOfBirth
+        @NotNull @Past Date dateOfBirth
+
 ) {}

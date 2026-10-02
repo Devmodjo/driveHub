@@ -31,7 +31,8 @@ public class EmailService {
     @Value("${app.mail.from-name}")
     private String fromName;
 
-    private String frontendUrl = "https://localhost:4200";
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @Async
     public void sendVerificationEmail(String toEmail, String name,
@@ -116,9 +117,9 @@ public class EmailService {
             context.setVariable("reason", reason);
             context.setVariable("registeredAt", registeredAt);
             context.setVariable("activateUrl",
-                    frontendUrl + "/backoffice/admin/" + adminId + "/activate");
+                    frontendUrl + "/backoffice/dashboard/admins");
             context.setVariable("backofficeUrl",
-                    frontendUrl + "/backoffice/admins/pending");
+                    frontendUrl + "/backoffice/dashboard/admins");
 
             String html = templateEngine.process(
                     "emails/admin-new-registration", context);
@@ -173,6 +174,92 @@ public class EmailService {
             log.error("Échec envoi email d'activation à {} : {}", toEmail, e.getMessage());
         }
 
+    }
+
+    // =====================================================================
+    //  Emails du workflow principal (auto-école et adhésion)
+    //  Tous utilisent le même modèle : templates/emails/notification.html
+    // =====================================================================
+
+    /** Au moniteur : sa demande de création d'auto-école est validée par la plateforme. */
+    @Async
+    public void sendSchoolApprovedEmail(String toEmail, String name, String schoolName) {
+        sendNotification(toEmail, name,
+                "Votre auto-école est validée — DriveHub",
+                "Votre auto-école est validée",
+                "Bonne nouvelle : « " + schoolName + " » a été validée par l'équipe DriveHub. "
+                        + "Votre espace de gestion est prêt : élèves, véhicules, réservations, examens et paiements.",
+                "Accéder à mon espace", frontendUrl + "/dashboard/bienvenue");
+    }
+
+    /** Au moniteur : sa demande de création d'auto-école est refusée. */
+    @Async
+    public void sendSchoolRejectedEmail(String toEmail, String name, String schoolName) {
+        sendNotification(toEmail, name,
+                "Votre demande d'auto-école — DriveHub",
+                "Votre demande n'a pas été retenue",
+                "La demande de création de « " + schoolName + " » n'a pas été validée. "
+                        + "Contactez le support DriveHub pour en connaître la raison et la soumettre à nouveau.",
+                null, null);
+    }
+
+    /** Au responsable de l'auto-école : un élève (ou un moniteur) demande à la rejoindre. */
+    @Async
+    public void sendJoinRequestReceivedEmail(String toEmail, String name, String applicantName, String schoolName) {
+        sendNotification(toEmail, name,
+                "Nouvelle demande d'adhésion — DriveHub",
+                "Nouvelle demande d'adhésion",
+                applicantName + " souhaite rejoindre « " + schoolName + " ». "
+                        + "Acceptez ou refusez sa demande depuis votre espace.",
+                "Voir les demandes", frontendUrl + "/dashboard/demandes");
+    }
+
+    /** Au demandeur : son adhésion est acceptée. */
+    @Async
+    public void sendJoinApprovedEmail(String toEmail, String name, String schoolName) {
+        sendNotification(toEmail, name,
+                "Bienvenue chez " + schoolName + " — DriveHub",
+                "Votre inscription est acceptée",
+                "« " + schoolName + " » a accepté votre demande. Vous pouvez maintenant réserver vos leçons, "
+                        + "suivre vos cours, consulter vos examens et payer vos frais en ligne.",
+                "Accéder à mon espace", frontendUrl + "/dashboard/bienvenue");
+    }
+
+    /** Au demandeur : son adhésion est refusée. */
+    @Async
+    public void sendJoinRejectedEmail(String toEmail, String name, String schoolName) {
+        sendNotification(toEmail, name,
+                "Votre demande d'adhésion — DriveHub",
+                "Votre demande n'a pas été acceptée",
+                "« " + schoolName + " » n'a pas accepté votre demande. Vous pouvez choisir une autre auto-école "
+                        + "dans le catalogue DriveHub.",
+                "Voir les auto-écoles", frontendUrl + "/auto-ecoles");
+    }
+
+    /**
+     * Construit et envoie un email à partir du modèle "notification".
+     * Une erreur d'envoi est seulement journalisée : elle ne doit jamais annuler l'action métier
+     * (une auto-école validée reste validée même si le serveur mail est indisponible).
+     *
+     * @param actionLabel texte du bouton (null = pas de bouton)
+     * @param actionUrl   lien du bouton (null = pas de bouton)
+     */
+    private void sendNotification(String toEmail, String name, String subject, String title, String message,
+                                  String actionLabel, String actionUrl) {
+        try {
+            Context context = new Context();
+            context.setVariable("name", name);
+            context.setVariable("title", title);
+            context.setVariable("message", message);
+            context.setVariable("actionLabel", actionLabel);
+            context.setVariable("actionUrl", actionUrl);
+
+            String html = templateEngine.process("emails/notification", context);
+            sendHtmlEmail(toEmail, subject, html);
+            log.info("Email « {} » envoyé à {}", subject, toEmail);
+        } catch (Exception e) {
+            log.error("Échec envoi email « {} » à {} : {}", subject, toEmail, e.getMessage());
+        }
     }
 
     private void sendHtmlEmail(String to, String subject,

@@ -1,7 +1,7 @@
 package cm.mvtech.drivehub.core.domain.service;
 
 import cm.mvtech.drivehub.core.domain.entities.TenantEntity;
-import cm.mvtech.drivehub.modules.drivingschool.infrastructure.DrivingSchoolRegistryRepository;
+import cm.mvtech.drivehub.core.infrastructure.TenantSchemas;
 import cm.mvtech.drivehub.core.infrastructure.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,17 +12,15 @@ import org.springframework.stereotype.Service;
 public class TenantServiceImpl implements TenantService {
 
     private final TenantRepository tenantRepository;
-    private final DrivingSchoolRegistryRepository registryRepository;
 
     @Override
     public boolean isValidTenant(String tenantId) {
 
-        if (tenantId == null || tenantId.isBlank()) {
+        // Un nom mal formé est rejeté avant même d'interroger la base.
+        if (!TenantSchemas.isValid(tenantId)) {
             return false;
         }
 
-
-//        return registryRepository.existsBySchemaName(tenantId);
         return tenantRepository.findByCode(tenantId)
                 .map(TenantEntity::isActive)
                 .orElse(false);

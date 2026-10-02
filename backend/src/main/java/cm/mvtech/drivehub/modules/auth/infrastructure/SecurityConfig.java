@@ -7,12 +7,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -31,12 +33,16 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.disable())
+                // CORS : règles définies dans configs/CorsConfig (origines lues dans application.yaml)
+                .cors(Customizer.withDefaults())
 
                 // IMPORTANT: Session stateless pour éviter les problèmes
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+
+                // Route protégée appelée sans jeton valide (absent, expiré, révoqué) : 401 et non 403
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
 
                 // Ordre des filtres: TENANT, JWT
                 .addFilterBefore(tenantFilter, UsernamePasswordAuthenticationFilter.class)
@@ -48,7 +54,9 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
+                                "/error",                    // page d'erreur Spring : sinon un 401/400 envoyé par un filtre devient un 403 vide
                                 "/api/auth/**",              // Login/Register users normaux
+                                "/api/webhooks/**",          // Webhooks Campay (vérifiés par signature)
                                 "/api/driving-schools/**",   // Liste publique des écoles
                                 "/api/platform/admin/login", // Login admin platform
                                 "/api/platform/admin/register" // Register admin platform
@@ -81,7 +89,6 @@ public class SecurityConfig {
                         // Tout le reste nécessite authentification
                         .anyRequest().authenticated()
                 );
-        http.cors(Customizer.withDefaults());
         return http.build();
     }
 }

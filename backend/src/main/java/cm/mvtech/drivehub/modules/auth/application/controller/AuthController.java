@@ -1,21 +1,24 @@
 package cm.mvtech.drivehub.modules.auth.application.controller;
 
 
+import cm.mvtech.drivehub.modules.auth.application.dto.AuthResponse;
 import cm.mvtech.drivehub.modules.auth.application.dto.CurrentUserResponse;
 import cm.mvtech.drivehub.modules.auth.application.dto.ForgotPasswordRequest;
 import cm.mvtech.drivehub.modules.auth.application.dto.ResetPasswordRequest;
 import cm.mvtech.drivehub.modules.messageapi.ApiResponse;
 import cm.mvtech.drivehub.modules.auth.application.dto.LoginRequest;
 import cm.mvtech.drivehub.modules.monitor.application.dto.MonitorRegisterRequest;
-import cm.mvtech.drivehub.modules.student.StudentRegisterRequest;
+import cm.mvtech.drivehub.modules.student.application.dto.StudentRegisterRequest;
 
 import cm.mvtech.drivehub.modules.auth.domain.services.AuthService;
+import cm.mvtech.drivehub.modules.auth.domain.services.TokenRevocationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -26,12 +29,12 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(originPatterns = "*")
 @RequiredArgsConstructor
 @Tag(name = "USER API", description = "api d'authentification des utilisateurs lambda de la plateforme")
 public class AuthController {
 
     private final AuthService authService;
+    private final TokenRevocationService tokenRevocationService;
 
     @Operation(
             summary = "login des users",
@@ -75,6 +78,23 @@ public class AuthController {
     public ResponseEntity<ApiResponse> registerMonitor(@Valid @RequestBody MonitorRegisterRequest registerRequest) {
         authService.registerMonitor(registerRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(true, "Inscription de l'encadreur réussie. En attente de validation par l'admin."));
+    }
+
+    @Operation(summary = "renouveler le jeton",
+            description = "à appeler après l'approbation d'une adhésion : le nouveau jeton porte le tenant de l'auto-école")
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthResponse> refreshToken(Authentication authentication) {
+        return ResponseEntity.ok(authService.refreshToken(authentication.getName()));
+    }
+
+    @Operation(summary = "Déconnexion",
+            description = "Invalide le jeton envoyé dans l'en-tête Authorization : il est refusé ensuite (401).")
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        tokenRevocationService.revoke(authorization.substring(7));   // retire le préfixe "Bearer "
+        return ResponseEntity.ok(new ApiResponse(true, "Déconnexion réussie"));
     }
 
     @Operation(summary = "Vérification email",

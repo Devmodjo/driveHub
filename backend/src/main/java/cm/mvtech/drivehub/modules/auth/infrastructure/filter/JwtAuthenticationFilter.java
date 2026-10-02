@@ -3,6 +3,7 @@ package cm.mvtech.drivehub.modules.auth.infrastructure.filter;
 import cm.mvtech.drivehub.core.infrastructure.TenantContext;
 import cm.mvtech.drivehub.modules.auth.domain.services.CustomUserDetailsService;
 import cm.mvtech.drivehub.modules.auth.domain.services.JwtService;
+import cm.mvtech.drivehub.modules.auth.domain.services.TokenRevocationService;
 import cm.mvtech.drivehub.platform.admin.services.serviceImpl.PlatformAdminDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
     private final PlatformAdminDetailsService platformAdminDetailsService;
+    private final TokenRevocationService tokenRevocationService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -55,6 +57,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
+            // Jeton invalidé par une déconnexion (POST /api/auth/logout) : traité comme absent
+            if (tokenRevocationService.isRevoked(token)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             // Ne pas modifier le TenantContext ici
             // Le TenantResolutionFilter s'en charge déjà
             // On vérifie juste la cohérence pour les users normaux
@@ -76,8 +84,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             } else {
                 // Pour les users normaux, vérifier la cohérence du tenant
-                if (tokenTenant != null && !tokenTenant.equals(currentTenant)
-                        && !"public".equals(currentTenant)) {
+                // Correction : la vérification était ignorée quand le token n'avait pas de tenant
+                // (tokenTenant == null) ; un utilisateur sans auto-école pouvait alors envoyer
+                // n'importe quel X-Tenant-ID. Désormais le token DOIT porter le tenant demandé.
+                if (!"public".equals(currentTenant) && !java.util.Objects.equals(tokenTenant, currentTenant)) {
                     // Incohérence entre le tenant du token et le header
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
                             "Tenant mismatch");

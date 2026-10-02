@@ -2,7 +2,7 @@ package cm.mvtech.drivehub.modules.monitor.domain.model;
 
 
 import cm.mvtech.drivehub.core.domain.entities.EntityBase;
-import cm.mvtech.drivehub.modules.reservation.Reservation;
+import cm.mvtech.drivehub.modules.reservation.domain.model.Reservation;
 import cm.mvtech.drivehub.modules.auth.domain.model.User;
 import cm.mvtech.drivehub.modules.enums.Gender;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.DrivingSchool;
@@ -19,10 +19,10 @@ import java.util.Set;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "monitors", schema = "public")
+@Table(name = "monitors") // pas de schéma fixe : suit le schéma du tenant courant
 public class Monitor extends EntityBase {
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @JsonIgnore
     private User user;
@@ -43,11 +43,12 @@ public class Monitor extends EntityBase {
     @Column(nullable = false)
     private String residenceCity;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "driving_school_id")
     @JsonIgnore
     private DrivingSchool drivingSchool;
 
     @OneToMany(mappedBy = "monitor")
+    @JsonIgnore
     private Set<Reservation> reservations;
 }

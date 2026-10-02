@@ -19,10 +19,10 @@ import cm.mvtech.drivehub.modules.enums.ProfileStatus;
 import cm.mvtech.drivehub.modules.enums.Role;
 import cm.mvtech.drivehub.modules.monitor.application.dto.MonitorRegisterRequest;
 import cm.mvtech.drivehub.modules.monitor.domain.model.Monitor;
-import cm.mvtech.drivehub.modules.monitor.infrastucture.repository.MonitorsRepository; // Utilisation de la typo 'infrastucture' du projet
-import cm.mvtech.drivehub.modules.student.Student;
-import cm.mvtech.drivehub.modules.student.StudentRegisterRequest;
-import cm.mvtech.drivehub.modules.student.StudentsRepository;
+import cm.mvtech.drivehub.modules.monitor.infrastructure.repository.MonitorsRepository; // Utilisation de la typo 'infrastucture' du projet
+import cm.mvtech.drivehub.modules.student.domain.model.Student;
+import cm.mvtech.drivehub.modules.student.application.dto.StudentRegisterRequest;
+import cm.mvtech.drivehub.modules.student.infrastructure.repository.StudentsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +34,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.security.authentication.BadCredentialsException;
+import cm.mvtech.drivehub.modules.auth.domain.services.UserTenantResolver;
+import cm.mvtech.drivehub.modules.exception.ConflictException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -45,6 +48,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -68,6 +72,8 @@ class AuthServiceImplTest {
     private EmailService emailService;
     @Mock
     private Authentication authentication;
+    @Mock
+    private UserTenantResolver userTenantResolver;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -96,7 +102,8 @@ class AuthServiceImplTest {
         LoginRequest request = new LoginRequest("john.doe@example.com", "password");
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(jwtService.generateToken(any(User.class))).thenReturn("jwtToken");
+        when(userTenantResolver.resolveTenant(any(User.class))).thenReturn(Optional.of("ae_le_volant_abc123"));
+        when(jwtService.generateToken(any(User.class), eq("ae_le_volant_abc123"))).thenReturn("jwtToken");
 
         AuthResponse response = authService.login(request);
         
@@ -107,7 +114,8 @@ class AuthServiceImplTest {
         assertEquals(user.getProfileStatus(), response.getProfileStatus());
         verify(userRepository, times(1)).findByEmail(anyString());
         verify(passwordEncoder, times(1)).matches(eq("password"), anyString());
-        verify(jwtService, times(1)).generateToken(any(User.class));
+        // Le JWT porte le schéma de l'auto-école de l'utilisateur (et non plus toujours "public").
+        verify(jwtService, times(1)).generateToken(any(User.class), eq("ae_le_volant_abc123"));
     }
 
     @Test
@@ -115,7 +123,8 @@ class AuthServiceImplTest {
         LoginRequest request = new LoginRequest("nonexistent@example.com", "password");
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
-        assertThrows(UsernameNotFoundException.class, () -> authService.login(request));
+        // Même erreur que "mauvais mot de passe" : on ne révèle pas quels emails existent.
+        assertThrows(BadCredentialsException.class, () -> authService.login(request));
         verify(userRepository, times(1)).findByEmail(anyString());
         verifyNoInteractions(passwordEncoder, jwtService);
     }
@@ -126,7 +135,7 @@ class AuthServiceImplTest {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
-        assertThrows(AccessDeniedException.class, () -> authService.login(request));
+        assertThrows(BadCredentialsException.class, () -> authService.login(request));
         verify(userRepository, times(1)).findByEmail(anyString());
         verify(passwordEncoder, times(1)).matches(anyString(), anyString());
         verifyNoInteractions(jwtService);
@@ -138,17 +147,19 @@ class AuthServiceImplTest {
                 "Jane", "Doe", "jane.doe@example.com", "password",
                 "123456789", Gender.FEMALE, "Cameroonian", "Douala",new Date(2000, 1, 1)
         );
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
 
         authService.registerStudent(request);
 
-        verify(userRepository, times(1)).findByEmail(anyString());
+        verify(userRepository, times(1)).existsByEmail("jane.doe@example.com");
         verify(passwordEncoder, times(1)).encode(anyString());
         verify(userRepository, times(1)).save(any(User.class));
-        verify(studentsRepository, times(1)).save(any(Student.class)); 
-        verifyNoInteractions(emailTokenRepository, emailService);
+        verify(studentsRepository, times(1)).save(any(Student.class));
+        // L'élève reçoit maintenant, comme le moniteur, un email de vérification.
+        verify(emailService, times(1)).sendVerificationEmail(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -157,10 +168,10 @@ class AuthServiceImplTest {
                 "Jane", "Doe", "john.doe@example.com", "password",
                 "123456789", Gender.FEMALE, "Cameroonian", "Douala", new Date(2000, 1, 1)
         );
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> authService.registerStudent(request));
-        verify(userRepository, times(1)).findByEmail(anyString());
+        assertThrows(ConflictException.class, () -> authService.registerStudent(request));
+        verify(userRepository, times(1)).existsByEmail(anyString());
         verifyNoInteractions(passwordEncoder, studentsRepository, emailTokenRepository, emailService);
     }
 
@@ -170,16 +181,14 @@ class AuthServiceImplTest {
                 "Mike", "Smith", "mike.smith@example.com", "password",
                 "987654321", Gender.MALE, "Nigerian", "Lagos",new java.sql.Date(1990, 5, 10)
         );
-        // Le repository est sollicité 2 fois : check existence ET sendVerificationEmail
-        when(userRepository.findByEmail(anyString()))
-                .thenReturn(Optional.empty()) 
-                .thenReturn(Optional.of(user));
-        
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
 
         authService.registerMonitor(request);
 
-        verify(userRepository, times(2)).findByEmail(anyString());
+        verify(userRepository, times(1)).existsByEmail(anyString());
         verify(monitorsRepository, times(1)).save(any(Monitor.class));
         verify(emailTokenRepository, times(1)).save(any(EmailVerificationToken.class));
         verify(emailService, times(1)).sendVerificationEmail(anyString(), anyString(), anyString());
@@ -191,10 +200,10 @@ class AuthServiceImplTest {
                 "Mike", "Smith", "john.doe@example.com", "password",
                 "987654321", Gender.MALE, "Nigerian", "Lagos", new java.sql.Date(1990, 5, 10)
         );
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> authService.registerMonitor(request));
-        verify(userRepository, times(1)).findByEmail(anyString());
+        assertThrows(ConflictException.class, () -> authService.registerMonitor(request));
+        verify(userRepository, times(1)).existsByEmail(anyString());
         verifyNoInteractions(passwordEncoder, monitorsRepository, emailTokenRepository, emailService);
     }
 
@@ -260,7 +269,8 @@ class AuthServiceImplTest {
     void sendVerificationEmail_UserNotFound() {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
-        assertThrows(UsernameNotFoundException.class, () -> authService.sendVerificationEmail("nonexistent@example.com"));
+        // Silencieux : l'endpoint public /resend-verification ne doit pas révéler si un compte existe.
+        assertDoesNotThrow(() -> authService.sendVerificationEmail("nonexistent@example.com"));
         verify(userRepository, times(1)).findByEmail(anyString());
         verifyNoInteractions(emailTokenRepository, emailService);
     }

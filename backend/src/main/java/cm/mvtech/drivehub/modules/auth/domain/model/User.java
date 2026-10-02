@@ -2,7 +2,7 @@ package cm.mvtech.drivehub.modules.auth.domain.model;
 
 
 import cm.mvtech.drivehub.core.domain.entities.EntityBase;
-import cm.mvtech.drivehub.modules.student.Student;
+import cm.mvtech.drivehub.modules.student.domain.model.Student;
 import cm.mvtech.drivehub.modules.enums.Role;
 import cm.mvtech.drivehub.modules.enums.ProfileStatus;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.DrivingSchool;
