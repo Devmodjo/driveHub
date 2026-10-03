@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<!--
+  Modèle UNIQUE de tous les emails DriveHub (EmailService + EmailContent).
+
+  Règles suivies pour un bon affichage et une bonne délivrabilité :
+  - mise en page en tableaux et styles « en ligne » (Gmail, Outlook et les applications mobiles
+    ignorent souvent les balises <style>) ;
+  - largeur 600 px maximum, lisible sur téléphone ;
+  - logo joint à l'email (cid:logo) : il s'affiche même hors connexion à notre site ;
+  - pas d'emoji, pas de texte caché trompeur, un seul bouton, un vrai pied de page
+    (qui envoie, pourquoi, comment nous contacter) ;
+  - une version texte est envoyée en plus de cette version HTML.
+
+  Variables : c (EmailContent), siteUrl, supportEmail, fromEmail, year.
+-->
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="color-scheme" content="light"/>
+    <meta name="supported-color-schemes" content="light"/>
+    <title th:text="${c.title}">DriveHub</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F3F5F9;-webkit-text-size-adjust:100%;">
+<!-- Aperçu affiché par la messagerie à côté de l'objet (invisible dans l'email) -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#F3F5F9;font-size:1px;line-height:1px;"
+     th:text="${c.preheader}">Aperçu</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F3F5F9;">
+    <tr>
+        <td align="center" style="padding:28px 12px;">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+                   style="width:100%;max-width:600px;">
+
+                <!-- Carte principale -->
+                <tr>
+                    <td style="background-color:#FFFFFF;border:1px solid #E3E8EF;border-radius:16px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <!-- Fine bande bleue de la marque -->
+                            <tr>
+                                <td style="height:4px;line-height:4px;font-size:4px;background-color:#0070F3;border-radius:16px 16px 0 0;">&nbsp;</td>
+                            </tr>
+                            <!-- Logo (fond blanc : il est posé sur la carte) -->
+                            <tr>
+                                <td style="padding:28px 40px 4px;">
+                                    <a th:href="${siteUrl}" href="https://drivehub.cm" style="text-decoration:none;">
+                                        <img src="cid:logo" width="170" height="26" alt="DriveHub"
+                                             style="display:block;width:170px;height:auto;border:0;outline:none;font-family:Arial,sans-serif;font-size:22px;font-weight:bold;color:#0070F3;"/>
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:24px 40px 8px;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+                                    <p style="margin:0 0 6px;font-size:15px;line-height:22px;color:#5B6576;">
+                                        <span th:if="${c.greetingName != null}">Bonjour <span th:text="${c.greetingName}">Awa</span>,</span>
+                                        <span th:if="${c.greetingName == null}">Bonjour,</span>
+                                    </p>
+                                    <h1 style="margin:0 0 20px;font-size:22px;line-height:30px;font-weight:700;color:#0B1220;"
+                                        th:text="${c.title}">Titre</h1>
+                                    <p th:each="paragraph : ${c.paragraphs}"
+                                       style="margin:0 0 16px;font-size:15px;line-height:24px;color:#2E3A4D;white-space:pre-line;"
+                                       th:text="${paragraph}">Paragraphe</p>
+                                </td>
+                            </tr>
+
+                            <!-- Détails (libellé : valeur) -->
+                            <tr th:if="${!#lists.isEmpty(c.details)}">
+                                <td style="padding:8px 40px 8px;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+                                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                                           style="background-color:#F7F9FC;border:1px solid #E3E8EF;border-radius:12px;">
+                                        <tr th:each="detail, it : ${c.details}">
+                                            <td style="padding:10px 16px;font-size:13px;line-height:20px;color:#5B6576;width:40%;vertical-align:top;"
+                                                th:styleappend="${!it.last} ? 'border-bottom:1px solid #E3E8EF;' : ''"
+                                                th:text="${detail.label}">Libellé</td>
+                                            <td style="padding:10px 16px;font-size:14px;line-height:20px;color:#0B1220;font-weight:600;vertical-align:top;word-break:break-word;"
+                                                th:styleappend="${!it.last} ? 'border-bottom:1px solid #E3E8EF;' : ''"
+                                                th:text="${detail.value}">Valeur</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+
+                            <!-- Encadré mis en avant -->
+                            <tr th:if="${c.highlight != null}">
+                                <td style="padding:8px 40px 8px;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+                                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                                           style="background-color:#EEF5FF;border:1px solid #CFE2FF;border-radius:12px;">
+                                        <tr>
+                                            <td style="padding:16px 20px;">
+                                                <p style="margin:0 0 4px;font-size:12px;line-height:18px;color:#3D5A80;text-transform:uppercase;letter-spacing:1px;"
+                                                   th:text="${c.highlight.label}">Libellé</p>
+                                                <p style="margin:0;font-size:18px;line-height:26px;color:#0B1220;font-weight:700;font-family:Consolas,'Courier New',monospace;word-break:break-all;"
+                                                   th:text="${c.highlight.value}">Valeur</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+
+                            <!-- Bouton -->
+                            <tr th:if="${c.actionUrl != null}">
+                                <td style="padding:20px 40px 8px;">
+                                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                        <tr>
+                                            <td align="center" style="background-color:#0070F3;border-radius:10px;">
+                                                <a th:href="${c.actionUrl}" href="https://drivehub.cm" target="_blank"
+                                                   style="display:inline-block;padding:14px 28px;font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;line-height:20px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:10px;"
+                                                   th:text="${c.actionLabel}">Ouvrir DriveHub</a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <!-- Lien en clair si le bouton ne fonctionne pas -->
+                                    <p style="margin:16px 0 0;font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#7A8597;">
+                                        Le bouton ne fonctionne pas ? Copiez ce lien dans votre navigateur :<br/>
+                                        <a th:href="${c.actionUrl}" th:text="${c.actionUrl}" href="https://drivehub.cm"
+                                           style="color:#0070F3;text-decoration:underline;word-break:break-all;">https://drivehub.cm</a>
+                                    </p>
+                                </td>
+                            </tr>
+
+                            <!-- Remarques -->
+                            <tr th:if="${!#lists.isEmpty(c.notes)}">
+                                <td style="padding:16px 40px 0;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+                                    <p th:each="note : ${c.notes}"
+                                       style="margin:0 0 10px;font-size:13px;line-height:20px;color:#5B6576;"
+                                       th:text="${note}">Remarque</p>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td style="padding:20px 40px 32px;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+                                    <p style="margin:0;font-size:15px;line-height:22px;color:#2E3A4D;">L'équipe DriveHub</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Pied de page -->
+                <tr>
+                    <td align="center" style="padding:24px 24px 0;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+                        <p style="margin:0 0 8px;font-size:12px;line-height:18px;color:#7A8597;" th:text="${c.reason}">
+                            Vous recevez cet email car vous avez un compte sur DriveHub.
+                        </p>
+                        <p style="margin:0 0 8px;font-size:12px;line-height:18px;color:#7A8597;">
+                            Pour recevoir nos emails dans votre boîte principale, ajoutez
+                            <span th:text="${fromEmail}" style="color:#5B6576;">no-reply@drivehub.cm</span> à vos contacts.
+                        </p>
+                        <p style="margin:0;font-size:12px;line-height:18px;color:#7A8597;">
+                            DriveHub, plateforme de gestion d'auto-école &middot;
+                            <a th:href="${'mailto:' + supportEmail}" th:text="${supportEmail}" href="mailto:support@drivehub.cm"
+                               style="color:#5B6576;text-decoration:underline;">support@drivehub.cm</a>
+                            &middot; <a th:href="${siteUrl + '/confidentialite'}" href="https://drivehub.cm/confidentialite"
+                                        style="color:#5B6576;text-decoration:underline;">Confidentialité</a>
+                        </p>
+                        <p style="margin:8px 0 0;font-size:12px;line-height:18px;color:#A3ACBA;">
+                            &copy; <span th:text="${year}">2026</span> DriveHub
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

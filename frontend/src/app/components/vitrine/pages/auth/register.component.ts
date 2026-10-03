@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RegisterRequest, UserRole } from '../../../../interfaces/drivehub.models';
 import { SessionService } from '../../../../services/session-service/session.service';
 import { errorMessage, fieldErrorsOf } from '../../../../shared/http-error';
+import { SpamHintComponent } from '../../../../shared/spam-hint.component';
 import { AuthShellComponent } from './auth-shell.component';
 
 /**
@@ -19,16 +20,17 @@ import { AuthShellComponent } from './auth-shell.component';
  */
 @Component({
   selector: 'app-user-register',
-  imports: [FormsModule, RouterLink, AuthShellComponent],
+  imports: [FormsModule, RouterLink, AuthShellComponent, SpamHintComponent],
   template: `
     <app-auth-shell badge="Espace auto-école" title="Créer un compte" [wide]="true"
                     subtitle="Un seul compte pour suivre votre formation ou gérer votre auto-école.">
       @if (done()) {
         <div class="alert-success mb-6">{{ done() }}</div>
-        <p class="text-black/60 dark:text-white/60 font-light mb-8">
+        <p class="text-black/60 dark:text-white/60 font-light mb-3">
           Ouvrez l'email que nous venons d'envoyer à <strong>{{ form.email }}</strong> et cliquez sur le lien de vérification,
           puis connectez-vous.
         </p>
+        <app-spam-hint class="mb-8" />
         <a routerLink="/connexion" class="btn-primary">Aller à la connexion</a>
       } @else {
         @let e = fieldErrors();

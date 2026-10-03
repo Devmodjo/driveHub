@@ -2,16 +2,18 @@ import { Component, Input, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { ICONS } from '../../../../shared/icons';
+import { SpamHintComponent } from '../../../../shared/spam-hint.component';
 
 /**
  * Fenêtre affichée après une demande d'inscription réussie.
- * Elle rappelle le mot de passe provisoire (masqué par défaut, copiable) puis renvoie vers la connexion.
+ * Elle annonce l'email de décision (avec le conseil « regardez dans vos spams »),
+ * rappelle le mot de passe provisoire (masqué par défaut, copiable) puis renvoie vers la connexion.
  *
  * Mobile : feuille collée en bas de l'écran ; à partir de sm: : fenêtre centrée.
  */
 @Component({
   selector: 'register-modal',
-  imports: [LucideDynamicIcon],
+  imports: [LucideDynamicIcon, SpamHintComponent],
   templateUrl: './modal.component.html',
 })
 export class ModalComponent {

@@ -276,3 +276,13 @@
     @apply mt-1.5 text-sm text-red-600 dark:text-red-400;
   }
 }
+
+/* « Hub » du logo, en lettres évidées : contour noir (thème clair) ou blanc (thème sombre).
+   Auparavant « color: transparent » rendait aussi le contour (currentColor) transparent : le mot était invisible. */
+.logo-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px #000;
+}
+.dark .logo-outline {
+  -webkit-text-stroke: 1px #fff;
+}
