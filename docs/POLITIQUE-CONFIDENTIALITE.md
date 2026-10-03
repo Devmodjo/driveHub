@@ -39,7 +39,7 @@ Version du 2 octobre 2026 — publiée sur le site à l'adresse `/confidentialit
 6. **Conservation** : compte actif + 3 ans ; demande refusée 1 an ; paiements 10 ans ; jetons jusqu'à expiration.
 7. **Sécurité** : HTTPS, mots de passe chiffrés (BCrypt), un schéma de base de données par auto-école,
    accès restreints, déconnexion réelle (jetons révoqués). Justificatifs des moniteurs chiffrés (AES-256)
-   avant d'être stockés (Cloudflare R2), visibles seulement par les personnes chargées de la vérification
+   avant d'être stockés, visibles seulement par les personnes chargées de la vérification
    (équipe DriveHub, responsable de l'auto-école) ; chaque consultation est enregistrée.
 8. **Droits** : accès, rectification, effacement, limitation, opposition, retrait du consentement, portabilité —
    par email à contact@drivehub.cm ; recours auprès de l'autorité de protection des données.

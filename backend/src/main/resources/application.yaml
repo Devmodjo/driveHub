@@ -11,7 +11,8 @@ spring:
   # Les valeurs après ":" sont les valeurs par défaut pour le poste de développement.
   # (Remplace configs/DataSourceConfig.java qui avait l'utilisateur et le mot de passe écrits en dur.)
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/${DBNAME:drivehubDB}}
+    # DB_URL complète, OU ses morceaux DB_HOST / DB_PORT / DB_NAME (fournis automatiquement par Render)
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:${DBNAME:drivehubDB}}}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:root}
   jpa:
@@ -136,11 +137,11 @@ security:
 
 # ------------------------------------------------------------------
 #  Stockage des justificatifs
-#  provider : LOCAL (développement : dossier sur le disque) ou R2 (production : Cloudflare R2)
+#  provider : DATABASE (par défaut : dans PostgreSQL, rien à configurer), R2 (Cloudflare R2) ou LOCAL (dossier)
 #  Les fichiers sont chiffrés AVANT d'être envoyés, quel que soit le stockage.
 # ------------------------------------------------------------------
 storage:
-  provider: ${STORAGE_PROVIDER:LOCAL}
+  provider: ${STORAGE_PROVIDER:DATABASE}
   local:
     directory: ${STORAGE_LOCAL_DIR:./data/documents}
   r2:

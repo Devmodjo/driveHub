@@ -75,8 +75,10 @@ public class DataEncryptionService {
         } catch (IllegalArgumentException e) {
             throw new IllegalStateException("DATA_ENCRYPTION_KEY doit être encodée en Base64 (openssl rand -base64 32)");
         }
-        if (master.length != KEY_BYTES) {
-            throw new IllegalStateException("DATA_ENCRYPTION_KEY doit faire exactement 32 octets (reçu : "
+        // Au moins 32 octets (256 bits). Une clé plus longue est acceptée (ex : générée par l'hébergeur) :
+        // les sous-clés de 32 octets sont de toute façon dérivées par HMAC ci-dessous.
+        if (master.length < KEY_BYTES) {
+            throw new IllegalStateException("DATA_ENCRYPTION_KEY doit faire au moins 32 octets (reçu : "
                     + master.length + "). Générez-la avec « openssl rand -base64 32 ».");
         }
         encryptionKey = hmac(master, "drivehub-encryption-v1".getBytes(StandardCharsets.UTF_8));

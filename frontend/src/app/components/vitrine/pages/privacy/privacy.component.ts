@@ -108,8 +108,8 @@ import { RouterLink } from '@angular/router';
               espace distinct, accès réservé aux personnes habilitées, déconnexion qui invalide réellement votre jeton.
             </p>
             <p class="mt-4">
-              Les justificatifs des moniteurs (CNI, CAPEC) sont chiffrés (AES-256) avant d'être stockés chez notre hébergeur de fichiers
-              Cloudflare R2 : même en cas de fuite du stockage, ils resteraient illisibles. Ils ne sont jamais publics et ne
+              Les justificatifs des moniteurs (CNI, CAPEC) sont chiffrés (AES-256) avant d'être stockés : même en cas de fuite
+              du stockage, ils resteraient illisibles. Ils ne sont jamais publics et ne
               sont visibles que par les personnes qui doivent les vérifier (l'équipe DriveHub pour une nouvelle auto-école,
               le responsable de l'auto-école pour la demande d'adhésion d'un moniteur). Chaque consultation est enregistrée.
             </p>

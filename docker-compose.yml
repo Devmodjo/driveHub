@@ -17,12 +17,8 @@ services:
     # Ou l'image publiée par GitHub Actions (au lieu de "build") :
     # image: ghcr.io/devmodjo/drivehub-api:latest
     env_file: ./backend/.env
-    environment:
-      STORAGE_LOCAL_DIR: /app/data/documents
     ports:
       - "8082:8082"
-    volumes:
-      - documents:/app/data          # justificatifs (stockage LOCAL) conservés entre deux redémarrages
     depends_on:
       db:
         condition: service_healthy   # attend la base fournie... si elle est utilisée (--profile db)
@@ -46,5 +42,4 @@ services:
     # Pas de "ports" : la base n'est joignable que par l'API, pas depuis Internet
 
 volumes:
-  documents:
   pgdata:
