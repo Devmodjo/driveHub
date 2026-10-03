@@ -2,7 +2,9 @@ spring:
   config:
     # Variables lues dans backend/.env (copie de backend/.env.example) ; en production, les variables
     # d'environnement du serveur sont prioritaires sur ce fichier.
-    import: optional:file:.env[.properties]
+    # Deux emplacements : lancement depuis backend/ (./mvnw) ou depuis la racine du projet (IntelliJ, VS Code).
+    # Seul le fichier .env est lu, jamais .env.example (qui n'est qu'un modèle versionné dans Git).
+    import: "optional:file:.env[.properties],optional:file:backend/.env[.properties]"
   application:
     name: driveHub
   # Connexion PostgreSQL : valeurs lues dans .env (ou les variables d'environnement du serveur).

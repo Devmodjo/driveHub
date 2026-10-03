@@ -66,7 +66,8 @@ public class DataEncryptionService {
         String encoded = properties.masterKey();
         if (encoded == null || encoded.isBlank()) {
             throw new IllegalStateException("DATA_ENCRYPTION_KEY est absente. Générez-la une fois avec "
-                    + "« openssl rand -base64 32 » et ajoutez-la aux variables d'environnement.");
+                    + "« openssl rand -base64 32 » et mettez-la dans backend/.env (et non dans .env.example, qui "
+                    + "n'est jamais lu : copiez-le en .env), ou dans les variables d'environnement du serveur.");
         }
         byte[] master;
         try {
