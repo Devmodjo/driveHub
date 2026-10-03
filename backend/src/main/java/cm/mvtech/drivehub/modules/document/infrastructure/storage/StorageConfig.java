@@ -15,7 +15,10 @@ import java.net.URI;
 
 /**
  * Choix du stockage des justificatifs selon storage.provider : DATABASE (par défaut), R2 ou LOCAL.
- * En R2, l'application refuse de démarrer si un identifiant manque (erreur claire plutôt qu'un échec au premier envoi).
+ * <ul>
+ *   <li>R2 incomplet (ex : en local, sans identifiants) : avertissement et repli sur la base, l'application démarre ;</li>
+ *   <li>R2 ou LOCAL : les fichiers déjà enregistrés dans la base restent lisibles (FallbackDocumentStorage).</li>
+ * </ul>
  */
 @Slf4j
 @Configuration
@@ -25,16 +28,16 @@ public class StorageConfig {
     public DocumentStorage documentStorage(StorageProperties properties, JdbcTemplate jdbcTemplate,
                                            PlatformTransactionManager transactionManager) {
         String provider = properties.provider() == null ? "DATABASE" : properties.provider().trim().toUpperCase();
-        if ("DATABASE".equals(provider)) {
-            log.info("Justificatifs stockés dans la base PostgreSQL (chiffrés)");
-            return new DatabaseDocumentStorage(jdbcTemplate, transactionManager);
-        }
+        DocumentStorage database = new DatabaseDocumentStorage(jdbcTemplate, transactionManager);
+
         if ("R2".equals(provider)) {
             StorageProperties.R2 r2 = properties.r2();
             if (r2 == null || isBlank(r2.accountId()) || isBlank(r2.accessKeyId())
                     || isBlank(r2.secretAccessKey()) || isBlank(r2.bucket())) {
-                throw new IllegalStateException("STORAGE_PROVIDER=R2 : renseignez R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, "
-                        + "R2_SECRET_ACCESS_KEY et R2_BUCKET");
+                // R2 demandé mais pas configuré (ex : en local) : on ne bloque pas le démarrage
+                log.warn("STORAGE_PROVIDER=R2 mais R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY ou R2_BUCKET "
+                        + "manque : les justificatifs sont stockés dans la base PostgreSQL.");
+                return database;
             }
             S3Client client = S3Client.builder()
                     // Point d'accès R2 : https://<identifiant du compte>.r2.cloudflarestorage.com
@@ -44,13 +47,18 @@ public class StorageConfig {
                             AwsBasicCredentials.create(r2.accessKeyId(), r2.secretAccessKey())))
                     .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
                     .build();
-            log.info("Justificatifs stockés sur Cloudflare R2 (bucket {})", r2.bucket());
-            return new R2DocumentStorage(client, r2.bucket());
+            log.info("Justificatifs stockés sur Cloudflare R2 (bucket {}) ; les anciens restent lus dans la base", r2.bucket());
+            // Nouveaux fichiers dans R2 ; ceux enregistrés avant dans la base restent lisibles
+            return new FallbackDocumentStorage(new R2DocumentStorage(client, r2.bucket()), database);
         }
-        String directory = properties.local() == null || isBlank(properties.local().directory())
-                ? "./data/documents" : properties.local().directory();
-        log.warn("Justificatifs stockés en LOCAL dans {} : à réserver au développement", directory);
-        return new LocalDocumentStorage(directory);
+        if ("LOCAL".equals(provider)) {
+            String directory = properties.local() == null || isBlank(properties.local().directory())
+                    ? "./data/documents" : properties.local().directory();
+            log.warn("Justificatifs stockés en LOCAL dans {} : à réserver au développement", directory);
+            return new FallbackDocumentStorage(new LocalDocumentStorage(directory), database);
+        }
+        log.info("Justificatifs stockés dans la base PostgreSQL (chiffrés)");
+        return database;
     }
 
     private static boolean isBlank(String value) {
