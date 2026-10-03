@@ -158,4 +158,18 @@ class EmailServiceTest {
         doThrow(new MailSendException("SMTP indisponible")).when(mailSender).send(any(MimeMessage.class));
         assertDoesNotThrow(() -> service.sendSchoolApprovedEmail("awa@test.cm", "Awa", "Auto-école Test"));
     }
+
+    /** Développement : si l'envoi échoue, le lien est écrit dans la console ; jamais en production. */
+    @Test
+    @org.junit.jupiter.api.extension.ExtendWith(org.springframework.boot.test.system.OutputCaptureExtension.class)
+    void sendFailure_LogsLinkOnlyOnLocalhost(org.springframework.boot.test.system.CapturedOutput output) {
+        doThrow(new MailSendException("SMTP indisponible")).when(mailSender).send(any(MimeMessage.class));
+
+        service.sendVerificationEmail("awa@test.cm", "Awa", "https://app.drivehub.cm/verify-email?token=prod");
+        assertFalse(output.getOut().contains("token=prod"), "aucun lien dans les journaux de production");
+
+        ReflectionTestUtils.setField(service, "frontendUrl", "http://localhost:4200");
+        service.sendVerificationEmail("awa@test.cm", "Awa", "http://localhost:4200/verify-email?token=dev");
+        assertTrue(output.getOut().contains("http://localhost:4200/verify-email?token=dev"));
+    }
 }

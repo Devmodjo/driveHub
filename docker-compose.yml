@@ -5,7 +5,7 @@
 #
 #  Avec votre propre base (Neon, PostgreSQL déjà installé...) :
 #      docker compose up -d --build
-#  Avec la base PostgreSQL fournie ici (dans .env : DB_URL=jdbc:postgresql://db:5432/drivehub) :
+#  Avec la base PostgreSQL fournie ici (dans .env : DB_URL=jdbc:postgresql://db:5432/drivehubDB) :
 #      docker compose --profile db up -d --build
 #
 #  Arrêt : docker compose down      Journaux : docker compose logs -f api
@@ -33,7 +33,7 @@ services:
     image: postgres:16
     profiles: ["db"]                 # démarrée seulement avec --profile db
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-drivehub}
+      POSTGRES_DB: ${POSTGRES_DB:-drivehubDB}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}   # à changer sur un serveur
     volumes:

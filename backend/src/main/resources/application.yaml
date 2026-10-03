@@ -48,7 +48,7 @@ spring:
           connectiontimeout: 10000
           timeout: 10000
           writetimeout: 10000
-          auth: true
+          auth: ${MAIL_SMTP_AUTH:true}         # false pour un serveur de test local (Mailpit)
           starttls:
             enable: ${MAIL_STARTTLS:true}
             required: ${MAIL_STARTTLS:true}
