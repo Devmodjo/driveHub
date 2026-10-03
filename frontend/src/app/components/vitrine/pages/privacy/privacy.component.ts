@@ -50,8 +50,8 @@ import { RouterLink } from '@angular/router';
               <li><strong class="text-black dark:text-white">Identité et contact</strong> (tous les comptes) : prénom, nom, adresse email, téléphone, genre, date de naissance, nationalité, ville de résidence.</li>
               <li><strong class="text-black dark:text-white">Compte</strong> : mot de passe (enregistré uniquement sous forme chiffrée, nous ne pouvons pas le lire), rôle (élève ou moniteur), statut du compte, date et version de la politique de confidentialité acceptée.</li>
               <li><strong class="text-black dark:text-white">Auto-école</strong> (responsables) : nom, adresse, téléphone, WhatsApp, email, site web, présentation, et les justificatifs demandés pour vérifier que l'établissement est autorisé à exercer.</li>
-              <li><strong class="text-black dark:text-white">Formation</strong> (élèves) : catégorie de permis, pièce d'identité si l'auto-école la demande, réservations de leçons, inscriptions aux examens, cours consultés.</li>
-              <li><strong class="text-black dark:text-white">Justificatifs</strong> : pièce d'identité (CNI ou passeport) pour les élèves et les moniteurs, et CAPEC (certificat d'aptitude à l'enseignement de la conduite) pour les moniteurs. Ils ne sont demandés qu'au moment utile : avant la demande de création d'une auto-école ou la demande d'adhésion à une auto-école.</li>
+              <li><strong class="text-black dark:text-white">Formation</strong> (élèves) : catégorie de permis, réservations de leçons, inscriptions aux examens, cours consultés. Aucun justificatif n'est demandé aux élèves.</li>
+              <li><strong class="text-black dark:text-white">Justificatifs</strong> (moniteurs uniquement) : pièce d'identité (CNI ou passeport) et CAPEC (certificat d'aptitude à l'enseignement de la conduite). Ils ne sont demandés qu'au moment utile : avant la demande de création d'une auto-école ou la demande d'adhésion à une auto-école. Les élèves ne fournissent aucun justificatif.</li>
               <li><strong class="text-black dark:text-white">Paiements</strong> : montant, motif, moyen de paiement, numéro Mobile Money utilisé et référence de la transaction. Nous ne recevons jamais votre code secret Mobile Money.</li>
               <li><strong class="text-black dark:text-white">Données techniques</strong> : jeton de connexion et préférences (thème, langue) enregistrés dans votre navigateur, journaux techniques du serveur (date, adresse appelée) pour la sécurité.</li>
             </ul>
@@ -108,10 +108,10 @@ import { RouterLink } from '@angular/router';
               espace distinct, accès réservé aux personnes habilitées, déconnexion qui invalide réellement votre jeton.
             </p>
             <p class="mt-4">
-              Vos justificatifs (CNI, CAPEC) sont chiffrés (AES-256) avant d'être stockés chez notre hébergeur de fichiers
+              Les justificatifs des moniteurs (CNI, CAPEC) sont chiffrés (AES-256) avant d'être stockés chez notre hébergeur de fichiers
               Cloudflare R2 : même en cas de fuite du stockage, ils resteraient illisibles. Ils ne sont jamais publics et ne
               sont visibles que par les personnes qui doivent les vérifier (l'équipe DriveHub pour une nouvelle auto-école,
-              le responsable de l'auto-école pour une demande d'adhésion). Chaque consultation est enregistrée.
+              le responsable de l'auto-école pour la demande d'adhésion d'un moniteur). Chaque consultation est enregistrée.
             </p>
           </section>
 

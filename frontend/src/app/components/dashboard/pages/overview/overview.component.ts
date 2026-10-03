@@ -2,10 +2,8 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { LucideDynamicIcon, LucideIcon } from '@lucide/angular';
-import { Reservation, SchoolSubscription, Student, UserDocument } from '../../../../interfaces/drivehub.models';
-import { DocumentService } from '../../../../services/document-service/document.service';
+import { Reservation, SchoolSubscription, Student } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
-import { documentStatusLabel } from '../../../../shared/documents';
 import { SessionService } from '../../../../services/session-service/session.service';
 import { errorMessage } from '../../../../shared/http-error';
 import { ICONS } from '../../../../shared/icons';
@@ -63,7 +61,6 @@ interface Kpi {
           <div><dt class="field-label">Téléphone</dt><dd>{{ p.phoneNumber }}</dd></div>
           <div><dt class="field-label">Catégorie de permis</dt><dd>{{ p.licenseCategory ?? 'À définir avec votre auto-école' }}</dd></div>
           <div><dt class="field-label">Ville</dt><dd>{{ p.residenceCity }}</dd></div>
-          <div><dt class="field-label">Pièce d'identité</dt><dd>{{ cniStatus() }}</dd></div>
         </dl>
       </div>
     }
@@ -96,7 +93,6 @@ export class OverviewComponent {
   protected readonly icons = ICONS;
   protected readonly session = inject(SessionService);
   private readonly api = inject(SchoolApiService);
-  private readonly documents = inject(DocumentService);
   protected readonly label = label;
   protected readonly formatDate = formatDate;
   protected readonly formatDateTime = formatDateTime;
@@ -107,8 +103,6 @@ export class OverviewComponent {
   protected readonly error = signal('');
   /** Abonnement en période d'essai (null sinon, ou si l'utilisateur n'est pas le responsable). */
   protected readonly trial = signal<SchoolSubscription | null>(null);
-  /** Statut de la pièce d'identité de l'élève (« Vérifié », « En vérification »...). */
-  protected readonly cniStatus = signal('-');
 
   constructor() {
     const onError = (err: unknown) => this.error.set(errorMessage(err));
@@ -146,10 +140,6 @@ export class OverviewComponent {
       });
     } else {
       this.api.myStudentProfile().subscribe({ next: (p) => this.profile.set(p), error: onError });
-      this.documents.myDocuments().subscribe({
-        next: (docs) => this.cniStatus.set(documentStatusLabel(docs?.find((d: UserDocument) => d.type === 'CNI')?.status)),
-        error: () => this.cniStatus.set('-'),
-      });
       forkJoin({ payments: this.api.payments(0, 100), exams: this.api.myExamInscriptions() }).subscribe({
         next: ({ payments, exams }) => {
           const paid = payments.content.filter((p) => p.paymentStatus === 'VALIDATE').reduce((sum, p) => sum + Number(p.amount), 0);

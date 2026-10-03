@@ -9,7 +9,7 @@ import cm.mvtech.drivehub.modules.auth.infrastructure.repository.PasswordResetTo
 import cm.mvtech.drivehub.modules.auth.infrastructure.repository.UserRepository;
 import cm.mvtech.drivehub.modules.document.domain.model.DocumentType;
 import cm.mvtech.drivehub.modules.document.domain.services.DocumentService;
-import cm.mvtech.drivehub.modules.document.domain.services.SchoolDocumentAccessService;
+import cm.mvtech.drivehub.modules.drivingschool.domain.services.SchoolOwnerGuard;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.DrivingSchool;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.DrivingSchoolRegistry;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.SchoolJoinRequest;
@@ -49,7 +49,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class MonitorInvitationServiceTest {
 
-    @Mock private SchoolDocumentAccessService schoolAccess;
+    @Mock private SchoolOwnerGuard schoolAccess;
     @Mock private DrivingSchoolRegistryRepository registryRepository;
     @Mock private CurrentSchoolProvider currentSchoolProvider;
     @Mock private UserRepository userRepository;

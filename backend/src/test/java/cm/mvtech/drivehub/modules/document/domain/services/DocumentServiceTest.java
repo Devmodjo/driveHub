@@ -84,7 +84,7 @@ class DocumentServiceTest {
     @Test
     void requiredTypes_DependOnRole() {
         assertEquals(List.of(DocumentType.CNI, DocumentType.CAPEC), DocumentService.requiredTypes(Role.MONITOR));
-        assertEquals(List.of(DocumentType.CNI), DocumentService.requiredTypes(Role.STUDENT));
+        assertEquals(List.of(), DocumentService.requiredTypes(Role.STUDENT));
     }
 
     @Test
@@ -100,17 +100,24 @@ class DocumentServiceTest {
 
     @Test
     void assertRequiredDocuments_MissingDocument_ShouldExplainWhatToDo() {
-        when(documentRepository.findAllByUserOrderByTypeAsc(student)).thenReturn(List.of());
+        when(documentRepository.findAllByUserOrderByTypeAsc(monitor)).thenReturn(List.of());
         BadRequestException e = assertThrows(BadRequestException.class,
-                () -> service.assertRequiredDocuments(student, "avant de rejoindre une auto-école"));
+                () -> service.assertRequiredDocuments(monitor, "avant de rejoindre une auto-école"));
         assertTrue(e.getMessage().contains("avant de rejoindre une auto-école"));
+        assertTrue(e.getMessage().contains("CAPEC"));
+    }
+
+    @Test
+    void assertRequiredDocuments_Student_NothingRequired() {
+        when(documentRepository.findAllByUserOrderByTypeAsc(student)).thenReturn(List.of());
+        assertDoesNotThrow(() -> service.assertRequiredDocuments(student, "avant de rejoindre une auto-école"));
     }
 
     // ------------------------------------------------------------------ envoi
 
     @Test
     void upload_EncryptsBeforeStorage_AndStoresMetadataEncrypted() {
-        DocumentResponse response = service.upload(student, DocumentType.CNI, png("../ma cni<script>.png"), "AB 123 456");
+        DocumentResponse response = service.upload(monitor, DocumentType.CNI, png("../ma cni<script>.png"), "AB 123 456");
 
         assertEquals(DocumentStatus.PENDING, response.status());
         assertEquals("image/png", response.contentType());
@@ -129,8 +136,9 @@ class DocumentServiceTest {
     }
 
     @Test
-    void upload_CapecByStudent_ShouldBeRefused() {
+    void upload_ByStudent_ShouldBeRefused() {
         assertThrows(BadRequestException.class, () -> service.upload(student, DocumentType.CAPEC, png("capec.png"), null));
+        assertThrows(BadRequestException.class, () -> service.upload(student, DocumentType.CNI, png("cni.png"), null));
         assertTrue(bucket.isEmpty());
     }
 
@@ -143,13 +151,13 @@ class DocumentServiceTest {
                 new byte[(int) DocumentService.MAX_FILE_BYTES + 1]);
 
         assertTrue(assertThrows(BadRequestException.class,
-                () -> service.upload(student, DocumentType.CNI, empty, null)).getMessage().contains("vide"));
+                () -> service.upload(monitor, DocumentType.CNI, empty, null)).getMessage().contains("vide"));
         assertTrue(assertThrows(BadRequestException.class,
-                () -> service.upload(student, DocumentType.CNI, html, null)).getMessage().contains("Format"));
+                () -> service.upload(monitor, DocumentType.CNI, html, null)).getMessage().contains("Format"));
         assertTrue(assertThrows(BadRequestException.class,
-                () -> service.upload(student, DocumentType.CNI, tooBig, null)).getMessage().contains("5 Mo"));
+                () -> service.upload(monitor, DocumentType.CNI, tooBig, null)).getMessage().contains("5 Mo"));
         assertThrows(BadRequestException.class,
-                () -> service.upload(student, DocumentType.CNI, png("cni.png"), "<script>"));
+                () -> service.upload(monitor, DocumentType.CNI, png("cni.png"), "<script>"));
         assertTrue(bucket.isEmpty());
     }
 
@@ -158,9 +166,9 @@ class DocumentServiceTest {
         UserDocument previous = new UserDocument();
         previous.setObjectKey("documents/2020/01/old");
         bucket.put("documents/2020/01/old", new byte[]{1});
-        when(documentRepository.findByUserAndType(student, DocumentType.CNI)).thenReturn(Optional.of(previous));
+        when(documentRepository.findByUserAndType(monitor, DocumentType.CNI)).thenReturn(Optional.of(previous));
 
-        service.upload(student, DocumentType.CNI, png("cni.png"), null);
+        service.upload(monitor, DocumentType.CNI, png("cni.png"), null);
 
         verify(documentRepository).delete(previous);
         verify(documentRepository).flush();
@@ -179,7 +187,7 @@ class DocumentServiceTest {
 
     @Test
     void read_DecryptsOriginalContent_AndLogsAccess() {
-        service.upload(student, DocumentType.CNI, png("cni.png"), null);
+        service.upload(monitor, DocumentType.CNI, png("cni.png"), null);
         ArgumentCaptor<UserDocument> saved = ArgumentCaptor.forClass(UserDocument.class);
         verify(documentRepository).save(saved.capture());
 
@@ -195,7 +203,7 @@ class DocumentServiceTest {
 
     @Test
     void read_CorruptedFile_ShouldFail() {
-        service.upload(student, DocumentType.CNI, png("cni.png"), null);
+        service.upload(monitor, DocumentType.CNI, png("cni.png"), null);
         ArgumentCaptor<UserDocument> saved = ArgumentCaptor.forClass(UserDocument.class);
         verify(documentRepository).save(saved.capture());
         byte[] stored = bucket.get(saved.getValue().getObjectKey());

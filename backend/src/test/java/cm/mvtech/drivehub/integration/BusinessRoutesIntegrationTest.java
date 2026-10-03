@@ -459,7 +459,6 @@ class BusinessRoutesIntegrationTest {
         assertNull(jwtService.extractTenant(publicToken), "pas encore de tenant avant l'adhésion");
 
         String body = "{\"drivingSchoolId\":\"" + registryId + "\",\"role\":\"STUDENT\"}";
-        uploadCni(publicToken);
         perform(post("/api/join-school/public"), publicToken, body, false).andExpect(status().isOk());
         perform(post("/api/join-school/public"), publicToken, body, false).andExpect(status().isConflict());
 
@@ -493,7 +492,6 @@ class BusinessRoutesIntegrationTest {
     void joinSchool_RejectByOwner() throws Exception {
         User applicant = newUser(Role.STUDENT, "it-reject");
         String publicToken = tokenFor(applicant);
-        uploadCni(publicToken);
         perform(post("/api/join-school/public"), publicToken,
                 "{\"drivingSchoolId\":\"" + registryId + "\",\"role\":\"STUDENT\"}", false)
                 .andExpect(status().isOk());
@@ -571,18 +569,32 @@ class BusinessRoutesIntegrationTest {
     // =====================================================================
 
     /**
-     * La CNI envoyée par l'élève (avant son adhésion) : il la retrouve à l'identique, le responsable de son
-     * auto-école aussi ; personne d'autre. Vérifiée à l'approbation, elle ne peut plus être supprimée.
+     * Un moniteur qui veut rejoindre une auto-école envoie d'abord sa pièce d'identité et son CAPEC.
+     * Le responsable les consulte (fichier identique à l'original, consultation journalisée), personne
+     * d'autre ; ils passent à « vérifié » quand il accepte la demande et ne peuvent plus être supprimés.
      */
     @Test
-    void documents_StudentCni_VisibleToOwnerOnly() throws Exception {
-        JsonNode mine = json(perform(get("/api/documents/me"), studentToken, null, false).andExpect(status().isOk()));
-        assertEquals(1, mine.size());
-        assertEquals("CNI", mine.get(0).get("type").asText());
-        assertEquals("VERIFIED", mine.get(0).get("status").asText(), "vérifiée par le responsable à l'approbation");
-        String documentId = mine.get(0).get("id").asText();
+    void documents_MonitorJoin_DocumentsVisibleToOwnerOnly() throws Exception {
+        User applicant = newUser(Role.MONITOR, "it-join-monitor");
+        String token = tokenFor(applicant);
+        String body = "{\"drivingSchoolId\":\"" + registryId + "\",\"role\":\"MONITOR\"}";
 
-        byte[] own = perform(get("/api/documents/" + documentId + "/file"), studentToken, null, false)
+        // Sans justificatif : refus avec un message qui dit quoi faire
+        perform(post("/api/join-school/public"), token, body, false)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("CAPEC")));
+        perform(get("/api/documents/requirements"), token, null, false)
+                .andExpect(jsonPath("$.missing.length()").value(2));
+
+        upload(token, "CNI");
+        upload(token, "CAPEC");
+        perform(post("/api/join-school/public"), token, body, false).andExpect(status().isOk());
+        UUID requestId = pendingRequestOf(applicant);
+
+        JsonNode mine = json(perform(get("/api/documents/me"), token, null, false).andExpect(status().isOk()));
+        assertEquals(2, mine.size());
+        String documentId = mine.get(0).get("id").asText();
+        byte[] own = perform(get("/api/documents/" + documentId + "/file"), token, null, false)
                 .andExpect(status().isOk())
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
                 .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")))
@@ -590,52 +602,51 @@ class BusinessRoutesIntegrationTest {
         assertArrayEquals(TINY_PNG, own, "le fichier déchiffré est identique à l'original");
 
         // Un autre utilisateur ne peut pas le lire par la route « mes documents »
-        perform(get("/api/documents/" + documentId + "/file"), monitorToken, null, false).andExpect(status().isNotFound());
+        perform(get("/api/documents/" + documentId + "/file"), studentToken, null, false).andExpect(status().isNotFound());
 
-        // Le responsable de l'auto-école le voit dans la fiche de l'élève
-        JsonNode viaSchool = json(perform(get("/api/students/" + studentId + "/documents"), monitorToken)
+        // Le responsable les voit depuis la demande ; un moniteur sans auto-école, non
+        JsonNode viaRequest = json(perform(get("/api/join-school/admin/" + requestId + "/documents"), monitorToken, null, false)
                 .andExpect(status().isOk()));
-        assertEquals(documentId, viaSchool.get(0).get("id").asText());
-        byte[] viaOwner = perform(get("/api/students/" + studentId + "/documents/" + documentId + "/file"), monitorToken)
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        assertEquals(2, viaRequest.size());
+        byte[] viaOwner = perform(get("/api/join-school/admin/" + requestId + "/documents/" + documentId + "/file"),
+                monitorToken, null, false).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
         assertArrayEquals(TINY_PNG, viaOwner);
-        // ... mais pas l'élève lui-même par cette route réservée au responsable
-        perform(get("/api/students/" + studentId + "/documents"), studentToken).andExpect(status().isForbidden());
+        String outsider = tokenFor(newUser(Role.MONITOR, "it-doc-outsider"));
+        perform(get("/api/join-school/admin/" + requestId + "/documents"), outsider, null, false)
+                .andExpect(status().isForbidden());
 
-        perform(delete("/api/documents/" + documentId), studentToken, null, false).andExpect(status().isConflict());
-        perform(get("/api/documents/requirements"), studentToken, null, false)
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.missing").isEmpty());
+        perform(post("/api/join-school/admin/" + requestId + "/approve"), monitorToken, null, false)
+                .andExpect(status().isOk());
+        perform(get("/api/documents/me"), token, null, false)
+                .andExpect(jsonPath("$[0].status").value("VERIFIED"))
+                .andExpect(jsonPath("$[1].status").value("VERIFIED"));
+        perform(delete("/api/documents/" + documentId), token, null, false).andExpect(status().isConflict());
 
         Integer logged = jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM public.document_access_logs WHERE document_id = ?::uuid", Integer.class, documentId);
         assertTrue(logged != null && logged >= 2, "chaque consultation est journalisée");
-
-        // Le fichier est chiffré dans le stockage et en base, le nom du fichier aussi
         String fileNameInDb = jdbcTemplate.queryForObject(
                 "SELECT file_name_enc FROM public.user_documents WHERE id = ?::uuid", String.class, documentId);
-        assertTrue(fileNameInDb.startsWith("v1:"));
+        assertTrue(fileNameInDb.startsWith("v1:"), "nom du fichier chiffré en base");
     }
 
-    /** Sans pièce d'identité, la demande d'adhésion est refusée avec un message qui dit quoi faire. */
+    /** Aucun justificatif n'est demandé aux élèves : rien à envoyer, et l'envoi est refusé. */
     @Test
-    void documents_JoinWithoutCni_IsRefused() throws Exception {
-        User newcomer = newUser(Role.STUDENT, "it-nocni");
-        perform(post("/api/join-school/public"), tokenFor(newcomer),
-                "{\"drivingSchoolId\":\"" + registryId + "\",\"role\":\"STUDENT\"}", false)
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("CNI")));
-
-        // Le CAPEC n'est pas demandé à un élève, et un fichier qui n'est pas une image/PDF est refusé
+    void documents_StudentNeedsNoDocument() throws Exception {
+        User newcomer = newUser(Role.STUDENT, "it-nodoc");
+        perform(get("/api/documents/requirements"), tokenFor(newcomer), null, false)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.required").isEmpty());
         mockMvc.perform(multipart("/api/documents")
-                        .file(new MockMultipartFile("file", "capec.png", "image/png", TINY_PNG))
-                        .param("type", "CAPEC")
+                        .file(new MockMultipartFile("file", "cni.png", "image/png", TINY_PNG))
+                        .param("type", "CNI")
                         .header("Authorization", "Bearer " + tokenFor(newcomer)))
                 .andExpect(status().isBadRequest());
+        // Un fichier qui n'est ni une image ni un PDF est refusé (moniteur)
         mockMvc.perform(multipart("/api/documents")
                         .file(new MockMultipartFile("file", "cni.png", "image/png", "<html>".repeat(5).getBytes()))
                         .param("type", "CNI")
-                        .header("Authorization", "Bearer " + tokenFor(newcomer)))
+                        .header("Authorization", "Bearer " + tokenFor(newUser(Role.MONITOR, "it-badfile"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Format")));
     }
@@ -793,7 +804,6 @@ class BusinessRoutesIntegrationTest {
 
     /** Parcours complet d'adhésion d'un élève, puis jeton portant le tenant. */
     private String joinSchoolAndGetToken(User student) throws Exception {
-        uploadCni(tokenFor(student));   // justificatif exigé avant la demande d'adhésion
         perform(post("/api/join-school/public"), tokenFor(student),
                 "{\"drivingSchoolId\":\"" + registryId + "\",\"role\":\"STUDENT\"}", false)
                 .andExpect(status().isOk());
@@ -805,11 +815,11 @@ class BusinessRoutesIntegrationTest {
         return token;
     }
 
-    /** Envoie une pièce d'identité (petite image PNG) pour l'utilisateur du jeton. */
-    private void uploadCni(String token) throws Exception {
+    /** Envoie un justificatif (petite image PNG) pour l'utilisateur du jeton. */
+    private void upload(String token, String type) throws Exception {
         mockMvc.perform(multipart("/api/documents")
-                        .file(new MockMultipartFile("file", "cni.png", "image/png", TINY_PNG))
-                        .param("type", "CNI")
+                        .file(new MockMultipartFile("file", type.toLowerCase() + ".png", "image/png", TINY_PNG))
+                        .param("type", type)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isCreated());
     }

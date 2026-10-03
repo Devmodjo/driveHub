@@ -63,9 +63,6 @@ describe('DocumentService', () => {
     service.joinRequestFile('r1', 'd1').subscribe();
     expect(http.expectOne(`${API_URL}join-school/admin/r1/documents/d1/file`).request.responseType).toBe('blob');
 
-    service.studentFile('s1', 'd1').subscribe();
-    expect(http.expectOne(`${API_URL}students/s1/documents/d1/file`).request.responseType).toBe('blob');
-
     service.platformFile('d1').subscribe();
     expect(http.expectOne(`${BASE_URL}documents/d1/file`).request.responseType).toBe('blob');
   });
@@ -73,9 +70,6 @@ describe('DocumentService', () => {
   it('appelle les routes du responsable et du back-office', () => {
     service.joinRequestDocuments('r1').subscribe();
     http.expectOne(`${API_URL}join-school/admin/r1/documents`).flush([]);
-
-    service.studentDocuments('s1').subscribe();
-    http.expectOne(`${API_URL}students/s1/documents`).flush([]);
 
     service.registryDocuments('reg1').subscribe();
     http.expectOne(`${BASE_URL}registries/reg1/documents`).flush([]);

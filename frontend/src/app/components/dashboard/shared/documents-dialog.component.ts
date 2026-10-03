@@ -17,19 +17,20 @@ interface Row {
 }
 
 /**
- * Fenêtre « Justificatifs de ... » pour le responsable d'auto-école (demandes d'adhésion, élèves).
+ * Fenêtre « Justificatifs de ... » pour le responsable d'auto-école (demandes d'adhésion des moniteurs).
  * Elle liste les pièces attendues (une pièce absente apparaît « À fournir ») et ouvre chaque fichier
  * dans la visionneuse.
  *
- * Le parent fournit le chargement de la liste et du fichier, car les routes de l'API diffèrent
- * (demande d'adhésion ou élève) :
- *   <app-documents-dialog [title]="..." [documents]="docs$" [fileLoader]="loadFile" [expected]="['CNI']" (closed)="..." />
+ * Le parent fournit le chargement de la liste et du fichier (routes de l'API propres à la demande) :
+ *   <app-documents-dialog [title]="..." [documents]="docs$" [fileLoader]="loadFile" [expected]="['CNI', 'CAPEC']" (closed)="..." />
  */
 @Component({
   selector: 'app-documents-dialog',
   imports: [LucideDynamicIcon, DocumentViewerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'viewing() || closed.emit()' },
+  // Échap ferme la fenêtre. Quand la visionneuse est ouverte par-dessus, c'est elle qui reçoit la touche
+  // (elle l'arrête avant qu'elle n'arrive ici) : seule la visionneuse se ferme.
+  host: { '(document:keydown.escape)': 'closed.emit()' },
   template: `
     <div class="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-[2px] sm:p-6"
          (click)="closed.emit()">
@@ -113,8 +114,8 @@ export class DocumentsDialogComponent {
   readonly documents = input.required<Observable<UserDocument[]>>();
   /** Chargement du fichier d'un justificatif. */
   readonly fileLoader = input.required<(doc: UserDocument) => Observable<Blob>>();
-  /** Pièces attendues pour cette personne (élève : CNI ; moniteur : CNI et CAPEC). */
-  readonly expected = input<DocumentType[]>(['CNI']);
+  /** Pièces attendues pour cette personne (moniteur : pièce d'identité et CAPEC). */
+  readonly expected = input<DocumentType[]>(['CNI', 'CAPEC']);
   readonly closed = output<void>();
 
   protected readonly loading = signal(true);

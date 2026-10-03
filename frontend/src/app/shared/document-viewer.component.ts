@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, output, signal } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { LucideDynamicIcon } from '@lucide/angular';
@@ -16,6 +17,9 @@ import { ICONS } from './icons';
  * - PDF : affiché dans un cadre sur ordinateur. Sur téléphone, les navigateurs affichent mal les PDF
  *   dans un cadre : on propose plutôt de l'ouvrir dans un nouvel onglet.
  *
+ * Touche Échap : elle ferme uniquement la visionneuse, jamais la fenêtre ou le panneau qui l'a ouverte
+ * (voir le constructeur).
+ *
  * Utilisation :
  *   @if (viewing(); as v) {
  *     <app-document-viewer [title]="v.title" [fileName]="v.fileName" [source]="v.source" (closed)="viewing.set(null)" />
@@ -25,7 +29,6 @@ import { ICONS } from './icons';
   selector: 'app-document-viewer',
   imports: [LucideDynamicIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'closed.emit()' },
   template: `
     <div class="fixed inset-0 z-[90] flex items-stretch sm:items-center justify-center bg-black/70 backdrop-blur-[2px] sm:p-6"
          (click)="closed.emit()">
@@ -123,8 +126,25 @@ export class DocumentViewerComponent {
       });
       onCleanup(() => subscription.unsubscribe());
     });
-    // Libère la mémoire occupée par le fichier quand la visionneuse se ferme
-    inject(DestroyRef).onDestroy(() => this.revoke());
+
+    // Touche Échap. La fenêtre ou le panneau qui contient la visionneuse écoute aussi Échap sur
+    // « document » (phase normale, dite de « bouillonnement »). On écoute ici en phase de « capture » :
+    // notre écouteur passe donc AVANT les leurs, et stopPropagation() les empêche de recevoir la touche.
+    // Résultat : Échap ferme seulement la visionneuse (l'élément le plus au-dessus), puis, si on
+    // appuie à nouveau, la fenêtre en dessous.
+    const page = inject(DOCUMENT);
+    const onKeydown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.stopPropagation();
+      this.closed.emit();
+    };
+    page.addEventListener('keydown', onKeydown, true);
+
+    inject(DestroyRef).onDestroy(() => {
+      page.removeEventListener('keydown', onKeydown, true);
+      // Libère la mémoire occupée par le fichier quand la visionneuse se ferme
+      this.revoke();
+    });
   }
 
   private revoke(): void {

@@ -9,7 +9,7 @@ import cm.mvtech.drivehub.modules.auth.infrastructure.repository.PasswordResetTo
 import cm.mvtech.drivehub.modules.auth.infrastructure.repository.UserRepository;
 import cm.mvtech.drivehub.modules.document.domain.model.DocumentType;
 import cm.mvtech.drivehub.modules.document.domain.services.DocumentService;
-import cm.mvtech.drivehub.modules.document.domain.services.SchoolDocumentAccessService;
+import cm.mvtech.drivehub.modules.drivingschool.domain.services.SchoolOwnerGuard;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.DrivingSchoolRegistry;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.SchoolJoinRequest;
 import cm.mvtech.drivehub.modules.drivingschool.domain.services.CurrentSchoolProvider;
@@ -57,7 +57,7 @@ public class MonitorInvitationService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    private final SchoolDocumentAccessService schoolAccess;
+    private final SchoolOwnerGuard schoolAccess;
     private final DrivingSchoolRegistryRepository registryRepository;
     private final CurrentSchoolProvider currentSchoolProvider;
     private final UserRepository userRepository;

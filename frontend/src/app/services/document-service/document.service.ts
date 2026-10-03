@@ -18,13 +18,13 @@ import { API_URL, BASE_URL } from '../../utils/UTILS';
 export class DocumentService {
   private readonly http = inject(HttpClient);
 
-  // ─── Utilisateur connecté (moniteur ou élève) ──────────────────────
+  // ─── Utilisateur connecté (seuls les moniteurs envoient des justificatifs) ───
   /** Mes justificatifs déjà envoyés. */
   myDocuments(): Observable<UserDocument[]> {
     return this.http.get<UserDocument[]>(`${API_URL}documents/me`);
   }
 
-  /** Pièces demandées selon mon rôle et pièces qui manquent encore. */
+  /** Pièces demandées selon mon rôle et pièces qui manquent encore (listes vides pour un élève). */
   requirements(): Observable<DocumentRequirements> {
     return this.http.get<DocumentRequirements>(`${API_URL}documents/requirements`);
   }
@@ -55,22 +55,13 @@ export class DocumentService {
   }
 
   // ─── Responsable d'auto-école ──────────────────────────────────────
-  /** Justificatifs de la personne qui demande à rejoindre l'auto-école. */
+  /** Justificatifs du moniteur qui demande à rejoindre l'auto-école (liste vide pour un élève). */
   joinRequestDocuments(requestId: string): Observable<UserDocument[]> {
     return this.http.get<UserDocument[]>(`${API_URL}join-school/admin/${requestId}/documents`);
   }
 
   joinRequestFile(requestId: string, documentId: string): Observable<Blob> {
     return this.http.get(`${API_URL}join-school/admin/${requestId}/documents/${documentId}/file`, { responseType: 'blob' });
-  }
-
-  /** Justificatifs d'un élève de l'auto-école (l'intercepteur ajoute X-Tenant-ID). */
-  studentDocuments(studentId: string): Observable<UserDocument[]> {
-    return this.http.get<UserDocument[]>(`${API_URL}students/${studentId}/documents`);
-  }
-
-  studentFile(studentId: string, documentId: string): Observable<Blob> {
-    return this.http.get(`${API_URL}students/${studentId}/documents/${documentId}/file`, { responseType: 'blob' });
   }
 
   // ─── Back-office (jeton administrateur, ajouté par l'intercepteur pour /api/platform) ──

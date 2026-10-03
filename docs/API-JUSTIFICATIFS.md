@@ -9,7 +9,7 @@ l'inscription.
 | Moniteur fondateur (dirigeant) | Pièce d'identité (`CNI`) + CAPEC (`CAPEC`) | Avant d'envoyer la demande de création d'auto-école | L'équipe DriveHub (back-office) |
 | Moniteur qui rejoint une auto-école | `CNI` + `CAPEC` | Avant d'envoyer la demande d'adhésion | Le responsable de l'auto-école |
 | Moniteur ajouté par le responsable | `CNI` + `CAPEC` | Envoyées par le responsable dans le formulaire d'ajout | Le responsable (pièces considérées comme vérifiées) |
-| Élève | `CNI` | Avant d'envoyer la demande d'adhésion | Le responsable de l'auto-école |
+| Élève | Aucune | — | L'auto-école l'accueille en personne |
 
 ## Sécurité (résumé — détail dans le README, section « Justificatifs »)
 
@@ -39,7 +39,9 @@ l'inscription.
 }
 ```
 
-## Utilisateur connecté (moniteur ou élève, jeton utilisateur, sans `X-Tenant-ID`)
+## Utilisateur connecté (moniteur, jeton utilisateur, sans `X-Tenant-ID`)
+
+Un élève reçoit `{ "required": [], "missing": [] }` et un envoi de sa part est refusé (`400`).
 
 | Méthode | Route | Description |
 |---------|-------|-------------|
@@ -53,7 +55,7 @@ Erreurs : `400` (type de fichier refusé, fichier vide ou trop lourd, avec un me
 
 Effets sur les parcours existants :
 - `POST /api/driving-schools/request` répond `400` « Ajoutez votre pièce d'identité et votre CAPEC… » si un justificatif manque.
-- `POST /api/join-school/public` répond `400` avec le même type de message (élève : CNI ; moniteur : CNI + CAPEC).
+- `POST /api/join-school/public` répond `400` avec le même type de message pour un moniteur (CNI + CAPEC). Rien n'est demandé à un élève.
 
 ## Responsable d'auto-école (jeton moniteur)
 
@@ -61,8 +63,6 @@ Effets sur les parcours existants :
 |---------|-------|-------------|
 | `GET` | `/api/join-school/admin/{requestId}/documents` | Justificatifs du demandeur → `DocumentResponse[]` |
 | `GET` | `/api/join-school/admin/{requestId}/documents/{documentId}/file` | Voir un justificatif du demandeur |
-| `GET` | `/api/students/{studentId}/documents` (avec `X-Tenant-ID`) | Justificatifs d'un élève de l'auto-école |
-| `GET` | `/api/students/{studentId}/documents/{documentId}/file` (avec `X-Tenant-ID`) | Voir un justificatif d'un élève |
 | `POST` | `/api/monitors` (avec `X-Tenant-ID`) | Ajouter un moniteur à l'auto-école. `multipart/form-data` : partie `monitor` en JSON (`application/json`) `{ firstname, lastname, email, phoneNumber, gender, nationality, residenceCity, dateOfBirth }`, fichiers `cni` et `capec` (obligatoires), `cniNumber`, `capecNumber` (facultatifs). Crée le compte, le rattache à l'auto-école et envoie une **invitation** par email. → `201 MonitorResponseDto` |
 
 À l'approbation d'une demande d'adhésion, les justificatifs du demandeur passent à `VERIFIED`.

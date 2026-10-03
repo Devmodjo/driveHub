@@ -1,31 +1,20 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
-import { Observable } from 'rxjs';
-import { LicenseCategory, Student, UserDocument } from '../../../../interfaces/drivehub.models';
-import { DocumentService } from '../../../../services/document-service/document.service';
+import { LicenseCategory, Student } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
 import { errorMessage } from '../../../../shared/http-error';
 import { ICONS } from '../../../../shared/icons';
 import { LICENSE_CATEGORIES, formatDate } from '../../shared/labels';
-import { DocumentsDialogComponent } from '../../shared/documents-dialog.component';
 import { PageHeaderComponent } from '../../shared/page-header.component';
 
-/** Fenêtre des justificatifs ouverte pour un élève. */
-interface DocumentsView {
-  student: Student;
-  documents: Observable<UserDocument[]>;
-  loader: (doc: UserDocument) => Observable<Blob>;
-}
-
 /**
- * Élèves de l'auto-école (moniteur) : catégorie de permis, justificatifs, retrait.
- * La pièce d'identité n'est plus saisie ici sous forme de lien : l'élève l'envoie lui-même
- * (fichier chiffré) avant sa demande d'adhésion, et le responsable la consulte avec « Justificatifs ».
+ * Élèves de l'auto-école (moniteur) : catégorie de permis, retrait.
+ * Aucun justificatif n'est demandé aux élèves (seuls les moniteurs fournissent pièce d'identité et CAPEC).
  */
 @Component({
   selector: 'app-students',
-  imports: [FormsModule, LucideDynamicIcon, PageHeaderComponent, DocumentsDialogComponent],
+  imports: [FormsModule, LucideDynamicIcon, PageHeaderComponent],
   template: `
     <app-page-header title="Élèves" subtitle="Les élèves arrivent par les demandes d'adhésion que vous approuvez." />
     @if (error()) { <div class="alert-error mb-6">{{ error() }}</div> }
@@ -53,9 +42,6 @@ interface DocumentsView {
               <td class="font-semibold">{{ s.firstname }} {{ s.lastname }}</td><td>{{ s.email }}</td><td>{{ s.phoneNumber }}</td>
               <td>{{ s.residenceCity }}</td><td>{{ s.licenseCategory ?? '-' }}</td><td>{{ formatDate(s.createdOn) }}</td>
               <td class="whitespace-nowrap text-right">
-                <button class="btn-small hover:bg-black/5 dark:hover:bg-white/5" (click)="showDocuments(s)">
-                  <svg [lucideIcon]="icons.FileText" [size]="15" /> Justificatifs
-                </button>
                 <button class="btn-small hover:bg-black/5 dark:hover:bg-white/5" (click)="edit(s)" aria-label="Modifier"><svg [lucideIcon]="icons.Pencil" [size]="15" /></button>
                 <button class="btn-small text-red-600 hover:bg-red-500/10" (click)="remove(s)" aria-label="Retirer"><svg [lucideIcon]="icons.Trash" [size]="15" /></button>
               </td>
@@ -66,12 +52,6 @@ interface DocumentsView {
         </tbody>
       </table>
     </div>
-
-    @if (viewing(); as v) {
-      <app-documents-dialog [title]="'Justificatifs de ' + v.student.firstname + ' ' + v.student.lastname"
-                            [subtitle]="v.student.email" [documents]="v.documents" [expected]="['CNI']" [fileLoader]="v.loader"
-                            (closed)="viewing.set(null)" />
-    }
   `,
 })
 export class StudentsComponent {
@@ -79,12 +59,10 @@ export class StudentsComponent {
   protected readonly categories = LICENSE_CATEGORIES;
   protected readonly formatDate = formatDate;
   private readonly api = inject(SchoolApiService);
-  private readonly documentService = inject(DocumentService);
 
   protected readonly students = signal<Student[]>([]);
   protected readonly editing = signal<Student | null>(null);
   protected readonly error = signal('');
-  protected readonly viewing = signal<DocumentsView | null>(null);
   protected form: { licenseCategory: LicenseCategory } = { licenseCategory: 'B' };
 
   constructor() {
@@ -113,15 +91,6 @@ export class StudentsComponent {
     }).subscribe({
       next: () => { this.editing.set(null); this.load(); },
       error: (err) => this.error.set(errorMessage(err)),
-    });
-  }
-
-  /** Ouvre la fenêtre des justificatifs de l'élève (pièce d'identité). */
-  protected showDocuments(s: Student): void {
-    this.viewing.set({
-      student: s,
-      documents: this.documentService.studentDocuments(s.id),
-      loader: (doc) => this.documentService.studentFile(s.id, doc.id),
     });
   }
 

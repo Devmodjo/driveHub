@@ -8,6 +8,7 @@ import {
 } from '../../../../shared/documents';
 import { errorMessage, fieldErrorsOf } from '../../../../shared/http-error';
 import { ICONS } from '../../../../shared/icons';
+import { SpamHintComponent } from '../../../../shared/spam-hint.component';
 import { label } from '../../shared/labels';
 import { PageHeaderComponent } from '../../shared/page-header.component';
 import { WhyDocumentsComponent } from '../../shared/why-documents.component';
@@ -30,7 +31,7 @@ interface PickedFile {
  */
 @Component({
   selector: 'app-monitors',
-  imports: [FormsModule, LucideDynamicIcon, PageHeaderComponent, WhyDocumentsComponent],
+  imports: [FormsModule, LucideDynamicIcon, PageHeaderComponent, WhyDocumentsComponent, SpamHintComponent],
   template: `
     <app-page-header title="Moniteurs" subtitle="L'équipe pédagogique de votre auto-école.">
       @if (!formOpen()) {
@@ -38,7 +39,13 @@ interface PickedFile {
       }
     </app-page-header>
 
-    @if (success()) { <div class="alert-success mb-6" role="status">{{ success() }}</div> }
+    @if (success()) {
+      <!-- Invitation envoyée : on rappelle que l'email peut arriver dans les spams du moniteur -->
+      <div class="mb-6">
+        <div class="alert-success" role="status">{{ success() }}</div>
+        <app-spam-hint audience="other" class="mt-2" />
+      </div>
+    }
     @if (error()) { <div class="alert-error mb-6" role="alert">{{ error() }}</div> }
 
     @if (formOpen()) {

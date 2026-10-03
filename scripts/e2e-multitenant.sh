@@ -91,8 +91,7 @@ TA=$(login "$MA"); TB=$(login "$MB")   # nouveaux jetons : ils portent maintenan
 echo "3. Élève : inscription, adhésion, validation par le moniteur"
 register student "$ST"; verify_email "$ST"
 TS=$(login "$ST")
-expect 400 "$(call POST /api/join-school/public "$TS" "" "{\"drivingSchoolId\":\"$RA\",\"role\":\"STUDENT\"}")" "Adhésion refusée sans pièce d'identité"
-upload "$TS" CNI
+[[ $(body "$(call GET /api/documents/requirements "$TS")" | jq '.required | length') == 0 ]] && ok "Aucun justificatif demandé à un élève" || fail "Un justificatif est demandé à l'élève"
 expect 200 "$(call POST /api/join-school/public "$TS" "" "{\"drivingSchoolId\":\"$RA\",\"role\":\"STUDENT\"}")" "Demande d'adhésion à A"
 REQ=$(body "$(call GET /api/join-school/admin/pending "$TA")" | jq -r '.content[0].requestId')
 expect 403 "$(call POST "/api/join-school/admin/$REQ/approve" "$TB")" "Le moniteur B ne peut pas valider une demande de A"

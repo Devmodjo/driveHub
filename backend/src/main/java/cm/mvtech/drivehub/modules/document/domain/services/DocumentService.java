@@ -68,9 +68,12 @@ public class DocumentService {
 
     // ================================================================== règles
 
-    /** Justificatifs demandés selon le rôle : élève → CNI ; moniteur → CNI et CAPEC. */
+    /**
+     * Justificatifs demandés selon le rôle : moniteur → pièce d'identité et CAPEC ; élève → aucun
+     * (c'est l'auto-école qui l'accueille physiquement et vérifie son identité).
+     */
     public static List<DocumentType> requiredTypes(Role role) {
-        return role == Role.MONITOR ? List.of(DocumentType.CNI, DocumentType.CAPEC) : List.of(DocumentType.CNI);
+        return role == Role.MONITOR ? List.of(DocumentType.CNI, DocumentType.CAPEC) : List.of();
     }
 
     /** Ce qui est demandé et ce qui manque encore (un justificatif refusé compte comme manquant). */
@@ -128,7 +131,7 @@ public class DocumentService {
             throw new BadRequestException("Précisez le type de justificatif : CNI ou CAPEC");
         }
         if (!requiredTypes(owner.getRoles()).contains(type)) {
-            throw new BadRequestException("Le CAPEC est demandé uniquement aux moniteurs");
+            throw new BadRequestException("Aucun justificatif n'est demandé aux élèves");
         }
         byte[] content = readContent(file);
         AllowedFileType fileType = AllowedFileType.detect(content).orElseThrow(() -> new BadRequestException(

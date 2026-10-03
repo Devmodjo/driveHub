@@ -13,6 +13,7 @@ import { SessionService } from '../../../../services/session-service/session.ser
 import { errorMessage, fieldErrorsOf } from '../../../../shared/http-error';
 import { VALIDATION_DELAY } from '../../../../utils/UTILS';
 import { ICONS } from '../../../../shared/icons';
+import { SpamHintComponent } from '../../../../shared/spam-hint.component';
 import { DocumentUploadComponent } from '../../shared/document-upload.component';
 import { PageHeaderComponent } from '../../shared/page-header.component';
 import { StatusBadgeComponent } from '../../shared/status-badge.component';
@@ -25,18 +26,18 @@ import { WhyDocumentsComponent } from '../../shared/why-documents.component';
  *    de la validation par l'équipe DriveHub ;
  *  - élève (ou moniteur salarié) : demande d'adhésion à une auto-école du catalogue.
  *
- * Justificatifs : ils sont demandés ici, juste avant la demande (jamais à l'inscription).
- *  - moniteur : pièce d'identité + CAPEC, obligatoires avant d'envoyer la demande de création
- *    (le bouton « Envoyer la demande » reste inactif tant qu'il en manque) ;
- *  - élève : pièce d'identité, obligatoire avant de demander à rejoindre une auto-école.
- * La liste des pièces qui manquent vient du backend (GET /api/documents/requirements).
+ * Justificatifs : ils ne sont demandés qu'aux MONITEURS, ici, juste avant la demande (jamais à l'inscription) :
+ * pièce d'identité + CAPEC, obligatoires avant d'envoyer la demande de création (le bouton
+ * « Envoyer la demande » reste inactif tant qu'il en manque). La liste des pièces qui manquent vient
+ * du backend (GET /api/documents/requirements).
+ * Les élèves ne fournissent aucun justificatif : ils choisissent directement leur auto-école.
  * Après approbation, "Accéder à mon espace" récupère un nouveau jeton qui contient le tenant.
  */
 @Component({
   selector: 'app-welcome',
   imports: [
     FormsModule, RouterLink, DatePipe, LucideDynamicIcon, PageHeaderComponent, StatusBadgeComponent,
-    DocumentUploadComponent, WhyDocumentsComponent,
+    DocumentUploadComponent, WhyDocumentsComponent, SpamHintComponent,
   ],
   template: `
     <app-page-header badge="Bienvenue" title="Configurons votre espace"
@@ -52,7 +53,8 @@ import { WhyDocumentsComponent } from '../../shared/why-documents.component';
     @if (error()) { <div class="alert-error mb-6">{{ error() }}</div> }
 
 
-    <!-- Justificatifs : demandés juste avant la demande (création d'auto-école ou adhésion) -->
+    <!-- Justificatifs du moniteur : demandés juste avant la demande (création d'auto-école ou adhésion).
+         Pour un élève, requirements() reste null : la section n'apparaît jamais. -->
     @if (requirements(); as req) {
       <section class="premium-card rounded-[28px] p-5 sm:p-8 max-w-3xl mb-8" aria-labelledby="docs-title">
         <div class="flex flex-wrap items-start justify-between gap-3 mb-2">
@@ -64,15 +66,13 @@ import { WhyDocumentsComponent } from '../../shared/why-documents.component';
           }
         </div>
         <p class="text-sm text-black/60 dark:text-white/60 mb-3">
-          @if (session.isMonitor() && !registry()) {
+          @if (!registry()) {
             Avant d'envoyer votre demande, ajoutez votre pièce d'identité et votre CAPEC. Une photo nette ou un scan suffit.
-          } @else if (session.isMonitor()) {
-            Les pièces jointes à votre demande. Si l'une d'elles est refusée, envoyez-en simplement une nouvelle.
           } @else {
-            Avant de demander votre inscription dans une auto-école, ajoutez votre pièce d'identité. Une photo nette suffit.
+            Les pièces jointes à votre demande. Si l'une d'elles est refusée, envoyez-en simplement une nouvelle.
           }
         </p>
-        <app-why-documents [context]="session.isMonitor() && !joiningOnly() ? 'school' : 'join'" />
+        <app-why-documents [context]="joiningOnly() ? 'join' : 'school'" />
         <div class="grid grid-cols-1 gap-4 mt-5" [class]="req.required.length > 1 ? 'md:grid-cols-2' : ''">
           @for (type of req.required; track type) {
             <app-document-upload [type]="type" [document]="docOf(type)" (changed)="onDocumentChanged(type, $event)" />
@@ -95,6 +95,7 @@ import { WhyDocumentsComponent } from '../../shared/why-documents.component';
                 Votre demande est en cours d'examen par l'équipe DriveHub : elle sera traitée sous <strong>{{ validationDelay }}</strong>.
                 Vous recevrez un email dès qu'elle sera validée.
               </p>
+              <app-spam-hint class="mt-3" />
             }
             @case ('APPROVED') { <p class="text-sm">Votre auto-école est approuvée. Cliquez sur « Accéder à mon espace » pour commencer.</p> }
             @case ('ACTIVE') { <p class="text-sm">Votre auto-école est active. Cliquez sur « Accéder à mon espace » pour commencer.</p> }
@@ -180,14 +181,8 @@ import { WhyDocumentsComponent } from '../../shared/why-documents.component';
         </p>
       }
     } @else {
-      <div class="mb-8 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div class="mb-8">
         <a routerLink="/auto-ecoles" class="btn-primary"><svg [lucideIcon]="icons.Search" [size]="16" /> Trouver une auto-école</a>
-        @if (!documentsReady()) {
-          <p class="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
-            <svg [lucideIcon]="icons.Info" [size]="16" class="shrink-0 mt-0.5" />
-            <span>Ajoutez {{ missingText() }} avant d'envoyer votre demande d'inscription.</span>
-          </p>
-        }
       </div>
     }
 
@@ -195,14 +190,18 @@ import { WhyDocumentsComponent } from '../../shared/why-documents.component';
       <div class="premium-card rounded-[28px] p-6 mt-8 overflow-x-auto">
         <h3 class="text-lg font-bold mb-4">Mes demandes d'adhésion</h3>
         <table class="data-table">
-          <thead><tr><th>Auto-école</th><th>Ville</th><th>Date</th><th>Statut</th></tr></thead>
+          <thead><tr><th>Auto-école</th><th class="hidden sm:table-cell">Ville</th><th>Date</th><th>Statut</th></tr></thead>
           <tbody>
             @for (r of joinRequests(); track r.requestId) {
-              <tr><td>{{ r.drivingSchoolName }}</td><td>{{ r.city }}</td><td>{{ r.requestedAt | date: 'dd/MM/yyyy' }}</td>
+              <tr><td>{{ r.drivingSchoolName }}</td><td class="hidden sm:table-cell">{{ r.city }}</td><td>{{ r.requestedAt | date: 'dd/MM/yyyy' }}</td>
                 <td><app-status-badge [value]="r.joinStatus" /></td></tr>
             }
           </tbody>
         </table>
+        @if (hasPendingJoin()) {
+          <p class="mt-4 text-sm text-black/60 dark:text-white/60">Vous serez prévenu par email dès que l'auto-école aura répondu.</p>
+          <app-spam-hint class="mt-1" />
+        }
       </div>
     }
   `,
@@ -227,15 +226,17 @@ export class WelcomeComponent {
   protected readonly descriptionMax = 2000;
   protected readonly error = signal('');
 
-  /** Justificatifs déjà envoyés par l'utilisateur. */
+  /** Justificatifs déjà envoyés par le moniteur. */
   protected readonly myDocuments = signal<UserDocument[]>([]);
-  /** Pièces demandées et pièces manquantes (null tant que la réponse n'est pas arrivée). */
+  /** Pièces demandées et pièces manquantes (null tant que la réponse n'est pas arrivée, et toujours null pour un élève). */
   protected readonly requirements = signal<DocumentRequirements | null>(null);
   /** Vrai quand toutes les pièces demandées ont été envoyées. */
   protected readonly documentsReady = computed(() => (this.requirements()?.missing.length ?? 1) === 0);
-  protected readonly missingText = computed(() => missingDocumentsText(this.requirements()?.missing ?? ['CNI']));
+  protected readonly missingText = computed(() => missingDocumentsText(this.requirements()?.missing ?? ['CNI', 'CAPEC']));
   /** Moniteur qui a déjà une demande d'adhésion : ses pièces sont vues par le responsable de l'auto-école. */
   protected readonly joiningOnly = computed(() => !this.registry() && this.joinRequests().length > 0);
+  /** Au moins une demande d'adhésion attend encore la réponse de l'auto-école (réponse envoyée par email). */
+  protected readonly hasPendingJoin = computed(() => this.joinRequests().some((r) => r.joinStatus === 'PENDING'));
 
   protected school: SchoolRequest = {
     name: '', email: '', country: 'Cameroun', city: '', phoneNumber: '', address: '',
@@ -252,12 +253,13 @@ export class WelcomeComponent {
         next: (reg) => { this.registry.set(reg); this.loading.set(false); },
         error: (err) => { this.error.set(errorMessage(err)); this.loading.set(false); },
       });
+      // Justificatifs : uniquement pour les moniteurs (rien n'est demandé aux élèves)
+      this.documents.myDocuments().subscribe({ next: (docs) => this.myDocuments.set(docs ?? []) });
+      this.loadRequirements();
     } else {
       this.loading.set(false);
     }
     this.api.myJoinRequests().subscribe({ next: (list) => this.joinRequests.set(list ?? []) });
-    this.documents.myDocuments().subscribe({ next: (docs) => this.myDocuments.set(docs ?? []) });
-    this.loadRequirements();
   }
 
   private loadRequirements(): void {

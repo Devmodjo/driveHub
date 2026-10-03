@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Justificatifs de l'utilisateur connecté (moniteur ou élève). Données du schéma public :
+ * Justificatifs de l'utilisateur connecté (demandés aux moniteurs ; un élève n'en a aucun). Données du schéma public :
  * pas besoin d'en-tête X-Tenant-ID. Chaque utilisateur ne voit que ses propres documents.
  */
 @RestController

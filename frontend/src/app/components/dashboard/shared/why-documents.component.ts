@@ -3,13 +3,17 @@ import { RouterLink } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { ICONS } from '../../../shared/icons';
 
-/** Qui vérifie les justificatifs : l'équipe DriveHub, le responsable de l'auto-école, ou le responsable qui les envoie. */
+/**
+ * Qui vérifie les justificatifs d'un moniteur : l'équipe DriveHub (création d'auto-école), le responsable
+ * de l'auto-école (moniteur qui demande à la rejoindre), ou le responsable qui les envoie lui-même (ajout d'un moniteur).
+ */
 export type DocumentsContext = 'school' | 'join' | 'owner';
 
 let nextId = 0;
 
 /**
  * Lien discret « Pourquoi vous demande-t-on cela ? » qui déplie une courte explication rassurante.
+ * Seuls les moniteurs fournissent des justificatifs (pièce d'identité et CAPEC) : rien n'est demandé aux élèves.
  *
  * Accessibilité : c'est un vrai <button> ; aria-expanded indique aux lecteurs d'écran si le texte
  * est ouvert, et aria-controls relie le bouton au texte qu'il affiche.
@@ -31,8 +35,8 @@ let nextId = 0;
       <div [id]="panelId" class="mt-3 rounded-2xl bg-[#0070f3]/[0.06] dark:bg-[#0070f3]/10 p-4 text-sm leading-relaxed text-black/70 dark:text-white/70 animate-expand">
         <p>
           DriveHub n'accueille que des <strong class="text-black dark:text-white">auto-écoles autorisées</strong> et des
-          <strong class="text-black dark:text-white">moniteurs qualifiés</strong>. Vérifier l'identité de chacun, et le CAPEC des
-          moniteurs, protège les élèves contre les auto-écoles clandestines.
+          <strong class="text-black dark:text-white">moniteurs qualifiés</strong>. Vérifier la pièce d'identité et le CAPEC de chaque
+          moniteur protège les élèves contre les auto-écoles clandestines. Aucun justificatif n'est demandé aux élèves.
         </p>
         <p class="mt-2 flex items-start gap-2">
           <svg [lucideIcon]="icons.Lock" [size]="16" class="shrink-0 mt-0.5 text-[#0070f3]" />
