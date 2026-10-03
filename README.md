@@ -25,7 +25,7 @@ Prérequis : **Java 21**, **Node.js 22**, **PostgreSQL** (local).
 # 1. Configuration : crée backend/.env et génère les secrets (affiche le mot de passe du compte ROOT)
 ./scripts/init-env.sh
 #    -> vérifiez DB_URL / DB_USERNAME / DB_PASSWORD dans backend/.env, puis créez la base :
-psql -U postgres -c "CREATE DATABASE drivehub;"
+psql -U postgres -c 'CREATE DATABASE "drivehubDB";'
 
 # 2. Backend (http://localhost:8082, tables créées automatiquement)
 cd backend && ./mvnw spring-boot:run
@@ -435,7 +435,7 @@ cp .env.example .env     # dans backend/, puis remplir
 ```
 
 ```properties
-DB_URL=jdbc:postgresql://localhost:5432/drivehub
+DB_URL=jdbc:postgresql://localhost:5432/drivehubDB
 DB_USERNAME=postgres
 DB_PASSWORD=root
 JWT_SECRET_KEY=...           # openssl rand -base64 48
@@ -453,7 +453,7 @@ MAIL_PASSWORD=...
 ### 3. Créer la base de données PostgreSQL
 
 ```sql
-CREATE DATABASE drivehub;
+CREATE DATABASE "drivehubDB";
 ```
 
 > **Base existante : inutile de la supprimer.** Au démarrage, Flyway applique les nouvelles
@@ -573,7 +573,7 @@ payer, se déconnecter, avec les emails attendus à chaque étape) : [docs/GUIDE
 ```bash
 cd backend && ./mvnw test                               # tests unitaires et d'intégration (PostgreSQL local)
 ./scripts/e2e-multitenant.sh http://localhost:8082 \
-   "postgresql://postgres:root@localhost:5432/drivehub"  # parcours complet sur l'API lancée
+   "postgresql://postgres:root@localhost:5432/drivehubDB"  # parcours complet sur l'API lancée
 ```
 
 ---

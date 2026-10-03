@@ -52,7 +52,7 @@ backend/.env créé.
     mot de passe : $ROOT_PASSWORD
 
   À vérifier dans backend/.env :
-    DB_URL / DB_USERNAME / DB_PASSWORD  -> votre PostgreSQL (la base doit exister : CREATE DATABASE drivehub;)
+    DB_URL / DB_USERNAME / DB_PASSWORD  -> votre PostgreSQL (la base doit exister : CREATE DATABASE "drivehubDB";)
     MAIL_*                              -> facultatif en local : sans serveur d'emails, les liens
                                            (vérification, invitation) s'affichent dans la console du backend.
 

@@ -39,7 +39,7 @@ cd backend && ./mvnw spring-boot:run
 Votre PostgreSQL local se règle dans `.env` :
 
 ```properties
-DB_URL=jdbc:postgresql://localhost:5432/drivehub
+DB_URL=jdbc:postgresql://localhost:5432/drivehubDB
 DB_USERNAME=postgres
 DB_PASSWORD=root
 ```
@@ -136,7 +136,7 @@ Sur un serveur Linux avec Docker (Hetzner, OVH, Contabo...) :
 
 ```bash
 git clone https://github.com/Devmodjo/drivehub.git && cd drivehub
-cp backend/.env.example backend/.env    # remplir ; avec la base fournie : DB_URL=jdbc:postgresql://db:5432/drivehub
+cp backend/.env.example backend/.env    # remplir ; avec la base fournie : DB_URL=jdbc:postgresql://db:5432/drivehubDB
 docker compose --profile db up -d --build
 ```
 
