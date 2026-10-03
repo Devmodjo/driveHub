@@ -3,6 +3,8 @@ package cm.mvtech.drivehub.modules.document.infrastructure.storage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -12,7 +14,7 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import java.net.URI;
 
 /**
- * Choix du stockage des justificatifs selon storage.provider (LOCAL ou R2).
+ * Choix du stockage des justificatifs selon storage.provider : DATABASE (par défaut), R2 ou LOCAL.
  * En R2, l'application refuse de démarrer si un identifiant manque (erreur claire plutôt qu'un échec au premier envoi).
  */
 @Slf4j
@@ -20,8 +22,13 @@ import java.net.URI;
 public class StorageConfig {
 
     @Bean
-    public DocumentStorage documentStorage(StorageProperties properties) {
-        String provider = properties.provider() == null ? "LOCAL" : properties.provider().trim().toUpperCase();
+    public DocumentStorage documentStorage(StorageProperties properties, JdbcTemplate jdbcTemplate,
+                                           PlatformTransactionManager transactionManager) {
+        String provider = properties.provider() == null ? "DATABASE" : properties.provider().trim().toUpperCase();
+        if ("DATABASE".equals(provider)) {
+            log.info("Justificatifs stockés dans la base PostgreSQL (chiffrés)");
+            return new DatabaseDocumentStorage(jdbcTemplate, transactionManager);
+        }
         if ("R2".equals(provider)) {
             StorageProperties.R2 r2 = properties.r2();
             if (r2 == null || isBlank(r2.accountId()) || isBlank(r2.accessKeyId())

@@ -188,6 +188,8 @@ class BusinessRoutesIntegrationTest {
         for (UUID userId : createdUserIds) {
             quietly("DELETE FROM public.document_access_logs WHERE document_id IN "
                     + "(SELECT id FROM public.user_documents WHERE user_id = ?)", userId);
+            quietly("DELETE FROM public.document_contents WHERE object_key IN "
+                    + "(SELECT object_key FROM public.user_documents WHERE user_id = ?)", userId);
             quietly("DELETE FROM public.user_documents WHERE user_id = ?", userId);
             quietly("DELETE FROM public.monitors WHERE user_id = ?", userId);
             quietly("DELETE FROM public.students WHERE user_id = ?", userId);
@@ -628,6 +630,29 @@ class BusinessRoutesIntegrationTest {
         String fileNameInDb = jdbcTemplate.queryForObject(
                 "SELECT file_name_enc FROM public.user_documents WHERE id = ?::uuid", String.class, documentId);
         assertTrue(fileNameInDb.startsWith("v1:"), "nom du fichier chiffré en base");
+    }
+
+    /** Stockage en base : le contenu est chiffré, et remplacer un justificatif supprime l'ancien fichier. */
+    @Test
+    void documents_DatabaseStorage_EncryptedAndReplacedWithoutOrphan() throws Exception {
+        String token = tokenFor(newUser(Role.MONITOR, "it-replace"));
+        String firstId = json(mockMvc.perform(multipart("/api/documents")
+                        .file(new MockMultipartFile("file", "cni.png", "image/png", TINY_PNG)).param("type", "CNI")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isCreated())).get("id").asText();
+        String firstKey = jdbcTemplate.queryForObject(
+                "SELECT object_key FROM public.user_documents WHERE id = ?::uuid", String.class, firstId);
+        byte[] stored = jdbcTemplate.queryForObject(
+                "SELECT content FROM public.document_contents WHERE object_key = ?", byte[].class, firstKey);
+        assertFalse(java.util.Arrays.equals(TINY_PNG, stored), "contenu chiffré dans la base");
+
+        mockMvc.perform(multipart("/api/documents")
+                        .file(new MockMultipartFile("file", "cni2.png", "image/png", TINY_PNG)).param("type", "CNI")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isCreated());
+        Integer remaining = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM public.document_contents WHERE object_key = ?", Integer.class, firstKey);
+        assertEquals(0, remaining, "l'ancien fichier est supprimé après le remplacement");
     }
 
     /** Aucun justificatif n'est demandé aux élèves : rien à envoyer, et l'envoi est refusé. */

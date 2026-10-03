@@ -3,10 +3,11 @@ package cm.mvtech.drivehub.modules.document.infrastructure.storage;
 /**
  * Stockage des fichiers de justificatifs (contenu DÉJÀ chiffré par DataEncryptionService).
  *
- * <p>Deux implémentations, choisies par storage.provider dans application.yaml :</p>
+ * <p>Trois implémentations, choisies par storage.provider dans application.yaml :</p>
  * <ul>
- *   <li>{@link LocalDocumentStorage} (LOCAL) : un dossier sur le disque, pour le développement et les tests ;</li>
- *   <li>{@link R2DocumentStorage} (R2) : Cloudflare R2, pour la production.</li>
+ *   <li>{@link DatabaseDocumentStorage} (DATABASE, par défaut) : dans la base PostgreSQL, rien à configurer ;</li>
+ *   <li>{@link R2DocumentStorage} (R2) : Cloudflare R2, pour un grand nombre de fichiers ;</li>
+ *   <li>{@link LocalDocumentStorage} (LOCAL) : un dossier sur le disque.</li>
  * </ul>
  * Le reste du code ne connaît que cette interface : changer de stockage ne demande aucune autre modification.
  *

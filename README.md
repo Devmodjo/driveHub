@@ -368,8 +368,8 @@ npm test             # tests unitaires
 
 ## Mise en ligne et CI/CD
 
-**Guide pas à pas : [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md)** — Vercel (frontend), Render (backend, image
-Docker), Neon (PostgreSQL), Cloudflare R2 (justificatifs), Brevo (emails).
+**Guide pas à pas : [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md)** — deux comptes : Render (API + base PostgreSQL,
+clés générées automatiquement) et Vercel (site) ; emails envoyés depuis Gmail.
 
 | Fichier | Rôle |
 |---------|------|
@@ -377,7 +377,7 @@ Docker), Neon (PostgreSQL), Cloudflare R2 (justificatifs), Brevo (emails).
 | `.github/workflows/deploy.yml` | Push sur `Develop` : tests, puis redéploiement Render et image `ghcr.io/.../drivehub-api` |
 | `backend/Dockerfile` | Image du backend (Java 21, utilisateur sans droits, vérification de santé `/actuator/health`) |
 | `docker-compose.yml` | API (+ PostgreSQL avec `--profile db`) sur un serveur VPS |
-| `render.yaml` | Description du service Render (Blueprint) |
+| `render.yaml` | Render (Blueprint) : crée l'API et sa base PostgreSQL en une fois |
 | `backend/.env.example` | Toutes les variables d'environnement, commentées |
 
 ## Déployer le frontend sur Vercel
@@ -442,12 +442,12 @@ JWT_SECRET_KEY=...           # openssl rand -base64 48
 DATA_ENCRYPTION_KEY=...      # openssl rand -base64 32 (chiffre les justificatifs : à conserver)
 MOCK_ROOT_USERNAME=root@drivehub.cm
 MOCK_ROOT_PASSWORD=...
-MAIL_USERNAME=...            # SMTP (Gmail en local, Brevo en production)
+MAIL_USERNAME=...            # adresse Gmail (mot de passe d'application dans MAIL_PASSWORD)
 MAIL_PASSWORD=...
 ```
 
 `.env` n'est jamais versionné. En production, les mêmes variables sont saisies chez l'hébergeur
-(voir [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md)) : remplacer la base locale par Neon = changer `DB_URL`,
+(voir [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md)) : changer de base = changer `DB_URL`,
 `DB_USERNAME` et `DB_PASSWORD`, rien d'autre.
 
 ### 3. Créer la base de données PostgreSQL
@@ -519,7 +519,8 @@ src/main/resources/db/migration/
 │   ├── V12__consentement_confidentialite.sql       ← preuve du consentement
 │   ├── V13__envois_emails_plateforme.sql           ← historique des emails du back-office
 │   ├── V14__justificatifs.sql                      ← CNI et CAPEC des moniteurs (chiffrés), journal des consultations
-│   └── V15__abonnements.sql                        ← offres, période d'essai, factures (facturation désactivée)
+│   ├── V15__abonnements.sql                        ← offres, période d'essai, factures (facturation désactivée)
+│   └── V16__justificatifs_en_base.sql              ← contenu chiffré des justificatifs (stockage DATABASE)
 └── tenant/                                  ← appliquées à CHAQUE schéma d'auto-école
     ├── V2__init_tenant_schema_template.sql
     ├── V3__corrections_champs_metier.sql
@@ -536,14 +537,15 @@ créer `tenant/V6__....sql` — ne jamais modifier une migration déjà appliqu�
 Pour écarter les auto-écoles clandestines, chaque **moniteur** fournit sa pièce d'identité et son CAPEC (fondateur :
 avant la demande de création, vérifiés par l'équipe DriveHub ; moniteur qui rejoint une auto-école : vérifiés par
 son responsable ; moniteur ajouté par le responsable : fournis par lui, avec invitation par email). **Rien n'est
-demandé aux élèves.** Fichiers chiffrés (AES-256-GCM, une clé par fichier) avant l'envoi vers Cloudflare R2,
-numéros chiffrés en base, chaque consultation journalisée. API : [docs/API-JUSTIFICATIFS.md](docs/API-JUSTIFICATIFS.md).
+demandé aux élèves.** Fichiers chiffrés (AES-256-GCM, une clé par fichier),
+numéros chiffrés en base, chaque consultation journalisée. Les fichiers chiffrés sont stockés dans PostgreSQL par
+défaut (`STORAGE_PROVIDER=DATABASE`) ; Cloudflare R2 reste possible (`STORAGE_PROVIDER=R2`). API : [docs/API-JUSTIFICATIFS.md](docs/API-JUSTIFICATIFS.md).
 Abonnements (essai de 15 jours, facturation préparée mais désactivée) : [docs/ABONNEMENTS-ET-PAIEMENTS.md](docs/ABONNEMENTS-ET-PAIEMENTS.md).
 
 ## Emails
 
 Un seul modèle (`templates/emails/layout.html`, logo DriveHub joint), une version texte et une version HTML,
-en-têtes soignés. Pour ne pas finir dans les spams (domaine, SPF, DKIM, DMARC, Brevo) :
+en-têtes soignés. Gmail, adresse professionnelle et spams :
 [docs/EMAILS-DELIVRABILITE.md](docs/EMAILS-DELIVRABILITE.md). L'interface rappelle aux utilisateurs de regarder
 dans leurs courriers indésirables.
 

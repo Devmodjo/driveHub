@@ -15,9 +15,9 @@ l'inscription.
 
 - Fichiers acceptés : PDF, JPEG, PNG, WebP ; **5 Mo maximum** ; le type réel est vérifié sur le contenu du fichier
   (signature binaire), pas seulement sur l'extension.
-- Chaque fichier est **chiffré (AES-256-GCM) avant d'être envoyé** au stockage (Cloudflare R2 en production,
-  dossier local en développement), avec une clé propre au fichier, elle-même chiffrée par la clé maître
-  (`DATA_ENCRYPTION_KEY`). Une fuite du bucket ne révèle donc rien.
+- Chaque fichier est **chiffré (AES-256-GCM) avant d'être envoyé** au stockage (la base PostgreSQL par défaut,
+  ou Cloudflare R2), avec une clé propre au fichier, elle-même chiffrée par la clé maître
+  (`DATA_ENCRYPTION_KEY`). Une fuite du stockage ne révèle donc rien.
 - En base, le numéro du document et le nom du fichier sont chiffrés. Une empreinte (HMAC) du numéro permet de
   repérer un même numéro utilisé par deux comptes, sans jamais le déchiffrer.
 - Les fichiers ne sont jamais publics : ils passent par l'API, qui vérifie les droits et **journalise chaque

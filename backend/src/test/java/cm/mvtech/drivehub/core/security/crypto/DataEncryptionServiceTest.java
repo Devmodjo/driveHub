@@ -88,5 +88,6 @@ class DataEncryptionServiceTest {
         assertThrows(IllegalStateException.class, () -> withKey(""));
         assertThrows(IllegalStateException.class, () -> withKey("pas du base64 !"));
         assertThrows(IllegalStateException.class, () -> withKey(Base64.getEncoder().encodeToString(new byte[16])));
+        assertDoesNotThrow(() -> withKey(Base64.getEncoder().encodeToString(new byte[48])), "clé plus longue acceptée");
     }
 }

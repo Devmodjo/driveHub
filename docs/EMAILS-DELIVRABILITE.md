@@ -4,26 +4,32 @@ Le code fait déjà sa part (voir plus bas). **L'essentiel se règle une seule f
 domaine** : sans SPF, DKIM et DMARC, Gmail et Outlook classent les emails en spam (ou les refusent), quelle
 que soit leur qualité.
 
-## 1. Ne pas envoyer depuis une adresse Gmail personnelle en production
+## 1. Démarrer avec Gmail : oui, c'est possible
 
-Gmail convient pour développer, mais en production :
+Pour une première version, **votre Gmail suffit** (c'est la configuration de `render.yaml`) :
+`MAIL_HOST=smtp.gmail.com`, `MAIL_PORT=587`, `MAIL_USERNAME` = votre adresse, `MAIL_PASSWORD` = un
+**mot de passe d'application** (Compte Google > Sécurité > Validation en deux étapes > Mots de passe des applications).
 
-- un expéditeur `@gmail.com` envoyé par une application est jugé suspect ;
-- Gmail limite à environ 500 envois par jour et peut bloquer le compte ;
-- vous ne pouvez pas signer (DKIM) avec votre domaine.
+Limites à connaître :
 
-Utilisez un **service d'emails transactionnels** avec votre domaine (ex. `drivehub.cm`) :
+- environ **500 emails par jour** ;
+- l'expéditeur est votre adresse `@gmail.com` (moins professionnel, un peu plus souvent classé en spam) ;
+- l'expéditeur doit être l'adresse Gmail elle-même (ne pas renseigner `MAIL_FROM`).
 
-| Service | Offre gratuite (indicative) | Remarque |
-|---------|-----------------------------|----------|
-| [Brevo](https://www.brevo.com) | 300 emails / jour | Société européenne, interface en français, SMTP simple |
-| [Resend](https://resend.com) | 3 000 emails / mois | Très simple, SMTP disponible |
-| [Mailjet](https://www.mailjet.com) | 200 emails / jour | Interface en français |
-| Amazon SES | Très bon marché | Plus technique à configurer |
+## Obtenir une adresse professionnelle (ex. contact@drivehub.cm)
 
-DriveHub parle SMTP : changer de fournisseur = changer 5 variables d'environnement, aucun code.
+1. **Acheter un nom de domaine** (environ 10 à 20 € par an) : `drivehub.cm` auprès d'un registraire camerounais
+   agréé, ou `drivehub.com` / `.africa` chez Namecheap, OVH, Cloudflare...
+2. **Créer les boîtes email** sur ce domaine :
+   - **Google Workspace** (environ 7 $ par utilisateur et par mois) : c'est Gmail, avec votre domaine. DriveHub
+     garde exactement la même configuration (`smtp.gmail.com`), seule l'adresse change ;
+   - **Zoho Mail** : offre gratuite pour quelques utilisateurs (SMTP `smtp.zoho.com`, port 587).
+3. Le service choisi donne les enregistrements DNS à ajouter chez le registraire (MX, SPF, DKIM) : suivez son
+   assistant. Ajoutez aussi DMARC (voir plus bas). C'est ce qui évite les spams.
 
-## 2. Réglages (exemple avec Brevo)
+Brevo (ou équivalent) ne devient utile qu'au-delà de quelques centaines d'emails par jour.
+
+## 2. Plus tard : un service d'envoi (exemple avec Brevo)
 
 1. Créez un compte Brevo, menu **Expéditeurs, domaines et IP dédiées → Domaines → Ajouter un domaine** :
    `drivehub.cm`.
