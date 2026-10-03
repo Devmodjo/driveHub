@@ -91,4 +91,11 @@ public interface DrivingSchoolRegistryRepository
                 WHERE r.createdAt >= :startDate
             """)
     long countByCreatedAtAfter(@Param("startDate") java.time.LocalDate startDate);
+
+    boolean existsBySlug(String slug);
+
+    /** Page publique : auto-école trouvée par son adresse, seulement si elle est validée. */
+    Optional<DrivingSchoolRegistry> findBySlugAndDrivingSchoolStatusIn(String slug, java.util.Collection<DrivingSchoolStatus> statuses);
+
+    List<DrivingSchoolRegistry> findAllBySlugIsNull();
 }

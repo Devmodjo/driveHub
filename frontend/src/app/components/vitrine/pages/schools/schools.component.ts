@@ -1,25 +1,22 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { RevealDirective } from '../../../../directives/reveal.directive';
 import { PublicSchool } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
-import { SessionService } from '../../../../services/session-service/session.service';
-import { isMissingDocumentsError } from '../../../../shared/documents';
+import { SeoService } from '../../../../services/seo-service/seo.service';
 import { errorMessage } from '../../../../shared/http-error';
 import { ICONS } from '../../../../shared/icons';
-import { SpamHintComponent } from '../../../../shared/spam-hint.component';
 
 /**
- * Catalogue public « Trouver une auto-école » : liste des auto-écoles approuvées par la plateforme
- * (registre du schéma public). Un élève connecté peut demander à rejoindre une auto-école.
- * Aucun justificatif n'est demandé aux élèves. Un moniteur, lui, doit d'abord fournir sa pièce
- * d'identité et son CAPEC : s'il en manque, le message d'erreur propose un lien vers la page où les ajouter.
+ * Catalogue public « Trouver une auto-école » : liste des auto-écoles validées par la plateforme.
+ * Chaque fiche ouvre la page publique de l'auto-école (/auto-ecoles/{slug}), où se trouvent sa
+ * présentation, ses coordonnées et le bouton « Demander à m'inscrire » (SchoolDetailComponent).
  */
 @Component({
   selector: 'app-schools',
-  imports: [FormsModule, RouterLink, LucideDynamicIcon, RevealDirective, SpamHintComponent],
+  imports: [FormsModule, RouterLink, LucideDynamicIcon, RevealDirective],
   template: `
     <section class="pt-36 pb-24 bg-white dark:bg-black min-h-screen">
       <div class="container mx-auto px-6">
@@ -34,29 +31,13 @@ import { SpamHintComponent } from '../../../../shared/spam-hint.component';
 
         <div class="relative max-w-xl mb-12">
           <svg [lucideIcon]="icons.Search" [size]="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40" />
-          <input class="field-input pl-11" type="search" placeholder="Nom de l'auto-école ou ville"
+          <input class="field-input" style="padding-left: 2.75rem" type="search" placeholder="Nom de l'auto-école ou ville"
                  [ngModel]="query()" (ngModelChange)="query.set($event)" />
         </div>
 
-        @if (message()) {
-          <!-- La réponse de l'auto-école arrive par email : on rappelle de surveiller les spams -->
-          <div class="mb-8">
-            <div class="alert-success">{{ message() }}</div>
-            <app-spam-hint class="mt-2" />
-          </div>
-        }
         @if (error()) {
-          <div class="alert-error mb-8" role="alert">
-            {{ error() }}
-            <!-- Moniteur dont les justificatifs manquent : lien direct vers la page où il les ajoute -->
-            @if (missingDocuments()) {
-              <a routerLink="/dashboard/bienvenue" class="mt-2 flex items-center gap-1.5 font-bold underline">
-                Ajouter mes justificatifs <svg [lucideIcon]="icons.ArrowRight" [size]="15" />
-              </a>
-            }
-          </div>
+          <div class="alert-error mb-8" role="alert">{{ error() }}</div>
         }
-
         @if (loading()) {
           <p class="text-black/50 dark:text-white/50">Chargement des auto-écoles...</p>
         } @else if (filtered().length === 0) {
@@ -66,24 +47,22 @@ import { SpamHintComponent } from '../../../../shared/spam-hint.component';
         } @else {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             @for (school of filtered(); track school.id) {
-              <article class="premium-card rounded-[28px] p-8 flex flex-col">
+              <a [routerLink]="['/auto-ecoles', school.slug]"
+                 class="premium-card rounded-[28px] p-8 flex flex-col group transition-transform hover:-translate-y-1">
                 <div class="w-12 h-12 rounded-2xl bg-[#0070f3]/10 text-[#0070f3] flex items-center justify-center mb-6">
                   <svg [lucideIcon]="icons.School" [size]="24" [strokeWidth]="1.5" />
                 </div>
-                <h3 class="text-xl font-bold text-black dark:text-white mb-3 tracking-tight">{{ school.name }}</h3>
-                <ul class="space-y-2 text-sm text-black/60 dark:text-white/60 font-light mb-8 grow">
-                  <li class="flex items-center gap-2"><svg [lucideIcon]="icons.MapPin" [size]="15" /> {{ school.address }}, {{ school.city }}</li>
-                  @if (school.phoneNumber) {
-                    <li class="flex items-center gap-2"><svg [lucideIcon]="icons.Phone" [size]="15" /> {{ school.phoneNumber }}</li>
-                  }
-                  @if (school.email) {
-                    <li class="flex items-center gap-2"><svg [lucideIcon]="icons.Mail" [size]="15" /> {{ school.email }}</li>
-                  }
-                </ul>
-                <button class="btn-primary w-full" [disabled]="sending() === school.id" (click)="join(school)">
-                  {{ sending() === school.id ? 'Envoi...' : 'Demander à m\\'inscrire' }}
-                </button>
-              </article>
+                <h2 class="text-xl font-bold text-black dark:text-white mb-2 tracking-tight group-hover:text-[#0070f3] transition-colors">{{ school.name }}</h2>
+                <p class="flex items-center gap-2 text-sm text-black/60 dark:text-white/60 mb-4">
+                  <svg [lucideIcon]="icons.MapPin" [size]="15" /> {{ school.city }}
+                </p>
+                <p class="text-sm text-black/60 dark:text-white/60 font-light leading-relaxed line-clamp-3 mb-6 grow">
+                  {{ school.description || 'Auto-école vérifiée par DriveHub. Inscription en ligne et suivi de formation sur mobile.' }}
+                </p>
+                <span class="inline-flex items-center gap-2 font-bold text-[#0070f3]">
+                  Voir l'auto-école <svg [lucideIcon]="icons.ArrowRight" [size]="16" class="transition-transform group-hover:translate-x-1" />
+                </span>
+              </a>
             }
           </div>
         }
@@ -99,17 +78,11 @@ import { SpamHintComponent } from '../../../../shared/spam-hint.component';
 export class SchoolsComponent {
   protected readonly icons = ICONS;
   private readonly api = inject(SchoolApiService);
-  private readonly session = inject(SessionService);
-  private readonly router = inject(Router);
 
   protected readonly schools = signal<PublicSchool[]>([]);
   protected readonly loading = signal(true);
   protected readonly query = signal('');
-  protected readonly sending = signal<string | null>(null);
-  protected readonly message = signal('');
   protected readonly error = signal('');
-  /** Moniteur dont la demande est refusée car un justificatif manque (pièce d'identité, CAPEC). */
-  protected readonly missingDocuments = signal(false);
 
   protected readonly filtered = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -119,35 +92,14 @@ export class SchoolsComponent {
   });
 
   constructor() {
+    inject(SeoService).setPage({
+      title: 'Trouver une auto-école au Cameroun - DriveHub',
+      description: 'Auto-écoles vérifiées à Douala, Yaoundé et partout au Cameroun : présentation, coordonnées et inscription en ligne.',
+      path: '/auto-ecoles',
+    });
     this.api.publicSchools().subscribe({
       next: (schools) => { this.schools.set(schools ?? []); this.loading.set(false); },
       error: (err) => { this.error.set(errorMessage(err)); this.loading.set(false); },
-    });
-  }
-
-  protected join(school: PublicSchool): void {
-    if (!this.session.isLoggedIn()) {
-      this.router.navigate(['/connexion'], { queryParams: { redirect: '/auto-ecoles' } });
-      return;
-    }
-    const role = this.session.role();
-    if (!role) return;
-    this.sending.set(school.id);
-    this.message.set('');
-    this.error.set('');
-    this.missingDocuments.set(false);
-    this.api.requestJoin(school.id, role).subscribe({
-      next: () => {
-        this.sending.set(null);
-        this.message.set(`Demande envoyée à ${school.name}. Vous serez prévenu par email de sa réponse ; suivez aussi son statut depuis votre espace.`);
-      },
-      error: (err) => {
-        this.sending.set(null);
-        const message = errorMessage(err);
-        this.error.set(message);
-        // Seuls les moniteurs fournissent des justificatifs : le lien « Ajouter mes justificatifs » ne concerne qu'eux
-        this.missingDocuments.set(role === 'MONITOR' && isMissingDocumentsError(err?.status ?? 0, message));
-      },
     });
   }
 }

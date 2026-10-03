@@ -25,6 +25,11 @@ export class SchoolApiService {
     return this.http.get<PublicSchool[]>(`${API_URL}driving-schools/public/all`);
   }
 
+  /** Page publique d'une auto-école validée, par son adresse (404 si elle n'existe pas). */
+  publicSchool(slug: string): Observable<PublicSchool> {
+    return this.http.get<PublicSchool>(`${API_URL}driving-schools/public/${encodeURIComponent(slug)}`);
+  }
+
   requestSchool(request: SchoolRequest): Observable<ApiMessage> {
     return this.http.post<ApiMessage>(`${API_URL}driving-schools/request`, request);
   }

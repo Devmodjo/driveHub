@@ -65,6 +65,7 @@ class DrivingSchoolServiceImplTest {
     @Mock private EmailService emailService;
     @Mock private DocumentService documentService;
     @Mock private SubscriptionService subscriptionService;
+    @Mock private SchoolSlugService schoolSlugService;
 
     @InjectMocks
     private DrivingSchoolServiceImpl service;

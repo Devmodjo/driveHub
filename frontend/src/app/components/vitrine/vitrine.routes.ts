@@ -24,6 +24,11 @@ export const VITRINE_ROUTES: Routes = [
         path: 'auto-ecoles', title: 'Trouver une auto-école - DriveHub',
         loadComponent: () => import('./pages/schools/schools.component').then((m) => m.SchoolsComponent),
       },
+      {
+        // Page publique d'une auto-école (référencée par Google) ; le titre est posé par la page elle-même
+        path: 'auto-ecoles/:slug',
+        loadComponent: () => import('./pages/school-detail/school-detail.component').then((m) => m.SchoolDetailComponent),
+      },
     ],
   },
   {
