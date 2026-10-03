@@ -222,3 +222,67 @@
 .data-table td {
   @apply px-4 py-3 border-b border-black/5 dark:border-white/5 text-black/80 dark:text-white/80 align-middle;
 }
+
+/* Erreur rattachée à un champ de formulaire (message renvoyé par le backend dans fieldErrors) */
+.field-error {
+  @apply mt-1.5 text-sm text-red-600 dark:text-red-400;
+}
+.field-input-error {
+  @apply border-red-500/60 focus:border-red-500 focus:ring-red-500/20;
+}
+
+/* ══ BACK-OFFICE PLATEFORME (/backoffice) ══════════════════
+   Quelques classes partagées par les écrans du back-office, pour éviter de répéter
+   les mêmes longues listes d'utilitaires Tailwind dans chaque gabarit.
+   Règle « mobile d'abord » : toutes les zones cliquables mesurent au moins 44px de haut
+   (min-h-11) sur téléphone ; elles peuvent devenir plus compactes à partir de md:. */
+/* Dans @layer components : les utilitaires Tailwind (lg:hidden, w-full, md:w-9...) restent prioritaires. */
+@layer components {
+  .bo-card {
+    @apply rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#0c0c0c] shadow-[0_1px_2px_rgba(0,0,0,0.04)];
+  }
+  .bo-page-title {
+    @apply font-display text-2xl sm:text-3xl font-black tracking-tight text-black dark:text-white;
+  }
+  .bo-page-subtitle {
+    @apply mt-1 text-sm text-black/50 dark:text-white/50;
+  }
+  .bo-section-title {
+    @apply font-display text-base font-extrabold tracking-tight text-black dark:text-white;
+  }
+  /* Puces de filtre (Tous, Actives, En attente...) : elles défilent horizontalement sur mobile */
+  .bo-chip {
+    @apply inline-flex shrink-0 items-center gap-2 min-h-11 md:min-h-9 rounded-full border border-black/10 dark:border-white/10 px-4 text-sm font-semibold text-black/60 dark:text-white/60 transition-colors hover:bg-black/5 dark:hover:bg-white/5;
+  }
+  .bo-chip-active {
+    @apply border-[#0070f3] bg-[#0070f3] text-white hover:bg-[#0070f3] dark:text-white dark:hover:bg-[#0070f3];
+  }
+  /* Boutons d'action des listes (Voir, Approuver, Rejeter...) */
+  .bo-btn {
+    @apply inline-flex items-center justify-center gap-1.5 min-h-11 md:min-h-9 rounded-xl px-4 text-sm font-bold transition-colors disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .bo-btn-outline   { @apply border border-black/10 dark:border-white/15 text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/5; }
+  .bo-btn-blue      { @apply bg-[#0070f3] text-white hover:bg-[#0051af]; }
+  .bo-btn-green     { @apply bg-emerald-600 text-white hover:bg-emerald-700; }
+  .bo-btn-red       { @apply bg-red-600 text-white hover:bg-red-700; }
+  .bo-btn-amber     { @apply bg-amber-500 text-white hover:bg-amber-600; }
+  .bo-btn-ghost-red { @apply text-red-600 dark:text-red-400 hover:bg-red-500/10; }
+  /* Bouton carré qui ne contient qu'une icône (menu, fermer, thème...) */
+  .bo-icon-btn {
+    @apply inline-flex items-center justify-center w-11 h-11 shrink-0 rounded-xl text-black/70 dark:text-white/70 transition-colors hover:bg-black/5 dark:hover:bg-white/10;
+  }
+  /* Message d'erreur affiché sous un champ de formulaire */
+  .bo-field-error {
+    @apply mt-1.5 text-sm text-red-600 dark:text-red-400;
+  }
+}
+
+/* « Hub » du logo, en lettres évidées : contour noir (thème clair) ou blanc (thème sombre).
+   Auparavant « color: transparent » rendait aussi le contour (currentColor) transparent : le mot était invisible. */
+.logo-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px #000;
+}
+.dark .logo-outline {
+  -webkit-text-stroke: 1px #fff;
+}

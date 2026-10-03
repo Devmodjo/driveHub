@@ -68,7 +68,7 @@ public class ExamService {
 
     /**
      * Inscrit un élève à un examen.
-     * Règles : pas de double inscription ; la catégorie de permis de l'élève doit correspondre à l'examen.
+     * Règles : pas de double inscription ; l'élève doit avoir une catégorie de permis, identique à celle de l'examen.
      */
     @Transactional
     public ExamsInscriptionResponseDto register(UUID examId, UUID studentId) {
@@ -78,8 +78,12 @@ public class ExamService {
         if (inscriptionRepository.existsByExams_IdAndStudent_Id(examId, studentId)) {
             throw new ConflictException("Cet élève est déjà inscrit à cet examen");
         }
-        if (exam.getCategory() != null && student.getLicenseCategory() != null
-                && exam.getCategory() != student.getLicenseCategory()) {
+        // Correction : un élève sans catégorie de permis pouvait être inscrit à n'importe quel examen
+        if (student.getLicenseCategory() == null) {
+            throw new BadRequestException("Définissez d'abord la catégorie de permis de l'élève "
+                    + "(page Élèves) avant de l'inscrire à un examen");
+        }
+        if (exam.getCategory() != null && exam.getCategory() != student.getLicenseCategory()) {
             throw new BadRequestException("L'élève prépare le permis " + student.getLicenseCategory()
                     + " mais l'examen concerne le permis " + exam.getCategory());
         }

@@ -1,5 +1,7 @@
 package cm.mvtech.drivehub.modules.drivingschool.domain.services;
 
+import cm.mvtech.drivehub.modules.document.domain.services.DocumentService;
+import cm.mvtech.drivehub.modules.subscription.domain.services.SubscriptionService;
 import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
 import cm.mvtech.drivehub.core.domain.service.TenantProvisioningService;
 import cm.mvtech.drivehub.core.infrastructure.TenantContext;
@@ -37,6 +39,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -60,6 +63,8 @@ class DrivingSchoolServiceImplTest {
     @Mock private TenantExecutor tenantExecutor;
     @Mock private MonitorsRepository monitorsRepository;
     @Mock private EmailService emailService;
+    @Mock private DocumentService documentService;
+    @Mock private SubscriptionService subscriptionService;
 
     @InjectMocks
     private DrivingSchoolServiceImpl service;
@@ -134,6 +139,8 @@ class DrivingSchoolServiceImplTest {
 
         verify(userRepository).findById(monitorUser.getId());
         verify(drivingSchoolRegistryRepository).save(any(DrivingSchoolRegistry.class));
+        // Accusé de réception envoyé au moniteur (délai de traitement de 48 à 72 heures)
+        verify(emailService).sendSchoolRequestReceivedEmail(eq(monitorUser.getEmail()), eq(monitorUser.getFirstname()), anyString());
     }
 
     /**

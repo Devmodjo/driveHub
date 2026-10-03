@@ -6,16 +6,20 @@ import { RevealDirective } from '../../../../directives/reveal.directive';
 import { PublicSchool } from '../../../../interfaces/drivehub.models';
 import { SchoolApiService } from '../../../../services/school-api-service/school-api.service';
 import { SessionService } from '../../../../services/session-service/session.service';
+import { isMissingDocumentsError } from '../../../../shared/documents';
 import { errorMessage } from '../../../../shared/http-error';
 import { ICONS } from '../../../../shared/icons';
+import { SpamHintComponent } from '../../../../shared/spam-hint.component';
 
 /**
  * Catalogue public « Trouver une auto-école » : liste des auto-écoles approuvées par la plateforme
  * (registre du schéma public). Un élève connecté peut demander à rejoindre une auto-école.
+ * Aucun justificatif n'est demandé aux élèves. Un moniteur, lui, doit d'abord fournir sa pièce
+ * d'identité et son CAPEC : s'il en manque, le message d'erreur propose un lien vers la page où les ajouter.
  */
 @Component({
   selector: 'app-schools',
-  imports: [FormsModule, RouterLink, LucideDynamicIcon, RevealDirective],
+  imports: [FormsModule, RouterLink, LucideDynamicIcon, RevealDirective, SpamHintComponent],
   template: `
     <section class="pt-36 pb-24 bg-white dark:bg-black min-h-screen">
       <div class="container mx-auto px-6">
@@ -34,8 +38,24 @@ import { ICONS } from '../../../../shared/icons';
                  [ngModel]="query()" (ngModelChange)="query.set($event)" />
         </div>
 
-        @if (message()) { <div class="alert-success mb-8">{{ message() }}</div> }
-        @if (error()) { <div class="alert-error mb-8">{{ error() }}</div> }
+        @if (message()) {
+          <!-- La réponse de l'auto-école arrive par email : on rappelle de surveiller les spams -->
+          <div class="mb-8">
+            <div class="alert-success">{{ message() }}</div>
+            <app-spam-hint class="mt-2" />
+          </div>
+        }
+        @if (error()) {
+          <div class="alert-error mb-8" role="alert">
+            {{ error() }}
+            <!-- Moniteur dont les justificatifs manquent : lien direct vers la page où il les ajoute -->
+            @if (missingDocuments()) {
+              <a routerLink="/dashboard/bienvenue" class="mt-2 flex items-center gap-1.5 font-bold underline">
+                Ajouter mes justificatifs <svg [lucideIcon]="icons.ArrowRight" [size]="15" />
+              </a>
+            }
+          </div>
+        }
 
         @if (loading()) {
           <p class="text-black/50 dark:text-white/50">Chargement des auto-écoles...</p>
@@ -88,6 +108,8 @@ export class SchoolsComponent {
   protected readonly sending = signal<string | null>(null);
   protected readonly message = signal('');
   protected readonly error = signal('');
+  /** Moniteur dont la demande est refusée car un justificatif manque (pièce d'identité, CAPEC). */
+  protected readonly missingDocuments = signal(false);
 
   protected readonly filtered = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -113,12 +135,19 @@ export class SchoolsComponent {
     this.sending.set(school.id);
     this.message.set('');
     this.error.set('');
+    this.missingDocuments.set(false);
     this.api.requestJoin(school.id, role).subscribe({
       next: () => {
         this.sending.set(null);
-        this.message.set(`Demande envoyée à ${school.name}. Suivez son statut depuis votre espace.`);
+        this.message.set(`Demande envoyée à ${school.name}. Vous serez prévenu par email de sa réponse ; suivez aussi son statut depuis votre espace.`);
       },
-      error: (err) => { this.sending.set(null); this.error.set(errorMessage(err)); },
+      error: (err) => {
+        this.sending.set(null);
+        const message = errorMessage(err);
+        this.error.set(message);
+        // Seuls les moniteurs fournissent des justificatifs : le lien « Ajouter mes justificatifs » ne concerne qu'eux
+        this.missingDocuments.set(role === 'MONITOR' && isMissingDocumentsError(err?.status ?? 0, message));
+      },
     });
   }
 }

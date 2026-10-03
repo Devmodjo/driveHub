@@ -66,6 +66,18 @@ public interface DrivingSchoolRegistryRepository
 
     long countByDrivingSchoolStatus(DrivingSchoolStatus status);
 
+    /** Recherche d'une auto-école validée par nom ou email de contact (destinataires d'un email). */
+    @Query("""
+            SELECT r FROM DrivingSchoolRegistry r
+            WHERE r.drivingSchoolStatus IN :statuses
+              AND (lower(r.schoolName) LIKE lower(concat('%', :q, '%'))
+                   OR lower(r.email) LIKE lower(concat('%', :q, '%')))
+            ORDER BY r.schoolName
+            """)
+    List<DrivingSchoolRegistry> searchByStatus(@Param("q") String q,
+                                               @Param("statuses") java.util.Collection<DrivingSchoolStatus> statuses,
+                                               Pageable pageable);
+
 
     @Query("""
             SELECT COUNT(r) FROM DrivingSchoolRegistry r

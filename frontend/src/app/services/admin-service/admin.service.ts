@@ -104,12 +104,13 @@ export class AdminService {
   }
 
   /**
-   * déactive un admin
-   * @param adminId id de l'admin à activer
+   * Désactive (suspend) un admin : PATCH /admin/{id}/deactivate (ROOT uniquement, réversible).
+   * Le compte repasse actif avec activateAdmin().
+   * @param adminId id de l'admin à désactiver
    * @returns Observable<ApiResponse>
    */
   disableAdmin(adminId: string) : Observable<ApiResponse> {
-    return this.http.patch<ApiResponse>(`${BASE_URL}admin/${adminId}/activate`, null);
+    return this.http.patch<ApiResponse>(`${BASE_URL}admin/${adminId}/deactivate`, null);
   }
   
   /**

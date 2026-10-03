@@ -3,16 +3,22 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SessionService } from '../../../../services/session-service/session.service';
 import { errorMessage } from '../../../../shared/http-error';
+import { SpamHintComponent } from '../../../../shared/spam-hint.component';
 import { AuthShellComponent } from './auth-shell.component';
 
 /** Demande d'un lien de réinitialisation du mot de passe. */
 @Component({
   selector: 'app-forgot-password',
-  imports: [FormsModule, RouterLink, AuthShellComponent],
+  imports: [FormsModule, RouterLink, AuthShellComponent, SpamHintComponent],
   template: `
     <app-auth-shell title="Mot de passe oublié" subtitle="Saisissez votre email : vous recevrez un lien pour choisir un nouveau mot de passe.">
       <form class="space-y-5" (ngSubmit)="submit()">
-        @if (message()) { <div class="alert-success">{{ message() }}</div> }
+        @if (message()) {
+          <div>
+            <div class="alert-success">{{ message() }}</div>
+            <app-spam-hint class="mt-2" />
+          </div>
+        }
         @if (error()) { <div class="alert-error">{{ error() }}</div> }
         <div>
           <label class="field-label" for="email">Email</label>

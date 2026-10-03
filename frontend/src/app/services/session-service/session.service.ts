@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import {
-  ApiMessage, AuthResponse, CurrentUser, ProfileStatus, RegisterRequest, UserRole,
+  AcceptInvitationRequest, ApiMessage, AuthResponse, CurrentUser, ProfileStatus, RegisterRequest, UserRole,
 } from '../../interfaces/drivehub.models';
 import { API_URL } from '../../utils/UTILS';
 
@@ -81,6 +81,14 @@ export class SessionService {
 
   resetPassword(token: string, newPassword: string): Observable<ApiMessage> {
     return this.http.post<ApiMessage>(`${API_URL}auth/reset-password`, { token, newPassword });
+  }
+
+  /**
+   * Moniteur ajouté par le responsable de son auto-école : il ouvre le lien reçu par email
+   * (/invitation?token=...), choisit son mot de passe et accepte la politique de confidentialité.
+   */
+  acceptInvitation(request: AcceptInvitationRequest): Observable<ApiMessage> {
+    return this.http.post<ApiMessage>(`${API_URL}auth/accept-invitation`, request);
   }
 
   /**

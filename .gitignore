@@ -38,6 +38,9 @@ coverage/
 .angular/config.json
 
 ## Dependency Files
-package-lock.json
+# package-lock.json est versionné : installations identiques en CI et sur Vercel (npm ci)
 yarn.lock
 pnpm-lock.yaml
+
+## Justificatifs stockés en local (développement) : ne jamais les versionner
+backend/data/

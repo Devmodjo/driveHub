@@ -99,8 +99,8 @@ class PlatformAdminControllerIntegrationTest {
                         .content(registerJson))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value(
-                        "Inscription réussie, en attente de validation par l'Administrateur ROOT"));
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(
+                        cm.mvtech.drivehub.modules.messageapi.ValidationDelay.TEXT)));
     }
 
     // ─── ACTIVATE ADMIN ───────────────────────────────────────────────────────

@@ -1,6 +1,9 @@
 package cm.mvtech.drivehub.modules.monitor.application.controller;
 
 
+import java.util.List;
+import cm.mvtech.drivehub.modules.document.application.dto.DocumentResponse;
+import cm.mvtech.drivehub.modules.document.application.controller.DocumentHttp;
 import cm.mvtech.drivehub.modules.messageapi.ApiPageResponse;
 import cm.mvtech.drivehub.modules.messageapi.ApiResponse;
 import cm.mvtech.drivehub.modules.messageapi.MyJoinRequestResponse;
@@ -87,4 +90,20 @@ public class JoinSchoolRequestController {
         );
     }
 
+
+    /** Justificatifs du demandeur (réservé au responsable de l'auto-école visée). */
+    @GetMapping("/admin/{id}/documents")
+    @PreAuthorize("hasRole('MONITOR')")
+    public List<DocumentResponse> requestDocuments(@PathVariable UUID id,
+                                                   @AuthenticationPrincipal(expression = "username") String email) {
+        return adminJoinApprovalService.requestDocuments(id, email);
+    }
+
+    /** Voir un justificatif du demandeur (consultation journalisée). */
+    @GetMapping("/admin/{id}/documents/{documentId}/file")
+    @PreAuthorize("hasRole('MONITOR')")
+    public ResponseEntity<byte[]> requestDocumentFile(@PathVariable UUID id, @PathVariable UUID documentId,
+                                                      @AuthenticationPrincipal(expression = "username") String email) {
+        return DocumentHttp.file(adminJoinApprovalService.requestDocumentFile(id, documentId, email));
+    }
 }

@@ -1,361 +1,238 @@
-@if (actionMessage()) {
-  <div class="toast-wrap">
-    <div class="toast" [class.toast--error]="actionMessage()!.type === 'error'">
-      {{ actionMessage()!.text }}
-    </div>
-  </div>
-}
+<bo-toast [message]="actionMessage()" />
 
-<div class="page-header">
+<header class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
   <div>
-    <h2 class="page-title">Gestion des Admins</h2>
-    <p class="page-subtitle">Liste et gestion de tous les administrateurs de la plateforme</p>
+    <h1 class="bo-page-title">Administrateurs</h1>
+    <p class="bo-page-subtitle">{{ totalElements() }} compte(s) sur la plateforme.</p>
   </div>
-  <div class="header-actions">
-    <span class="total-count">{{ totalElements() }} administrateur(s)</span>
-    @if (isRoot()) {
-      <button class="btn btn-primary" (click)="openCreateDrawer()">
-        + Ajouter un admin
-      </button>
-    }
-  </div>
-</div>
+  @if (isRoot()) {
+    <button type="button" class="bo-btn bo-btn-blue self-start sm:self-auto" (click)="openCreateDrawer()">
+      <svg [lucideIcon]="icons.UserPlus" [size]="16" /> Ajouter un admin
+    </button>
+  }
+</header>
 
-<div class="toolbar">
-  <div class="filter-tabs">
-    <button
-      class="filter-tab"
-      [class.filter-tab--active]="statusFilter() === undefined"
-      (click)="applyStatusFilter(undefined)">
-      Tous
-    </button>
-    <button
-      class="filter-tab"
-      [class.filter-tab--active]="statusFilter() === 'ACTIVE'"
-      (click)="applyStatusFilter('ACTIVE')">
-      <span class="filter-dot filter-dot--green"></span>
-      Actifs
-    </button>
-    <button
-      class="filter-tab"
-      [class.filter-tab--active]="statusFilter() === 'PENDING'"
-      (click)="applyStatusFilter('PENDING')">
-      <span class="filter-dot filter-dot--amber"></span>
-      En attente
-    </button>
-    <button
-      class="filter-tab"
-      [class.filter-tab--active]="statusFilter() === 'INACTIVE'"
-      (click)="applyStatusFilter('INACTIVE')">
-      <span class="filter-dot filter-dot--gray"></span>
-      Inactifs
-    </button>
-    <button
-      class="filter-tab"
-      [class.filter-tab--active]="statusFilter() === 'EMAIL_PENDING'"
-      (click)="applyStatusFilter('EMAIL_PENDING')">
-      <span class="filter-dot filter-dot--blue"></span>
-      Email en attente
-    </button>
-  </div>
+<!-- Boutons d'action d'une ligne, partagés par la carte mobile et le tableau -->
+<ng-template #statusAction let-admin>
+  @if (admin.adminStatus === 'PENDING' && canActivate()) {
+    <button type="button" class="bo-btn bo-btn-green" [disabled]="busyId() === admin.id" (click)="activateAdmin(admin.id)">Activer</button>
+  } @else if (isRoot() && admin.adminStatus === 'ACTIVE' && admin.role !== 'ROOT') {
+    <button type="button" class="bo-btn bo-btn-outline text-amber-700! dark:text-amber-300!" [disabled]="busyId() === admin.id" (click)="askDeactivate(admin)">Désactiver</button>
+  } @else if (isRoot() && (admin.adminStatus === 'SUSPENDED' || admin.adminStatus === 'INACTIVE')) {
+    <button type="button" class="bo-btn bo-btn-green" [disabled]="busyId() === admin.id" (click)="activateAdmin(admin.id)">Réactiver</button>
+  }
+</ng-template>
 
-  <div class="role-filter">
-    <select
-      class="select-input"
-      [value]="roleFilter() ?? ''"
-      (change)="applyRoleFilter($any($event.target).value || undefined)">
-      <option value="">Tous les roles</option>
-      <option value="REVIEWER">Reviewer</option>
+<section class="bo-card overflow-hidden">
+  <!-- Filtres -->
+  <div class="p-4 sm:p-5 space-y-3 border-b border-black/5 dark:border-white/10">
+    <div class="-mx-4 sm:mx-0 px-4 sm:px-0 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" role="tablist" aria-label="Filtrer par statut">
+      @for (tab of statusTabs; track tab.label) {
+        <button type="button" role="tab" class="bo-chip" [class.bo-chip-active]="statusFilter() === tab.value"
+                [attr.aria-selected]="statusFilter() === tab.value" (click)="applyStatusFilter(tab.value)">{{ tab.label }}</button>
+      }
+    </div>
+    <select class="field-input sm:max-w-60" aria-label="Filtrer par rôle" [value]="roleFilter() ?? ''"
+            (change)="applyRoleFilter($any($event.target).value || undefined)">
+      <option value="">Tous les rôles</option>
       <option value="ROOT">Root</option>
       <option value="SUPER_ADMIN">Super Admin</option>
+      <option value="REVIEWER">Reviewer</option>
     </select>
   </div>
-</div>
 
-<div class="panel">
-  <div class="table-scroll">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Administrateur</th>
-          <th>Role</th>
-          <th>Statut</th>
-          <th>Inscrit le</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        @if (isLoading()) {
+  @if (isLoading()) {
+    <p class="px-5 py-12 text-center text-sm text-black/50 dark:text-white/50">Chargement...</p>
+  } @else if (listError()) {
+    <p class="px-5 py-10 text-center text-sm text-black/60 dark:text-white/60">{{ listError() }}</p>
+  } @else if (admins().length === 0) {
+    <div class="px-5 py-12 text-center">
+      <svg [lucideIcon]="icons.Inbox" [size]="32" class="mx-auto text-black/25 dark:text-white/25" />
+      <p class="mt-3 text-sm text-black/50 dark:text-white/50">Aucun administrateur trouvé.</p>
+    </div>
+  } @else {
+    <!-- MOBILE : cartes -->
+    <ul class="md:hidden divide-y divide-black/5 dark:divide-white/10">
+      @for (admin of admins(); track admin.id) {
+        <li class="p-4">
+          <button type="button" class="w-full flex items-center gap-3 text-left" (click)="openDetail(admin)">
+            <span class="w-10 h-10 shrink-0 rounded-xl bg-[#0070f3]/10 text-[#0070f3] flex items-center justify-center text-sm font-black">{{ initials(admin.name) }}</span>
+            <span class="min-w-0 grow">
+              <span class="block font-bold text-sm text-black dark:text-white truncate">{{ admin.name }}</span>
+              <span class="block text-xs text-black/50 dark:text-white/50 truncate">{{ admin.email }}</span>
+            </span>
+            <span class="shrink-0" [class]="statusClass(admin.adminStatus)">{{ statusLabel(admin.adminStatus) }}</span>
+          </button>
+          <p class="mt-2 text-xs text-black/50 dark:text-white/50">{{ roleLabel(admin.role) }} · inscrit le {{ admin.createdAt | date:'dd/MM/yyyy' }}</p>
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <button type="button" class="bo-btn bo-btn-outline" (click)="openDetail(admin)">Voir</button>
+            <ng-container *ngTemplateOutlet="statusAction; context: { $implicit: admin }" />
+          </div>
+        </li>
+      }
+    </ul>
+
+    <!-- À PARTIR DE md: : tableau -->
+    <div class="hidden md:block overflow-x-auto">
+      <table class="data-table">
+        <thead>
           <tr>
-            <td colspan="5">
-              <div class="empty-state">Chargement...</div>
-            </td>
+            <th>Administrateur</th>
+            <th>Rôle</th>
+            <th>Statut</th>
+            <th class="hidden lg:table-cell">Inscrit le</th>
+            <th class="text-right">Actions</th>
           </tr>
-        }
-
-        @else if (admins().length === 0) {
-          <tr>
-            <td colspan="5">
-              <div class="empty-state">Aucun administrateur trouve.</div>
-            </td>
-          </tr>
-        }
-
-        @else {
+        </thead>
+        <tbody>
           @for (admin of admins(); track admin.id) {
-            <tr>
-              <td>
-                <div class="admin-cell">
-                  <div class="avatar">{{ getInitials(admin.name) }}</div>
-                  <div class="row-text">
-                    <span class="row-name">{{ admin.name }}</span>
-                    <span class="row-meta">{{ admin.email }}</span>
-                  </div>
+            <tr class="hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
+              <td class="max-w-72">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="w-9 h-9 shrink-0 rounded-xl bg-[#0070f3]/10 text-[#0070f3] flex items-center justify-center text-xs font-black">{{ initials(admin.name) }}</span>
+                  <span class="min-w-0">
+                    <span class="block font-bold text-black dark:text-white truncate">{{ admin.name }}</span>
+                    <span class="block text-xs text-black/50 dark:text-white/50 truncate">{{ admin.email }}</span>
+                  </span>
                 </div>
               </td>
-
-              <td class="cell-muted">{{ admin.role }}</td>
-
+              <td class="whitespace-nowrap">{{ roleLabel(admin.role) }}</td>
+              <td><span [class]="statusClass(admin.adminStatus)">{{ statusLabel(admin.adminStatus) }}</span></td>
+              <td class="hidden lg:table-cell whitespace-nowrap">{{ admin.createdAt | date:'dd/MM/yyyy' }}</td>
               <td>
-                <span [class]="getStatusClass(admin.adminStatus)">
-                  {{ getStatusLabel(admin.adminStatus) }}
-                </span>
-              </td>
-
-              <td class="cell-muted">{{ admin.createdAt | date:'dd/MM/yyyy' }}</td>
-
-              <td>
-                <div class="action-group">
-                  <button
-                    class="btn btn-outline"
-                    (click)="openDetail(admin)">
-                    Voir
-                  </button>
-
-                  @if (admin.adminStatus === 'PENDING' && canActivate()) {
-                    <button
-                      class="btn btn-green"
-                      [disabled]="isLoading()"
-                      (click)="activateAdmin(admin.id)">
-                      Activer
-                    </button>
-                  }
-
-                  @if (isRoot()) {
-                    <button
-                      class="btn btn-danger"
-                      [disabled]="isLoading()"
-                      (click)="deleteAdmin(admin.id)">
-                      Supprimer
+                <div class="flex items-center justify-end gap-2">
+                  <button type="button" class="bo-btn bo-btn-outline" (click)="openDetail(admin)">Voir</button>
+                  <ng-container *ngTemplateOutlet="statusAction; context: { $implicit: admin }" />
+                  @if (isRoot() && admin.role !== 'ROOT') {
+                    <button type="button" class="bo-icon-btn md:w-9 md:h-9 bo-btn-ghost-red" [disabled]="busyId() === admin.id"
+                            (click)="deleteAdmin(admin)" aria-label="Supprimer l'administrateur" title="Supprimer">
+                      <svg [lucideIcon]="icons.Trash" [size]="16" />
                     </button>
                   }
                 </div>
               </td>
             </tr>
           }
-        }
-      </tbody>
-    </table>
-  </div>
+        </tbody>
+      </table>
+    </div>
+  }
 
   @if (totalPages() > 1) {
-    <div class="pagination">
-      <button
-        class="page-btn"
-        [disabled]="isFirstPage()"
-        (click)="previousPage()">
-        Precedent
+    <div class="flex items-center justify-between gap-3 p-4 border-t border-black/5 dark:border-white/10">
+      <button type="button" class="bo-btn bo-btn-outline" [disabled]="isFirstPage()" (click)="previousPage()">
+        <svg [lucideIcon]="icons.ChevronLeft" [size]="16" /> Précédent
       </button>
-      <span class="page-info">
-        Page {{ displayedPage() }} / {{ totalPages() }}
-      </span>
-      <button
-        class="page-btn"
-        [disabled]="isLastPage()"
-        (click)="nextPage()">
-        Suivant
+      <span class="text-sm font-semibold text-black/60 dark:text-white/60">{{ displayedPage() }} / {{ totalPages() }}</span>
+      <button type="button" class="bo-btn bo-btn-outline" [disabled]="isLastPage()" (click)="nextPage()">
+        Suivant <svg [lucideIcon]="icons.ChevronRight" [size]="16" />
       </button>
     </div>
   }
-</div>
+</section>
 
-@if (showDetailDrawer() || showCreateDrawer()) {
-  <div class="drawer-overlay" (click)="closeDrawers()"></div>
-}
-
-@if (showDetailDrawer() && selectedAdmin()) {
-  <aside class="drawer">
-    <div class="drawer-header">
-      <h3 class="drawer-title">Details de l'administrateur</h3>
-      <button class="drawer-close" (click)="closeDrawers()">X</button>
-    </div>
-
-    <div class="drawer-body">
-      <div class="detail-avatar-section">
-        <div class="detail-avatar">{{ getInitials(selectedAdmin()!.name) }}</div>
-        <h4 class="detail-name">{{ selectedAdmin()!.name }}</h4>
-        <span class="detail-email">{{ selectedAdmin()!.email }}</span>
-      </div>
-
-      <div class="detail-grid">
-        <div class="detail-item">
-          <span class="detail-label">Role</span>
-          <span class="detail-value">{{ getRoleLabel(selectedAdmin()!.role) }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Statut</span>
-          <span [class]="getStatusClass(selectedAdmin()!.adminStatus)">
-            {{ getStatusLabel(selectedAdmin()!.adminStatus) }}
-          </span> 
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Date d'inscription</span>
-          <span class="detail-value">{{ selectedAdmin()!.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Residence</span>
-          <span class="detail-value">{{ selectedAdmin()!.residence || 'Non renseignee' }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Telephone</span>
-          <span class="detail-value">{{ selectedAdmin()!.phoneNumber || 'Non renseigne' }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Identifiant</span>
-          <span class="detail-value detail-value--mono">{{ selectedAdmin()!.id }}</span>
-        </div>
-      </div>
-
-      <div class="detail-actions">
-        @if (selectedAdmin()!.adminStatus === 'PENDING' && canActivate()) {
-          <button
-            class="btn btn-green btn-full"
-            [disabled]="isLoading()"
-            (click)="activateAdmin(selectedAdmin()!.id)">
-            Activer cet administrateur
-          </button>
-        }
-
-        @if (isRoot()) {
-          <button
-            class="btn btn-danger btn-full"
-            [disabled]="isLoading()"
-            (click)="deleteAdmin(selectedAdmin()!.id)">
-            Supprimer cet administrateur
-          </button>
-        }
+<!-- Volet de détail -->
+@if (showDetailDrawer() && selectedAdmin(); as admin) {
+  <bo-drawer title="Détails de l'administrateur" (closed)="closeDrawers()">
+    <div class="flex flex-col items-center text-center mb-6">
+      <div class="w-16 h-16 rounded-2xl bg-[#0070f3] text-white flex items-center justify-center text-xl font-black mb-3">{{ initials(admin.name) }}</div>
+      <h4 class="font-display text-xl font-black tracking-tight text-black dark:text-white break-words">{{ admin.name }}</h4>
+      <p class="text-sm text-black/50 dark:text-white/50 break-all">{{ admin.email }}</p>
+      <div class="mt-2 flex flex-wrap justify-center gap-1.5">
+        <span class="badge bg-[#0070f3]/10 text-[#0070f3]">{{ roleLabel(admin.role) }}</span>
+        <span [class]="statusClass(admin.adminStatus)">{{ statusLabel(admin.adminStatus) }}</span>
       </div>
     </div>
-  </aside>
+
+    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+      <div><dt class="field-label mb-1!">Inscrit le</dt><dd>{{ admin.createdAt | date:'dd/MM/yyyy HH:mm' }}</dd></div>
+      <div><dt class="field-label mb-1!">Téléphone</dt><dd>{{ admin.phoneNumber || 'Non renseigné' }}</dd></div>
+      <div class="sm:col-span-2"><dt class="field-label mb-1!">Résidence</dt><dd>{{ admin.residence || 'Non renseignée' }}</dd></div>
+      <div class="sm:col-span-2"><dt class="field-label mb-1!">Identifiant</dt><dd class="font-mono text-xs break-all text-black/60 dark:text-white/60">{{ admin.id }}</dd></div>
+    </dl>
+
+    <div class="mt-6 flex flex-col gap-2">
+      @if (admin.adminStatus === 'PENDING' && canActivate()) {
+        <button type="button" class="bo-btn bo-btn-green w-full" [disabled]="busyId() === admin.id" (click)="activateAdmin(admin.id)">Activer cet administrateur</button>
+      } @else if (isRoot() && admin.adminStatus === 'ACTIVE' && admin.role !== 'ROOT') {
+        <button type="button" class="bo-btn bo-btn-amber w-full" [disabled]="busyId() === admin.id" (click)="askDeactivate(admin)">Désactiver cet administrateur</button>
+      } @else if (isRoot() && (admin.adminStatus === 'SUSPENDED' || admin.adminStatus === 'INACTIVE')) {
+        <button type="button" class="bo-btn bo-btn-green w-full" [disabled]="busyId() === admin.id" (click)="activateAdmin(admin.id)">Réactiver cet administrateur</button>
+      }
+      @if (isRoot() && admin.role !== 'ROOT') {
+        <button type="button" class="bo-btn bo-btn-ghost-red w-full" [disabled]="busyId() === admin.id" (click)="deleteAdmin(admin)">Supprimer cet administrateur</button>
+      }
+    </div>
+  </bo-drawer>
 }
 
+<!-- Volet de création -->
 @if (showCreateDrawer()) {
-  <aside class="drawer">
-    <div class="drawer-header">
-      <h3 class="drawer-title">Nouvel administrateur</h3>
-      <button class="drawer-close" (click)="closeDrawers()">X</button>
-    </div>
+  <bo-drawer title="Nouvel administrateur" (closed)="closeDrawers()">
+    <form class="space-y-4" (ngSubmit)="createAdmin()">
+      @if (createError()) { <div class="alert-error" role="alert">{{ createError() }}</div> }
 
-    <div class="drawer-body">
-      <form class="create-form" (ngSubmit)="createAdmin()">
-        <div class="form-group">
-          <label class="form-label" for="admin-name">Nom complet</label>
-          <input
-            class="form-input"
-            id="admin-name"
-            type="text"
-            placeholder="Jean Dupont"
-            [ngModel]="createFormData().name"
-            (ngModelChange)="updateCreateField('name', $event)"
-            name="name"
-            required />
+      <div>
+        <label class="field-label" for="admin-name">Nom complet</label>
+        <input class="field-input" id="admin-name" type="text" name="name" placeholder="Jean Dupont" required
+               [ngModel]="createFormData().name" (ngModelChange)="updateCreateField('name', $event)" />
+        @if (createFieldErrors()['name']) { <p class="bo-field-error">{{ createFieldErrors()['name'] }}</p> }
+      </div>
+      <div>
+        <label class="field-label" for="admin-email">Adresse email</label>
+        <input class="field-input" id="admin-email" type="email" name="email" placeholder="jean.dupont@exemple.com" required
+               [ngModel]="createFormData().email" (ngModelChange)="updateCreateField('email', $event)" />
+        @if (createFieldErrors()['email']) { <p class="bo-field-error">{{ createFieldErrors()['email'] }}</p> }
+      </div>
+      <div>
+        <label class="field-label" for="admin-password">Mot de passe provisoire</label>
+        <input class="field-input" id="admin-password" type="password" name="password" placeholder="Au moins 8 caractères" required autocomplete="new-password"
+               [ngModel]="createFormData().password" (ngModelChange)="updateCreateField('password', $event)" />
+        @if (createFieldErrors()['password']) { <p class="bo-field-error">{{ createFieldErrors()['password'] }}</p> }
+      </div>
+      <div>
+        <label class="field-label" for="admin-role">Rôle</label>
+        <select class="field-input" id="admin-role" name="role" [ngModel]="createFormData().role" (ngModelChange)="updateCreateField('role', $event)">
+          <option value="REVIEWER">Reviewer</option>
+          <option value="SUPER_ADMIN">Super Admin</option>
+          <option value="ROOT">Root</option>
+        </select>
+        @if (createFieldErrors()['role']) { <p class="bo-field-error">{{ createFieldErrors()['role'] }}</p> }
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="field-label" for="admin-residence">Résidence</label>
+          <input class="field-input" id="admin-residence" type="text" name="residence" placeholder="Douala, Cameroun"
+                 [ngModel]="createFormData().residence" (ngModelChange)="updateCreateField('residence', $event)" />
+          @if (createFieldErrors()['residence']) { <p class="bo-field-error">{{ createFieldErrors()['residence'] }}</p> }
         </div>
+        <div>
+          <label class="field-label" for="admin-phone">Téléphone</label>
+          <input class="field-input" id="admin-phone" type="tel" name="phoneNumber" placeholder="6XXXXXXXX"
+                 [ngModel]="createFormData().phoneNumber" (ngModelChange)="updateCreateField('phoneNumber', $event)" />
+          @if (createFieldErrors()['phoneNumber']) { <p class="bo-field-error">{{ createFieldErrors()['phoneNumber'] }}</p> }
+        </div>
+      </div>
 
-        <div class="form-group">
-          <label class="form-label" for="admin-email">Adresse email</label>
-          <input
-            class="form-input"
-            id="admin-email"
-            type="email"
-            placeholder="jean.dupont@exemple.com"
-            [ngModel]="createFormData().email"
-            (ngModelChange)="updateCreateField('email', $event)"
-            name="email"
-            required />
-        </div>
+      <div class="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+        <button type="button" class="bo-btn bo-btn-outline sm:flex-1" (click)="closeDrawers()">Annuler</button>
+        <button type="submit" class="bo-btn bo-btn-blue sm:flex-1" [disabled]="isSubmitting()">
+          {{ isSubmitting() ? 'Création...' : 'Créer l\'administrateur' }}
+        </button>
+      </div>
+    </form>
+  </bo-drawer>
+}
 
-        <div class="form-group">
-          <label class="form-label" for="admin-password">Mot de passe</label>
-          <input
-            class="form-input"
-            id="admin-password"
-            type="password"
-            placeholder="Minimum 8 caracteres"
-            [ngModel]="createFormData().password"
-            (ngModelChange)="updateCreateField('password', $event)"
-            name="password"
-            required />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="admin-role">Role</label>
-          <select
-            class="form-input"
-            id="admin-role"
-            [ngModel]="createFormData().role"
-            (ngModelChange)="updateCreateField('role', $event)"
-            name="role">
-            <option value="REVIEWER">Reviewer</option>
-            <option value="SUPER_ADMIN">Super Admin</option>
-            <option value="ROOT">Root</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="admin-residence">Residence</label>
-          <input
-            class="form-input"
-            id="admin-residence"
-            type="text"
-            placeholder="Douala, Cameroun"
-            [ngModel]="createFormData().residence"
-            (ngModelChange)="updateCreateField('residence', $event)"
-            name="residence"
-            required />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="admin-phone">Telephone</label>
-          <input
-            class="form-input"
-            id="admin-phone"
-            type="tel"
-            placeholder="+237 6XX XXX XXX"
-            [ngModel]="createFormData().phoneNumber"
-            (ngModelChange)="updateCreateField('phoneNumber', $event)"
-            name="phoneNumber"
-            required />
-        </div>
-
-        <div class="form-actions">
-          <button
-            type="button"
-            class="btn btn-outline btn-full"
-            (click)="closeDrawers()">
-            Annuler
-          </button>
-          <button
-            type="submit"
-            class="btn btn-primary btn-full"
-            [disabled]="isSubmitting()">
-            @if (isSubmitting()) {
-              Creation en cours...
-            } @else {
-              Creer l'administrateur
-            }
-          </button>
-        </div>
-      </form>
-    </div>
-  </aside>
+<!-- Confirmation des actions sensibles -->
+@if (pendingAction(); as action) {
+  <bo-confirm
+    [title]="action.kind === 'delete' ? 'Supprimer cet administrateur ?' : 'Désactiver cet administrateur ?'"
+    [message]="action.kind === 'delete'
+      ? action.admin.name + ' sera supprimé définitivement. Cette action est irréversible.'
+      : action.admin.name + ' ne pourra plus se connecter jusqu\'à sa réactivation.'"
+    [confirmLabel]="action.kind === 'delete' ? 'Supprimer' : 'Désactiver'"
+    [tone]="action.kind === 'delete' ? 'danger' : 'warning'"
+    [busy]="busyId() === action.admin.id"
+    (confirmed)="confirmPendingAction()" (cancelled)="pendingAction.set(null)" />
 }

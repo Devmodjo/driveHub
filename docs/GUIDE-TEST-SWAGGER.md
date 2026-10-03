@@ -6,7 +6,7 @@ réserve une leçon et paie. À chaque étape : l'endpoint, le corps JSON à col
 vérifier, et l'email envoyé.
 
 > Le script `scripts/e2e-multitenant.sh` fait exactement le même parcours automatiquement
-> (52 vérifications). Ce guide est sa version « à la main ».
+> (55 vérifications). Ce guide est sa version « à la main ».
 
 ---
 
@@ -57,12 +57,15 @@ ou en SQL : `SELECT schema_name FROM public.driving_school_registry;` (exemple :
   "gender": "FEMALE",
   "nationality": "Camerounaise",
   "residenceCity": "Douala",
-  "dateOfBirth": "1990-05-10"
+  "dateOfBirth": "1990-05-10",
+  "acceptPrivacyPolicy": true
 }
 ```
 
 - Attendu : **201**.
 - Email : **« Vérifiez votre adresse email »** au moniteur.
+- `acceptPrivacyPolicy` est obligatoire : sans lui (ou à `false`), réponse **400** avec
+  `fieldErrors.acceptPrivacyPolicy`.
 
 ## Étape 2 — Le moniteur vérifie son email
 
@@ -100,7 +103,10 @@ ou en SQL : `SELECT schema_name FROM public.driving_school_registry;` (exemple :
 }
 ```
 
-- Attendu : **201**, « Auto ecole enregistrée en attente de validation ».
+- Attendu : **201**, « Demande enregistrée... votre demande sera traitée sous 48 à 72 heures ».
+- Email : **« Demande reçue »** au moniteur (accusé de réception avec le délai).
+- Un champ invalide (ex. présentation de plus de 2000 caractères) donne **400** avec le message du champ
+  dans `fieldErrors`.
 - Contrôle : **`GET /api/driving-schools/me`** renvoie la demande avec `"drivingSchoolStatus": "PENDING"`.
 
 ## Étape 5 — Vous (propriétaire du SaaS) validez l'auto-école
@@ -236,6 +242,21 @@ Avec `PAYMENT_PROVIDER=SIMULATED` (par défaut), aucun argent ne circule.
 Côté moniteur :
 - **`GET /api/payments/summary`** : total encaissé.
 - Paiement en espèces : `POST /api/payments` avec `"studentsId"` et `"method": "CASH"`.
+
+## Étape 14 bis — Vous écrivez aux utilisateurs (back-office)
+
+Avec le jeton ROOT (ou SUPER_ADMIN) :
+
+1. **`GET /api/platform/emails/audience-count?audience=ALL_STUDENTS`** : nombre de destinataires.
+2. **`POST /api/platform/emails`** :
+
+   ```json
+   { "audience": "SCHOOL_MEMBERS", "schoolId": "id-du-registre", "subject": "Information", "message": "Bonjour,\nLes cours reprennent lundi." }
+   ```
+
+   `audience` : `ALL_SCHOOLS`, `ALL_MONITORS`, `ALL_STUDENTS`, `SCHOOL_MEMBERS` (avec `schoolId`) ou
+   `INDIVIDUAL` (avec `"recipients": ["a@b.cm", ...]`, 50 au maximum). Attendu : **202**, `recipientCount`.
+3. **`GET /api/platform/emails`** : historique des envois.
 
 ## Étape 15 — Déconnexion
 

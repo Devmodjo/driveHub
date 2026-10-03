@@ -38,6 +38,12 @@ export const BACK_OFFICE_ROUTES: Routes = [
         path: 'pending',
         loadComponent: () => import('./pages/pending/pending.component').then((m) => m.PendingComponent),
       },
+      {
+        // Envoi d'emails aux auto-écoles, moniteurs et élèves + historique des envois
+        path: 'emails',
+        title: 'Back-office - Emails',
+        loadComponent: () => import('./pages/emails/emails.component').then((m) => m.EmailsComponent),
+      },
     ],
   },
 ];

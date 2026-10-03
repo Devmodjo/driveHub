@@ -1,5 +1,9 @@
 package cm.mvtech.drivehub.platform.admin.services.serviceImpl;
 
+import java.util.List;
+import cm.mvtech.drivehub.modules.document.domain.model.DocumentFile;
+import cm.mvtech.drivehub.modules.document.application.dto.DocumentResponse;
+import cm.mvtech.drivehub.modules.document.domain.services.DocumentService;
 import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
 import cm.mvtech.drivehub.modules.monitor.domain.model.Monitor;
 import cm.mvtech.drivehub.modules.drivingschool.domain.model.SchoolJoinRequest;
@@ -47,6 +51,7 @@ public class AdminJoinApprovalService {
     private final DrivingSchoolRegistryRepository drivingSchoolRegistryRepository;
     private final TenantExecutor tenantExecutor;
     private final EmailService emailService;
+    private final DocumentService documentService;
 
     /**
      * Le moniteur responsable d'une auto-école accepte une demande d'adhésion.
@@ -109,6 +114,9 @@ public class AdminJoinApprovalService {
         user.setProfileStatus(ProfileStatus.ACTIVE);
         userRepository.save(user);
 
+        // Le responsable a examiné les justificatifs du demandeur avant d'accepter
+        documentService.markPendingAsVerified(user, approver.getEmail());
+
         // Clôture de la demande
         request.setJoinStatus(JoinStatus.APPROVED);
         joinRequestRepository.save(request);
@@ -126,7 +134,10 @@ public class AdminJoinApprovalService {
         }
         DrivingSchoolRegistry registry = drivingSchoolRegistryRepository.findById(request.getDrivingSchoolId())
                 .orElseThrow(() -> new IllegalStateException("Auto-école registry introuvable"));
-        if (!registry.getAdmin().getEmail().equals(approverEmail)) {
+        // Même contrôle que approve() : par identifiant (la comparaison d'emails était sensible à la casse)
+        User approver = userRepository.findByEmail(approverEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable"));
+        if (!registry.getAdmin().getId().equals(approver.getId())) {
             throw new AccessDeniedException("Vous ne pouvez traiter que les demandes de votre auto-école");
         }
         request.setJoinStatus(JoinStatus.REJECTED);
@@ -134,6 +145,37 @@ public class AdminJoinApprovalService {
 
         User user = request.getUser();
         emailService.sendJoinRejectedEmail(user.getEmail(), user.getFirstname(), registry.getSchoolName());
+    }
+
+    /**
+     * Justificatifs du demandeur, visibles par le responsable de l'auto-école visée (et lui seul),
+     * pour décider d'accepter ou non la demande d'adhésion.
+     */
+    @Transactional(readOnly = true)
+    public List<DocumentResponse> requestDocuments(UUID requestId, String ownerEmail) {
+        return documentService.list(requestOwnedBy(requestId, ownerEmail).getUser());
+    }
+
+    /** Un justificatif du demandeur (consultation journalisée, contexte JOIN_REQUEST). */
+    @Transactional
+    public DocumentFile requestDocumentFile(UUID requestId, UUID documentId, String ownerEmail) {
+        SchoolJoinRequest request = requestOwnedBy(requestId, ownerEmail);
+        return documentService.read(documentService.getOwnedBy(request.getUser(), documentId),
+                ownerEmail, "SCHOOL_OWNER", "JOIN_REQUEST");
+    }
+
+    /** Demande d'adhésion adressée à l'auto-école dont {@code ownerEmail} est le responsable ; 403 sinon. */
+    private SchoolJoinRequest requestOwnedBy(UUID requestId, String ownerEmail) {
+        SchoolJoinRequest request = joinRequestRepository.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Demande introuvable"));
+        DrivingSchoolRegistry registry = drivingSchoolRegistryRepository.findById(request.getDrivingSchoolId())
+                .orElseThrow(() -> new IllegalStateException("Auto-école registry introuvable"));
+        User owner = userRepository.findByEmail(ownerEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable"));
+        if (!registry.getAdmin().getId().equals(owner.getId())) {
+            throw new AccessDeniedException("Vous ne pouvez consulter que les demandes adressées à votre auto-école");
+        }
+        return request;
     }
 
     private static Student copyStudent(Student source, User user) {

@@ -1,6 +1,7 @@
 package cm.mvtech.drivehub.platform.admin.controllers;
 
 
+import cm.mvtech.drivehub.modules.messageapi.ValidationDelay;
 import cm.mvtech.drivehub.modules.auth.application.dto.ForgotPasswordRequest;
 import cm.mvtech.drivehub.modules.auth.application.dto.ResetPasswordRequest;
 import cm.mvtech.drivehub.modules.auth.domain.services.TokenRevocationService;
@@ -91,7 +92,7 @@ public class PlatformAdminController {
 
         adminerService.adminerRegistry(adminCreateRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse(true, "Inscription réussie, en attente de validation par l'Administrateur ROOT"));
+                .body(new ApiResponse(true, "Inscription réussie. Votre compte sera examiné par l'administrateur principal sous " + ValidationDelay.TEXT + "."));
     }
 
     /**
@@ -304,7 +305,7 @@ public class PlatformAdminController {
             @RequestParam String token) {
         adminerService.verifyAdminEmail(token);
         return ResponseEntity.ok(new ApiResponse(true,
-                "Email vérifié. Votre compte est en attente de validation."));
+                "Email vérifié. Votre compte sera validé par l'administrateur principal sous " + ValidationDelay.TEXT + "."));
     }
 
     @Operation(summary = "Renvoyer l'email de vérification admin")

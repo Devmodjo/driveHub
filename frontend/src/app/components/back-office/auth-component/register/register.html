@@ -1,148 +1,97 @@
-<div class="bo-container">
-  <div class="bo-panel">
-    <div class="bo-header">
-      <h1 class="bo-title">DriveHub Administration</h1>
-      <p class="bo-subtitle">Création d'un compte Back-Office</p>
+<bo-auth-shell title="Demande d'accès" subtitle="Créez votre compte : il sera actif après validation par un administrateur." [wide]="true">
+  <!--
+    [formGroup] relie ce formulaire à l'objet registerForm du composant ;
+    (ngSubmit) appelle onSubmit() quand on valide.
+    Mobile : une colonne. À partir de sm: : deux colonnes pour les champs courts.
+  -->
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5" novalidate>
+
+    @if (errorMessage()) {
+      <div class="alert-error sm:col-span-2 flex items-start gap-2" role="alert">
+        <svg [lucideIcon]="icons.TriangleAlert" [size]="18" class="shrink-0 mt-0.5" />
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <div>
+      <label class="field-label" for="name">Nom complet</label>
+      <input id="name" class="field-input" type="text" formControlName="name" autocomplete="name" placeholder="Jean Dupont" />
+      @if (serverErrors()['name']) { <p class="bo-field-error">{{ serverErrors()['name'] }}</p> }
+      @else if (showError('name')) { <p class="bo-field-error">Le nom est requis.</p> }
     </div>
 
-    <!-- 
-      On garde la même logique Angular : 
-      [formGroup] connecte ce formulaire HTML à l'objet 'registerForm' dans le TS.
-      (ngSubmit) déclenche la méthode 'onSubmit()' quand on clique sur le bouton de validation.
-    -->
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="bo-form" novalidate>
+    <div>
+      <label class="field-label" for="email">Adresse e-mail</label>
+      <input id="email" class="field-input" type="email" formControlName="email" autocomplete="email" placeholder="nom@drivehub.cm" />
+      @if (serverErrors()['email']) { <p class="bo-field-error">{{ serverErrors()['email'] }}</p> }
+      @else if (showError('email')) { <p class="bo-field-error">Saisissez une adresse e-mail valide.</p> }
+    </div>
 
-      <div class="form-group">
-        <label for="name">Nom complet</label>
-        <input 
-          type="text" 
-          id="name" 
-          formControlName="name" 
-          placeholder="Entrez votre nom"
-        >
-        <!-- @if est la structure de contrôle Angular 17+ pour afficher un bloc sous condition -->
-        @if (registerForm.get('name')?.invalid && registerForm.get('name')?.touched) {
-          <span class="error-msg">Ce champ est requis.</span>
-        }
+    <div>
+      <label class="field-label" for="role">Rôle demandé</label>
+      <select id="role" class="field-input" formControlName="role">
+        <option value="" disabled>Sélectionnez un rôle</option>
+        <option [value]="role.REVIEWER">Reviewer (validation des auto-écoles)</option>
+        <option [value]="role.SUPER_ADMIN">Super Admin (accès étendu)</option>
+      </select>
+      @if (serverErrors()['role']) { <p class="bo-field-error">{{ serverErrors()['role'] }}</p> }
+      @else if (showError('role')) { <p class="bo-field-error">Le rôle est requis.</p> }
+    </div>
+
+    <div>
+      <label class="field-label" for="phoneNumber">Téléphone</label>
+      <input id="phoneNumber" class="field-input" type="tel" inputmode="numeric" formControlName="phoneNumber"
+             autocomplete="tel" placeholder="6XXXXXXXX" />
+      @if (serverErrors()['phoneNumber']) { <p class="bo-field-error">{{ serverErrors()['phoneNumber'] }}</p> }
+      @else if (registerForm.controls.phoneNumber.hasError('pattern') && registerForm.controls.phoneNumber.touched) {
+        <p class="bo-field-error">Uniquement des chiffres, sans espace.</p>
+      } @else if (showError('phoneNumber')) { <p class="bo-field-error">Le numéro de téléphone est requis.</p> }
+    </div>
+
+    <div class="sm:col-span-2">
+      <label class="field-label" for="residence">Résidence</label>
+      <input id="residence" class="field-input" type="text" formControlName="residence" placeholder="Douala, Cameroun" />
+      @if (serverErrors()['residence']) { <p class="bo-field-error">{{ serverErrors()['residence'] }}</p> }
+      @else if (showError('residence')) { <p class="bo-field-error">La résidence est requise.</p> }
+    </div>
+
+    <div class="sm:col-span-2">
+      <label class="field-label" for="reason">Raison de la demande</label>
+      <textarea id="reason" class="field-input resize-y min-h-28" rows="4" formControlName="reason"
+                placeholder="Expliquez pourquoi vous avez besoin d'un accès au back-office"></textarea>
+      @if (serverErrors()['reason']) { <p class="bo-field-error">{{ serverErrors()['reason'] }}</p> }
+      @else if (showError('reason')) { <p class="bo-field-error">La raison est requise.</p> }
+    </div>
+
+    <div class="sm:col-span-2">
+      <label class="field-label" for="password">Mot de passe provisoire</label>
+      <input id="password" class="field-input" type="password" formControlName="password" autocomplete="new-password" />
+      @if (serverErrors()['password']) { <p class="bo-field-error">{{ serverErrors()['password'] }}</p> }
+      @else if (registerForm.controls.password.hasError('minlength') && registerForm.controls.password.touched) {
+        <p class="bo-field-error">Au moins 8 caractères.</p>
+      } @else if (showError('password')) { <p class="bo-field-error">Le mot de passe est requis.</p> }
+      <div class="mt-3 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-800 dark:text-amber-200">
+        <svg [lucideIcon]="icons.TriangleAlert" [size]="16" class="shrink-0 mt-0.5" />
+        <p>Notez ce mot de passe : il <strong>ne pourra plus être récupéré</strong> avant la validation de votre compte par un administrateur.</p>
       </div>
+    </div>
 
-      <div class="form-group">
-        <label for="email">Adresse e-mail</label>
-        <input 
-          type="email" 
-          id="email" 
-          formControlName="email" 
-          placeholder="nom@entreprise.com"
-        >
-        @if (registerForm.get('email')?.invalid && registerForm.get('email')?.touched) {
-          <span class="error-msg">Un e-mail valide est requis.</span>
-        }
-      </div>
+    <div class="sm:col-span-2 space-y-3">
+      <button type="submit" class="btn-primary w-full min-h-12" [disabled]="isLoading()">
+        {{ isLoading() ? 'Envoi de la demande...' : 'Envoyer la demande' }}
+      </button>
+      <p class="text-sm text-center text-black/50 dark:text-white/50">
+        Vous avez déjà un compte ?
+        <a routerLink="/backoffice/login" class="inline-block py-2 text-[#0070f3] font-semibold">Se connecter</a>
+      </p>
+    </div>
+  </form>
+</bo-auth-shell>
 
-      <div class="form-group">
-        <label for="role">Rôle assigné</label>
-        <select id="role" formControlName="role">
-          <option value="" disabled selected>-- Sélectionnez un rôle --</option>
-          <option [value]="role.REVIEWER">Reviewer (Lecture seule)</option>
-          <option [value]="role.SUPER_ADMIN">Super Admin (Accès total)</option>
-        </select>
-        @if (registerForm.get('role')?.invalid && registerForm.get('role')?.touched) {
-          <span class="error-msg">Le rôle est requis.</span>
-        }
-      </div>
-
-      <div class="form-group">
-        <label for="phoneNumber">Numéro de téléphone</label>
-        <input 
-          type="tel" 
-          inputmode="numeric" 
-          pattern="[0-9]*" 
-          id="phoneNumber" 
-          formControlName="phoneNumber" 
-          placeholder="Ex: 6XXXXXXXX"
-        >
-        @if (registerForm.get('phoneNumber')?.hasError('required') && registerForm.get('phoneNumber')?.touched) {
-          <span class="error-msg">Un numéro de téléphone est requis.</span>
-        }
-        @if (registerForm.get('phoneNumber')?.hasError('pattern') && registerForm.get('phoneNumber')?.touched) {
-          <span class="error-msg">Ce champ ne doit contenir que des chiffres.</span>
-        }
-      </div>
-
-      <div class="form-group">
-        <label for="residence">Résidence</label>
-        <input 
-          type="text" 
-          id="residence" 
-          formControlName="residence" 
-          placeholder="Ville ou pays de résidence"
-        >
-        @if (registerForm.get('residence')?.invalid && registerForm.get('residence')?.touched) {
-          <span class="error-msg">La résidence est requise.</span>
-        }
-      </div>
-
-      <div class="form-group">
-        <label for="reason">Raison de la demande</label>
-        <textarea 
-          id="reason"
-          formControlName="reason"
-          placeholder="raison de votre demande"
-          rows="4"
-          cols="50"
-          class="resize-none border border-gray-300 rounded-md p-2"
-        ></textarea>
-        @if (registerForm.get('reason')?.invalid && registerForm.get('reason')?.touched) {
-          <span class="error-msg">La raison est requise.</span>
-        }
-      </div>
-
-      <div class="form-group">
-        <label for="password">Mot de passe provisoire</label>
-        <input 
-          type="password" 
-          id="password" 
-          formControlName="password" 
-        >
-        @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
-          <span class="error-msg">Un mot de passe est requis.</span>
-        }
-        <div class="mt-2 p-3 bg-amber-50 border-l-4 border-amber-500 text-amber-800 text-xs rounded shadow-sm">
-          <strong>⚠️ Attention :</strong> Veuillez noter ce mot de passe quelque part. Après avoir quitté cette page, <strong>il ne pourra plus être récupéré</strong> avant la validation définitive de votre compte par un administrateur.
-        </div>
-      </div>
-
-      <div class="form-actions">
-        <!-- 
-          [disabled] désactive le bouton tant que le formulaire est invalide
-          (= tant que Validators.required d'un champ n'est pas rempli)
-        -->
-
-        <!-- Bannière d'erreur API : affichée seulement si errorMessage() n'est pas vide -->
-        @if (errorMessage()) {
-          <div class="error-banner">
-            ⚠️ {{ errorMessage() }}
-          </div>
-        }
-
-        <button type="submit" [disabled]="registerForm.invalid" class="btn-primary">
-          Enregistrer l'utilisateur
-        </button>
-
-        vous avez deja un compte ? <a class="auth-link text-blue-600 " routerLink="/backoffice/login" routerLinkActive="active">connectez-vous !</a>
-      </div>
-
-    </form>
-  </div>
-</div>
-
-
-@if(handleModal() == true) {
-  <register-modal 
-    [title]="'Enregistrement réussi !'"  
-    [message]="'Votre requête sera validée dans les prochaines 24-48h. Vous serez notifié par e-mail de la décision.'" 
-    [password]="registerForm.value.password || undefined"
+@if (isSend()) {
+  <register-modal
+    [title]="'Demande envoyée'"
+    [message]="'Votre demande sera examinée sous 24 à 48 h. Vous serez prévenu par e-mail de la décision.'"
+    [password]="registerForm.controls.password.value || undefined"
   />
 }
-
-<router-outlet/>

@@ -29,4 +29,8 @@ public interface ReservationsRepository extends JpaRepository<Reservation, UUID>
     /** Conflit de planning : le véhicule est-il déjà réservé sur cette plage ? */
     boolean existsByVehicle_IdAndDateTimeBetweenAndReservationStatusNot(
             UUID vehicleId, LocalDateTime from, LocalDateTime to, ReservationStatus excluded);
+
+    /** Un élève ne peut pas avoir deux créneaux qui se chevauchent. */
+    boolean existsByStudent_IdAndDateTimeBetweenAndReservationStatusNot(
+            UUID studentId, LocalDateTime from, LocalDateTime to, ReservationStatus excluded);
 }

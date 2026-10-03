@@ -4,7 +4,8 @@ import { LandingComponent } from './pages/landing/landing.component';
 
 /**
  * Site public.
- *  - Pages avec la barre de navigation et le pied de page de la vitrine : accueil, catalogue.
+ *  - Pages avec la barre de navigation et le pied de page de la vitrine : accueil, catalogue,
+ *    politique de confidentialité.
  *  - Pages d'authentification en plein écran (écran divisé, voir AuthShellComponent) :
  *    connexion, inscription, mot de passe, vérification de l'email.
  * Toutes les pages, sauf l'accueil, ne sont téléchargées qu'à la première visite (loadComponent).
@@ -15,6 +16,10 @@ export const VITRINE_ROUTES: Routes = [
     component: VitrineLayoutComponent,
     children: [
       { path: '', component: LandingComponent, title: 'DriveHub - Gestion d\'auto-école' },
+      {
+        path: 'confidentialite', title: 'Politique de confidentialité - DriveHub',
+        loadComponent: () => import('./pages/privacy/privacy.component').then((m) => m.PrivacyComponent),
+      },
       {
         path: 'auto-ecoles', title: 'Trouver une auto-école - DriveHub',
         loadComponent: () => import('./pages/schools/schools.component').then((m) => m.SchoolsComponent),
@@ -37,6 +42,10 @@ export const VITRINE_ROUTES: Routes = [
   {
     path: 'verify-email', title: 'Vérification de l\'email - DriveHub',
     loadComponent: () => import('./pages/auth/verify-email.component').then((m) => m.VerifyEmailComponent),
+  },
+  {
+    path: 'invitation', title: 'Invitation - DriveHub',
+    loadComponent: () => import('./pages/auth/accept-invitation.component').then((m) => m.AcceptInvitationComponent),
   },
   {
     path: 'reset-password', title: 'Nouveau mot de passe - DriveHub',

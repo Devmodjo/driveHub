@@ -11,3 +11,6 @@ export const API_URL = environment.apiUrl;
 /** Back-office : API des administrateurs de la plateforme. */
 export const BASE_URL = `${environment.apiUrl}platform/`;
 export const SCHOOL_URL = `${environment.apiUrl}driving-schools/`;
+
+/** Délai de validation annoncé par l'équipe DriveHub (même valeur que ValidationDelay côté backend). */
+export const VALIDATION_DELAY = '48 à 72 heures';

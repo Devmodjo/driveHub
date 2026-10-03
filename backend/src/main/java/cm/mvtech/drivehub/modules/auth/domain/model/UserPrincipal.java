@@ -55,12 +55,14 @@ public class UserPrincipal implements UserDetails {
                 user.getPassword(),
                 user.getRoles(),
                 user.getProfileStatus(),
-                true,
-                user.getCreatedAt(),
-                user.getFullProfile(),
-                true,
-                true,
-                true,
+                // Correction : arguments dans l'ordre des champs (fullProfile, createdAt, enabled).
+                // Avant, fullProfile valait toujours true et enabled reprenait fullProfile (false par défaut).
+                Boolean.TRUE.equals(user.getFullProfile()),   // fullProfile
+                user.getCreatedAt(),                          // createdAt
+                true,                                         // enabled
+                true,                                         // accountNonExpired
+                true,                                         // accountNonLocked
+                true,                                         // credentialsNonExpired
                 grantedAuthorities
         );
     }

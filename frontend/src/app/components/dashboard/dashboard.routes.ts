@@ -5,7 +5,7 @@ import { monitorGuard, sessionGuard, tenantGuard } from '../../guards/session.gu
  * Espace des moniteurs et des élèves (/dashboard).
  *  - /dashboard/bienvenue : tant que l'utilisateur n'a pas d'auto-école (pas de tenant dans le jeton) ;
  *  - les autres pages lisent le schéma de l'auto-école (tenantGuard) ;
- *  - élèves, demandes et véhicules sont réservés aux moniteurs (monitorGuard).
+ *  - élèves, moniteurs, demandes et véhicules sont réservés aux moniteurs (monitorGuard).
  */
 export const DASHBOARD_ROUTES: Routes = [
   {
@@ -49,6 +49,10 @@ export const DASHBOARD_ROUTES: Routes = [
           {
             path: 'demandes', title: 'Demandes d\'adhésion - DriveHub', canActivate: [monitorGuard],
             loadComponent: () => import('./pages/join-requests/join-requests.component').then((m) => m.JoinRequestsComponent),
+          },
+          {
+            path: 'moniteurs', title: 'Moniteurs - DriveHub', canActivate: [monitorGuard],
+            loadComponent: () => import('./pages/monitors/monitors.component').then((m) => m.MonitorsComponent),
           },
           {
             path: 'vehicules', title: 'Véhicules - DriveHub', canActivate: [monitorGuard],

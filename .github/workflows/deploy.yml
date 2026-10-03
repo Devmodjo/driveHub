@@ -1,0 +1,77 @@
+# =====================================================================
+#  Déploiement continu (CD) du backend.
+#
+#  Quand la branche de production reçoit un push (fusion d'une pull request) :
+#   1. la CI est relancée (tests) ;
+#   2. si elle passe, Render est prévenu (« deploy hook ») : il reconstruit le backend à partir du
+#      Dockerfile et le met en ligne. Sans tests verts, rien n'est déployé ;
+#   3. en parallèle, l'image Docker est publiée sur GitHub Container Registry
+#      (ghcr.io/<propriétaire>/drivehub-api:latest), utile pour un serveur VPS avec docker compose.
+#
+#  Le frontend n'est pas déployé ici : Vercel le redéploie tout seul à chaque push (intégration Git).
+#
+#  Branche de production : Develop (branche par défaut du dépôt). Pour publier depuis "main" plus tard,
+#  remplacez Develop par main ci-dessous et dans les réglages Vercel / Render.
+#
+#  Secret à créer (Settings > Secrets and variables > Actions) :
+#   RENDER_DEPLOY_HOOK_URL : Render > service drivehub-api > Settings > Deploy Hook (facultatif :
+#   sans lui, l'image est publiée mais aucun redéploiement n'est demandé).
+# =====================================================================
+name: Deploy
+
+on:
+  push:
+    branches: [Develop]
+  workflow_dispatch:   # bouton « Run workflow » dans l'onglet Actions
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    uses: ./.github/workflows/ci.yml
+
+  image:
+    name: Image Docker du backend
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Nom de l'image (en minuscules, exigé par le registre)
+        id: name
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/drivehub-api" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: true
+          tags: |
+            ${{ steps.name.outputs.image }}:latest
+            ${{ steps.name.outputs.image }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  render:
+    name: Redéploiement sur Render
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Appeler le deploy hook
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "Secret RENDER_DEPLOY_HOOK_URL absent : image publiée, pas de redéploiement demandé."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK" > /dev/null
+          echo "Redéploiement demandé à Render."

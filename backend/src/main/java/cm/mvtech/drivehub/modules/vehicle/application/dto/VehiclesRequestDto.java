@@ -10,6 +10,7 @@ public record VehiclesRequestDto(
         @NotBlank(message = "l'immatriculation du vehicule est obligatoire")
         @Size(max = 20) String matriculation,
         @NotBlank(message = "le modele du vehicule est obligatoire")
+        @Size(max = 100, message = "Le modèle du véhicule ne doit pas dépasser 100 caractères")
         String model,
         @NotNull(message = "l'état du vehicule est obligatoire")
         State state

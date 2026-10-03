@@ -1,11 +1,17 @@
 package cm.mvtech.drivehub.modules.auth.domain.services;
 
+import cm.mvtech.drivehub.modules.auth.domain.model.EmailContent;
+import cm.mvtech.drivehub.modules.auth.domain.model.MailRecipient;
+import cm.mvtech.drivehub.modules.messageapi.ValidationDelay;
 import jakarta.mail.MessagingException;
+import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -13,14 +19,34 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.io.UnsupportedEncodingException;
+import java.time.Year;
+import java.util.List;
 import java.util.UUID;
 
-
+/**
+ * Envoi de tous les emails de DriveHub.
+ *
+ * <h2>Fonctionnement</h2>
+ * Chaque méthode publique décrit le CONTENU de l'email ({@link EmailContent}) ; la mise en forme est
+ * commune ({@code templates/emails/layout.html}, avec le logo DriveHub). Les envois sont asynchrones
+ * (@Async) et une erreur d'envoi est seulement journalisée : elle n'annule jamais l'action métier.
+ *
+ * <h2>Pour ne pas finir dans les spams</h2>
+ * <ul>
+ *   <li>chaque email contient une version HTML ET une version texte ;</li>
+ *   <li>l'expéditeur (MAIL_FROM) est une adresse de NOTRE domaine, et son Message-ID aussi ;</li>
+ *   <li>objets sans emoji ni majuscules, un seul lien d'action, un pied de page qui dit pourquoi on écrit ;</li>
+ *   <li>les annonces groupées portent l'en-tête List-Unsubscribe ;</li>
+ *   <li>le reste se règle dans le DNS du domaine (SPF, DKIM, DMARC) : voir docs/EMAILS-DELIVRABILITE.md.</li>
+ * </ul>
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class EmailService {
 
+    private static final String LOGO_CID = "logo";
+    private static final ClassPathResource LOGO = new ClassPathResource("mail/logo-drivehub.png");
 
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
@@ -31,164 +57,153 @@ public class EmailService {
     @Value("${app.mail.from-name}")
     private String fromName;
 
+    /** Adresse de réponse (facultative) : une boîte lue par l'équipe, différente de l'expéditeur no-reply. */
+    @Value("${app.mail.reply-to:}")
+    private String replyTo;
+
+    @Value("${app.mail.support-email:support@drivehub.cm}")
+    private String supportEmail;
+
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
+    // =====================================================================
+    //  Compte utilisateur (élève, moniteur)
+    // =====================================================================
+
     @Async
-    public void sendVerificationEmail(String toEmail, String name,
-                                      String verificationUrl) {
-        try {
-            Context context = new Context();
-            context.setVariable("name", name);
-            context.setVariable("verificationUrl", verificationUrl);
-
-            String html = templateEngine.process(
-                    "emails/verify-email", context);
-
-            sendHtmlEmail(toEmail, "Vérifiez votre adresse email — DriveHub", html);
-            log.info("Email de vérification envoyé à {}", toEmail);
-
-        } catch (Exception e) {
-            log.error("Échec envoi email vérification à {} : {}", toEmail, e.getMessage());
-            // On ne lève pas l'exception — l'inscription ne doit pas échouer
-        }
+    public void sendVerificationEmail(String toEmail, String name, String verificationUrl) {
+        send(toEmail, EmailContent.builder("Confirmez votre adresse email", "Confirmez votre adresse email")
+                .preheader("Un clic pour activer votre compte DriveHub.")
+                .greeting(name)
+                .paragraph("Merci de vous être inscrit sur DriveHub. Pour activer votre compte, confirmez "
+                        + "votre adresse email avec le bouton ci-dessous.")
+                .action("Confirmer mon adresse", verificationUrl)
+                .note("Ce lien est valable 24 heures. Passé ce délai, demandez-en un nouveau depuis la page de connexion.")
+                .note("Vous n'avez pas créé de compte ? Ignorez cet email : votre adresse ne sera pas utilisée.")
+                .reason("Vous recevez cet email car une inscription a été faite avec cette adresse sur DriveHub.")
+                .build());
     }
 
     @Async
-    public void sendPasswordResetEmail(String toEmail, String name,
-                                       String resetUrl) {
-        try {
-            Context context = new Context();
-            context.setVariable("name", name);
-            context.setVariable("resetUrl", resetUrl);
+    public void sendPasswordResetEmail(String toEmail, String name, String resetUrl) {
+        send(toEmail, EmailContent.builder("Réinitialisation de votre mot de passe", "Choisissez un nouveau mot de passe")
+                .preheader("Lien valable 1 heure.")
+                .greeting(name)
+                .paragraph("Nous avons reçu une demande de réinitialisation du mot de passe de votre compte DriveHub. "
+                        + "Si elle vient de vous, choisissez un nouveau mot de passe avec le bouton ci-dessous.")
+                .detail("Compte", toEmail)
+                .detail("Validité du lien", "1 heure")
+                .action("Choisir un nouveau mot de passe", resetUrl)
+                .note("Vous n'avez rien demandé ? Ignorez cet email : votre mot de passe actuel reste valable.")
+                .note("Conseil : au moins 8 caractères, et un mot de passe que vous n'utilisez nulle part ailleurs.")
+                .reason("Vous recevez cet email car une réinitialisation de mot de passe a été demandée pour cette adresse.")
+                .build());
+    }
 
-            String html = templateEngine.process(
-                    "emails/reset-password", context);
+    // =====================================================================
+    //  Administrateurs de la plateforme (back-office)
+    // =====================================================================
 
-            sendHtmlEmail(toEmail, "Réinitialisation de mot de passe — DriveHub", html);
-            log.info("Email reset password envoyé à {}", toEmail);
-
-        } catch (Exception e) {
-            log.error("Échec envoi email reset à {} : {}", toEmail, e.getMessage());
+    @Async
+    public void sendAdminWelcomeMail(String toEmail, String name, String status, String role, String temporaryPassword) {
+        boolean active = "ACTIVE".equals(status);
+        EmailContent.Builder content = EmailContent.builder("Bienvenue sur le back-office DriveHub",
+                        active ? "Votre compte administrateur est prêt" : "Votre demande d'accès est enregistrée")
+                .greeting(name)
+                .detail("Adresse email", toEmail)
+                .detail("Rôle", role)
+                .reason("Vous recevez cet email car un compte administrateur DriveHub a été créé avec cette adresse.");
+        if (active) {
+            content.paragraph("Votre compte administrateur DriveHub a été créé et activé. Vous pouvez vous connecter dès maintenant.");
+            if (temporaryPassword != null) {
+                content.highlight("Mot de passe temporaire", temporaryPassword)
+                        .note("Changez ce mot de passe temporaire dès votre première connexion.");
+            }
+            content.action("Accéder au back-office", frontendUrl + "/backoffice/login");
+        } else {
+            content.paragraph("Nous avons bien reçu votre demande d'accès au back-office. Elle sera examinée par "
+                    + "l'équipe DriveHub : vous recevrez un email dès qu'une décision sera prise.");
         }
+        send(toEmail, content.note("Vous n'êtes pas à l'origine de cette demande ? Écrivez-nous à " + supportEmail + ".")
+                .build());
     }
 
     @Async
-    public void sendAdminWelcomeMail(String toEmail,
-                                      String name,
-                                      String status,
-                                      String role,
-                                      String temporaryPassword) {
-        try {
-            Context context = new Context();
-            context.setVariable("name", name);
-            context.setVariable("email", toEmail);
-            context.setVariable("status", status);
-            context.setVariable("role", role);
-            // null si inscription normale, mot de passe si créé par ROOT
-            context.setVariable("temporaryPassword", temporaryPassword);
-
-            String html = templateEngine.process("emails/admin-welcome", context);
-            sendHtmlEmail(toEmail, "Bienvenue sur DriveHub — Votre compte administrateur", html);
-            log.info("Email de bienvenue envoyé à {}", toEmail);
-        } catch (Exception e) {
-            log.error("Échec envoi email bienvenue à {} : {}", toEmail, e.getMessage());
-        }
+    public void sendNewAdminRegistrationNotification(String rootEmail, String candidateName, String candidateEmail,
+                                                     String role, String residence, String phone, String reason,
+                                                     String registeredAt, UUID adminId) {
+        send(rootEmail, EmailContent.builder("Nouvelle demande d'accès au back-office : " + candidateName,
+                        "Nouvelle demande d'accès à examiner")
+                .paragraph("Une demande d'accès au back-office vient d'être confirmée par email. Le compte reste "
+                        + "inactif tant que vous ne l'avez pas activé.")
+                .detail("Nom", candidateName)
+                .detail("Adresse email", candidateEmail)
+                .detail("Rôle demandé", role)
+                .detail("Résidence", residence)
+                .detail("Téléphone", phone)
+                .detail("Date de la demande", registeredAt)
+                .detail("Motif", reason)
+                .action("Examiner la demande", frontendUrl + "/backoffice/dashboard/admins")
+                .reason("Vous recevez cet email car vous êtes administrateur principal (ROOT) de DriveHub.")
+                .build());
     }
 
     @Async
-    public void sendNewAdminRegistrationNotification(
-            String rootEmail,
-            String candidateName,
-            String candidateEmail,
-            String role,
-            String residence,
-            String phone,
-            String reason,
-            String registeredAt,
-            UUID adminId) {
-        try {
-            Context context = new Context();
-            context.setVariable("name", candidateName);
-            context.setVariable("email", candidateEmail);
-            context.setVariable("role", role);
-            context.setVariable("residence", residence);
-            context.setVariable("phone", phone);
-            context.setVariable("reason", reason);
-            context.setVariable("registeredAt", registeredAt);
-            context.setVariable("activateUrl",
-                    frontendUrl + "/backoffice/dashboard/admins");
-            context.setVariable("backofficeUrl",
-                    frontendUrl + "/backoffice/dashboard/admins");
-
-            String html = templateEngine.process(
-                    "emails/admin-new-registration", context);
-            sendHtmlEmail(rootEmail,
-                    "🔔 Nouvelle demande d'accès back-office — " + candidateName,
-                    html);
-            log.info("Notification ROOT envoyée pour la demande de {}",
-                    candidateEmail);
-        } catch (Exception e) {
-            log.error("Échec notification ROOT : {}", e.getMessage());
-        }
-    }
-
-    @Async
-    public void sendAdminEmailVerification(String toEmail,
-                                           String name,
-                                           String email,
-                                           String role,
-                                           String verificationUrl) {
-        try {
-            Context context = new Context();
-            context.setVariable("name", name);
-            context.setVariable("email", email);
-            context.setVariable("role", role);
-            context.setVariable("verificationUrl", verificationUrl);
-
-            String html = templateEngine.process(
-                    "emails/admin-verify-email", context);
-            sendHtmlEmail(toEmail,
-                    "🔐 Confirmez votre email — DriveHub Back-Office",
-                    html);
-            log.info("Email vérification admin envoyé à {}", toEmail);
-        } catch (Exception e) {
-            log.error("Échec email vérification admin {} : {}",
-                    toEmail, e.getMessage());
-        }
+    public void sendAdminEmailVerification(String toEmail, String name, String email, String role, String verificationUrl) {
+        send(toEmail, EmailContent.builder("Confirmez votre adresse email (back-office DriveHub)",
+                        "Confirmez votre adresse email")
+                .preheader("Première étape de votre demande d'accès au back-office.")
+                .greeting(name)
+                .paragraph("Vous avez demandé un accès au back-office DriveHub. Confirmez d'abord votre adresse email : "
+                        + "votre demande sera ensuite transmise à l'équipe DriveHub, qui l'examinera.")
+                .detail("Nom", name)
+                .detail("Adresse email", email)
+                .detail("Rôle demandé", role)
+                .action("Confirmer mon adresse", verificationUrl)
+                .note("Ce lien est valable 24 heures.")
+                .note("Vous n'avez rien demandé ? Ignorez cet email : aucun accès n'est accordé sans validation manuelle.")
+                .reason("Vous recevez cet email car une demande d'accès administrateur a été faite avec cette adresse.")
+                .build());
     }
 
     @Async
     public void sendAdminActivatedEmail(String toEmail, String name) {
-
-        try {
-            Context context = new Context();
-            context.setVariable("name", name);
-            context.setVariable("email", toEmail);
-
-            String html = templateEngine.process("emails/admin-activated", context);
-            sendHtmlEmail(toEmail, "Bienvenue sur DriveHub — Activation du Compte Admin", html);
-            log.info("Email dd'activation de compte envoyé à {}", toEmail);
-
-        } catch (Exception e) {
-            log.error("Échec envoi email d'activation à {} : {}", toEmail, e.getMessage());
-        }
-
+        send(toEmail, EmailContent.builder("Votre compte administrateur est activé", "Votre compte est activé")
+                .greeting(name)
+                .paragraph("Votre compte administrateur DriveHub vient d'être validé. Connectez-vous avec l'adresse "
+                        + "email et le mot de passe choisis lors de votre inscription.")
+                .action("Accéder au back-office", frontendUrl + "/backoffice/login")
+                .reason("Vous recevez cet email car vous avez demandé un accès au back-office DriveHub.")
+                .build());
     }
 
     // =====================================================================
-    //  Emails du workflow principal (auto-école et adhésion)
-    //  Tous utilisent le même modèle : templates/emails/notification.html
+    //  Auto-école et adhésion
     // =====================================================================
+
+    /** Au moniteur : accusé de réception de sa demande de création d'auto-école. */
+    @Async
+    public void sendSchoolRequestReceivedEmail(String toEmail, String name, String schoolName) {
+        sendNotification(toEmail, name,
+                "Demande reçue : " + schoolName,
+                "Votre demande est bien enregistrée",
+                "Nous avons bien reçu la demande de création de « " + schoolName + " ». "
+                        + "Notre équipe vérifie chaque auto-école avant son ouverture sur DriveHub : "
+                        + "votre demande sera traitée sous " + ValidationDelay.TEXT + ". "
+                        + "Vous recevrez un email dès qu'elle sera validée.",
+                "Suivre ma demande", frontendUrl + "/dashboard/bienvenue");
+    }
 
     /** Au moniteur : sa demande de création d'auto-école est validée par la plateforme. */
     @Async
     public void sendSchoolApprovedEmail(String toEmail, String name, String schoolName) {
         sendNotification(toEmail, name,
-                "Votre auto-école est validée — DriveHub",
+                "Votre auto-école est validée",
                 "Votre auto-école est validée",
                 "Bonne nouvelle : « " + schoolName + " » a été validée par l'équipe DriveHub. "
-                        + "Votre espace de gestion est prêt : élèves, véhicules, réservations, examens et paiements.",
+                        + "Votre espace de gestion est prêt : élèves, véhicules, réservations, examens et paiements. "
+                        + "Votre période d'essai gratuite de 15 jours commence aujourd'hui.",
                 "Accéder à mon espace", frontendUrl + "/dashboard/bienvenue");
     }
 
@@ -196,10 +211,10 @@ public class EmailService {
     @Async
     public void sendSchoolRejectedEmail(String toEmail, String name, String schoolName) {
         sendNotification(toEmail, name,
-                "Votre demande d'auto-école — DriveHub",
+                "Votre demande de création d'auto-école",
                 "Votre demande n'a pas été retenue",
                 "La demande de création de « " + schoolName + " » n'a pas été validée. "
-                        + "Contactez le support DriveHub pour en connaître la raison et la soumettre à nouveau.",
+                        + "Écrivez-nous à " + supportEmail + " pour en connaître la raison et la soumettre à nouveau.",
                 null, null);
     }
 
@@ -207,7 +222,7 @@ public class EmailService {
     @Async
     public void sendJoinRequestReceivedEmail(String toEmail, String name, String applicantName, String schoolName) {
         sendNotification(toEmail, name,
-                "Nouvelle demande d'adhésion — DriveHub",
+                "Nouvelle demande d'adhésion",
                 "Nouvelle demande d'adhésion",
                 applicantName + " souhaite rejoindre « " + schoolName + " ». "
                         + "Acceptez ou refusez sa demande depuis votre espace.",
@@ -218,7 +233,7 @@ public class EmailService {
     @Async
     public void sendJoinApprovedEmail(String toEmail, String name, String schoolName) {
         sendNotification(toEmail, name,
-                "Bienvenue chez " + schoolName + " — DriveHub",
+                "Bienvenue chez " + schoolName,
                 "Votre inscription est acceptée",
                 "« " + schoolName + " » a accepté votre demande. Vous pouvez maintenant réserver vos leçons, "
                         + "suivre vos cours, consulter vos examens et payer vos frais en ligne.",
@@ -229,48 +244,164 @@ public class EmailService {
     @Async
     public void sendJoinRejectedEmail(String toEmail, String name, String schoolName) {
         sendNotification(toEmail, name,
-                "Votre demande d'adhésion — DriveHub",
+                "Votre demande d'adhésion",
                 "Votre demande n'a pas été acceptée",
                 "« " + schoolName + " » n'a pas accepté votre demande. Vous pouvez choisir une autre auto-école "
                         + "dans le catalogue DriveHub.",
                 "Voir les auto-écoles", frontendUrl + "/auto-ecoles");
     }
 
-    /**
-     * Construit et envoie un email à partir du modèle "notification".
-     * Une erreur d'envoi est seulement journalisée : elle ne doit jamais annuler l'action métier
-     * (une auto-école validée reste validée même si le serveur mail est indisponible).
-     *
-     * @param actionLabel texte du bouton (null = pas de bouton)
-     * @param actionUrl   lien du bouton (null = pas de bouton)
-     */
-    private void sendNotification(String toEmail, String name, String subject, String title, String message,
-                                  String actionLabel, String actionUrl) {
-        try {
-            Context context = new Context();
-            context.setVariable("name", name);
-            context.setVariable("title", title);
-            context.setVariable("message", message);
-            context.setVariable("actionLabel", actionLabel);
-            context.setVariable("actionUrl", actionUrl);
+    /** Au titulaire : un de ses justificatifs a été refusé. */
+    @Async
+    public void sendDocumentRejectedEmail(String toEmail, String name, String documentLabel, String reason) {
+        send(toEmail, EmailContent.builder("Un justificatif est à renvoyer", "Un justificatif doit être renvoyé")
+                .greeting(name)
+                .paragraph("Nous n'avons pas pu valider " + documentLabel + ".")
+                .detail("Raison", reason)
+                .paragraph("Envoyez un nouveau fichier depuis votre espace : la vérification reprendra aussitôt.")
+                .action("Envoyer un nouveau fichier", frontendUrl + "/dashboard/bienvenue")
+                .build());
+    }
 
-            String html = templateEngine.process("emails/notification", context);
-            sendHtmlEmail(toEmail, subject, html);
-            log.info("Email « {} » envoyé à {}", subject, toEmail);
-        } catch (Exception e) {
-            log.error("Échec envoi email « {} » à {} : {}", subject, toEmail, e.getMessage());
+    /**
+     * Au moniteur ajouté par le responsable d'une auto-école : lien pour choisir son mot de passe
+     * et accepter la politique de confidentialité (valable 72 heures).
+     */
+    @Async
+    public void sendMonitorInvitationEmail(String toEmail, String name, String schoolName, String token) {
+        send(toEmail, EmailContent.builder("Invitation à rejoindre " + schoolName + " sur DriveHub",
+                        "Vous êtes invité à rejoindre " + schoolName)
+                .preheader("Choisissez votre mot de passe pour activer votre compte moniteur.")
+                .greeting(name)
+                .paragraph("Le responsable de « " + schoolName + " » vous a ajouté comme moniteur sur DriveHub. "
+                        + "Choisissez votre mot de passe pour accéder à votre espace : planning, élèves, cours et examens.")
+                .action("Activer mon compte", frontendUrl + "/invitation?token=" + token)
+                .note("Ce lien est valable 72 heures.")
+                .note("Vous ne connaissez pas cette auto-école ? Ignorez cet email : le compte ne sera pas activé.")
+                .reason("Vous recevez cet email car « " + schoolName + " » vous a ajouté comme moniteur sur DriveHub.")
+                .build());
+    }
+
+    /**
+     * Message libre envoyé depuis le back-office (annonce, information) à une liste de destinataires.
+     *
+     * <p>Exécuté en arrière-plan (@Async) : l'administrateur n'attend pas la fin de l'envoi.
+     * Les emails partent un par un (personnalisés « Bonjour {nom} ») pour ménager le serveur SMTP ;
+     * un échec sur une adresse n'empêche pas l'envoi aux suivantes.</p>
+     */
+    @Async
+    public void sendPlatformAnnouncement(List<MailRecipient> recipients, String subject, String message) {
+        int sent = 0;
+        for (MailRecipient recipient : recipients) {
+            boolean ok = send(recipient.email(), EmailContent.builder(subject, subject)
+                    .greeting(recipient.name())
+                    .paragraph(message)
+                    .action("Ouvrir DriveHub", frontendUrl)
+                    .note("Pour ne plus recevoir ces informations, répondez à cet email ou écrivez à " + supportEmail + ".")
+                    .bulk()
+                    .build());
+            if (ok) {
+                sent++;
+            }
+        }
+        log.info("Annonce « {} » : {} / {} email(s) envoyé(s)", subject, sent, recipients.size());
+    }
+
+    // =====================================================================
+    //  Mise en forme et envoi
+    // =====================================================================
+
+    /** Email simple : un message, un bouton facultatif. */
+    private boolean sendNotification(String toEmail, String name, String subject, String title, String message,
+                                     String actionLabel, String actionUrl) {
+        return send(toEmail, EmailContent.builder(subject, title)
+                .greeting(name)
+                .paragraph(message)
+                .action(actionLabel, actionUrl)
+                .build());
+    }
+
+    /**
+     * Met en forme et envoie un email. Une erreur est seulement journalisée : elle ne doit jamais annuler
+     * l'action métier (une auto-école validée reste validée même si le serveur mail est indisponible).
+     *
+     * @return {@code true} si l'email est parti
+     */
+    boolean send(String to, EmailContent content) {
+        try {
+            MimeMessage message = newMessage();
+            // MIXED_RELATED : versions texte + HTML, et le logo joint (affiché via cid:logo)
+            MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, "UTF-8");
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(to);
+            if (replyTo != null && !replyTo.isBlank()) {
+                helper.setReplyTo(replyTo);
+            }
+            helper.setSubject(content.subject());
+            helper.setText(toText(content), toHtml(content));
+            helper.addInline(LOGO_CID, "logo-drivehub.png", LOGO, "image/png");
+            if (content.bulk()) {
+                // Lien de désinscription reconnu par Gmail, Outlook, Yahoo (critère des annonces groupées)
+                message.setHeader("List-Unsubscribe", "<mailto:" + supportEmail + "?subject=Desinscription>");
+            }
+            mailSender.send(message);
+            log.info("Email « {} » envoyé à {}", content.subject(), to);
+            return true;
+        } catch (MessagingException | UnsupportedEncodingException | RuntimeException e) {
+            log.error("Échec de l'envoi de l'email « {} » à {} : {}", content.subject(), to, e.getMessage());
+            return false;
         }
     }
 
-    private void sendHtmlEmail(String to, String subject,
-                               String html) throws MessagingException, UnsupportedEncodingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper( message, true, "UTF-8");
-        helper.setFrom(fromEmail, fromName);
-        helper.setTo(to);
-        helper.setSubject(subject);
-        helper.setText(html, true);
-        mailSender.send(message);
+    /** Version HTML (modèle Thymeleaf commun). */
+    String toHtml(EmailContent content) {
+        Context context = new Context();
+        context.setVariable("c", content);
+        context.setVariable("siteUrl", frontendUrl);
+        context.setVariable("supportEmail", supportEmail);
+        context.setVariable("fromEmail", fromEmail);
+        context.setVariable("year", Year.now().getValue());
+        return templateEngine.process("emails/layout", context);
     }
 
+    /** Version texte, construite à partir du même contenu (lue par les filtres anti-spam et certaines messageries). */
+    String toText(EmailContent content) {
+        StringBuilder text = new StringBuilder();
+        text.append(content.greetingName() != null ? "Bonjour " + content.greetingName() + "," : "Bonjour,").append("\n\n");
+        text.append(content.title()).append("\n\n");
+        content.paragraphs().forEach(p -> text.append(p).append("\n\n"));
+        content.details().forEach(d -> text.append(d.label()).append(" : ").append(d.value()).append('\n'));
+        if (!content.details().isEmpty()) {
+            text.append('\n');
+        }
+        if (content.highlight() != null) {
+            text.append(content.highlight().label()).append(" : ").append(content.highlight().value()).append("\n\n");
+        }
+        if (content.actionUrl() != null) {
+            text.append(content.actionLabel()).append(" :\n").append(content.actionUrl()).append("\n\n");
+        }
+        content.notes().forEach(n -> text.append(n).append('\n'));
+        text.append("\nL'équipe DriveHub\n\n--\n").append(content.reason()).append('\n')
+                .append("DriveHub, plateforme de gestion d'auto-école - ").append(supportEmail).append('\n');
+        return text.toString();
+    }
+
+    /**
+     * Message dont l'identifiant (Message-ID) porte le domaine de l'expéditeur (ex : …@drivehub.cm)
+     * plutôt que le nom de la machine du serveur : un détail vérifié par les filtres anti-spam.
+     */
+    private MimeMessage newMessage() {
+        if (!(mailSender instanceof JavaMailSenderImpl impl)) {
+            return mailSender.createMimeMessage();
+        }
+        Session session = impl.getSession();
+        String domain = fromEmail != null && fromEmail.contains("@")
+                ? fromEmail.substring(fromEmail.indexOf('@') + 1) : "drivehub.cm";
+        return new MimeMessage(session) {
+            @Override
+            protected void updateMessageID() throws MessagingException {
+                setHeader("Message-ID", "<" + UUID.randomUUID() + "@" + domain + ">");
+            }
+        };
+    }
 }

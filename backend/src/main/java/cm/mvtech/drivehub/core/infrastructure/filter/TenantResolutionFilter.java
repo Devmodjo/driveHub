@@ -24,8 +24,10 @@ public class TenantResolutionFilter implements Filter {
             "/api/auth",
             "/api/driving-schools",
             "/api/platform",
+            "/api/documents",     // justificatifs de l'utilisateur connecté (schéma public)
             "/api/join-school",   // demandes d'adhésion : tables du schéma public (le demandeur n'a pas encore d'auto-école)
             "/api/webhooks",      // notifications des agrégateurs : le tenant est dans la référence du paiement
+            "/actuator",          // santé de l'application : aucune donnée d'auto-école
             "/error"
     );
 

@@ -24,9 +24,9 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
     @if (formOpen()) {
       <form class="premium-card rounded-[24px] p-6 mb-8 space-y-4" (ngSubmit)="save()">
         <div><label class="field-label" for="title">Titre</label>
-          <input id="title" class="field-input" name="title" required [(ngModel)]="form.title" /></div>
+          <input id="title" class="field-input" name="title" maxlength="200" required [(ngModel)]="form.title" /></div>
         <div><label class="field-label" for="content">Contenu</label>
-          <textarea id="content" class="field-input min-h-40" name="content" required [(ngModel)]="form.content"></textarea></div>
+          <textarea id="content" class="field-input min-h-40" name="content" maxlength="20000" required [(ngModel)]="form.content"></textarea></div>
         <div class="flex gap-2">
           <button type="submit" class="btn-primary">Enregistrer</button>
           <button type="button" class="btn-ghost" (click)="formOpen.set(false)">Annuler</button>

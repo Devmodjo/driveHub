@@ -1,23 +1,31 @@
-import { Component, Input, Output, EventEmitter, computed, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
 import { DatePipe, UpperCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { SchoolRegistryDetail } from '../../../../interfaces/SchoolRegistryDetail';
+import { ICONS } from '../../../../shared/icons';
+import { schoolStatusClass, schoolStatusLabel } from '../../shared/bo-status';
 
 /**
- * Tableau paginé des auto-ecoles avec onglets de filtrage par statut,
- * recherche par nom, et actions (voir, approuver, rejeter, supprimer).
+ * Liste paginée des auto-écoles : filtres par statut, recherche sur la page courante
+ * et actions (voir, approuver, rejeter, suspendre, réactiver, supprimer).
  *
- * Ce composant ne gere pas la logique metier : il recoit les donnees
- * via @Input et emet les evenements utilisateur via @Output
- * pour que le composant parent orchestre les appels API.
+ * - Mobile : une carte par auto-école, boutons larges.
+ * - À partir de md: : tableau ; les colonnes secondaires (ville, responsable, date)
+ *   n'apparaissent qu'à partir de lg: / xl: pour garder les actions visibles.
+ *
+ * Ce composant ne contient pas de logique métier : il reçoit les données via @Input
+ * et émet les actions via @Output ; la page parente (SchoolComponent) appelle l'API.
  */
 @Component({
   selector: 'registry-table',
-  imports: [DatePipe, UpperCasePipe, FormsModule],
+  imports: [DatePipe, UpperCasePipe, FormsModule, LucideDynamicIcon],
   templateUrl: './registry.table.component.html',
-  styleUrl: './registry.table.component.css',
 })
 export class RegistryTableComponent {
+  protected readonly icons = ICONS;
+  protected readonly statusLabel = schoolStatusLabel;
+  protected readonly statusClass = schoolStatusClass;
 
   @Input() schools: SchoolRegistryDetail[] = [];
   @Input() isLoading: boolean = false;
@@ -37,31 +45,46 @@ export class RegistryTableComponent {
   @Output() suspend = new EventEmitter<string>();
   @Output() reactivate = new EventEmitter<string>();
 
+  /** Onglets de filtre (value undefined = toutes les auto-écoles). */
+  protected readonly tabs: { label: string; value: string | undefined }[] = [
+    { label: 'Toutes', value: undefined },
+    { label: 'En attente', value: 'PENDING' },
+    { label: 'Actives', value: 'ACTIVE' },
+    { label: 'Approuvées', value: 'APPROVED' },
+    { label: 'Suspendues', value: 'SUSPENDED' },
+    { label: 'Rejetées', value: 'REJECTED' },
+  ];
+
   searchQuery = signal('');
 
-  /** Filtre local les ecoles affichees en fonction de la recherche par nom. */
-  filteredSchools = computed(() => {
+  /**
+   * Auto-écoles affichées : celles de la page courante, filtrées par la recherche (nom ou ville).
+   * Simple méthode (et non computed) : « schools » est un @Input classique, qu'un computed
+   * ne verrait pas changer.
+   */
+  filteredSchools(): SchoolRegistryDetail[] {
     const query = this.searchQuery().toLowerCase().trim();
     if (!query) return this.schools;
-    return this.schools.filter(s => s.schoolName.toLowerCase().includes(query));
-  });
+    return this.schools.filter((s) =>
+      (s.schoolName ?? '').toLowerCase().includes(query) || (s.city ?? '').toLowerCase().includes(query));
+  }
 
-  /** Calcule le numero du premier element affiche sur la page courante. */
+  /** Numéro du premier élément affiché sur la page courante. */
   get startIndex(): number {
     return this.currentPage * this.pageSize + 1;
   }
 
-  /** Calcule le numero du dernier element affiche sur la page courante. */
+  /** Numéro du dernier élément affiché sur la page courante. */
   get endIndex(): number {
     return Math.min((this.currentPage + 1) * this.pageSize, this.totalElements);
   }
 
-  /** Genere la liste des numeros de page pour la navigation. */
+  /** Numéros de page affichés (5 au maximum, centrés sur la page courante). */
   get pageNumbers(): number[] {
     const pages: number[] = [];
     const maxVisible = 5;
     let start = Math.max(0, this.currentPage - Math.floor(maxVisible / 2));
-    let end = Math.min(this.totalPages, start + maxVisible);
+    const end = Math.min(this.totalPages, start + maxVisible);
     if (end - start < maxVisible) {
       start = Math.max(0, end - maxVisible);
     }
@@ -83,31 +106,5 @@ export class RegistryTableComponent {
 
   onSearch(query: string): void {
     this.searchQuery.set(query);
-  }
-
-  /** Retourne un libelle lisible pour le statut d'une auto-ecole. */
-  getStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      ACTIVE: 'Active',
-      APPROVED: 'Approuvee',
-      PENDING: 'En attente',
-      REJECTED: 'Rejetee',
-      SUSPENDED: 'Suspendue',
-      INACTIVE: 'Inactive',
-    };
-    return labels[status] ?? status;
-  }
-
-  /** Retourne la classe CSS associee au statut pour le badge colore. */
-  getStatusClass(status: string): string {
-    const classes: Record<string, string> = {
-      ACTIVE: 'badge badge-green',
-      APPROVED: 'badge badge-green',
-      PENDING: 'badge badge-amber',
-      REJECTED: 'badge badge-red',
-      SUSPENDED: 'badge badge-gray',
-      INACTIVE: 'badge badge-gray',
-    };
-    return classes[status] ?? 'badge';
   }
 }

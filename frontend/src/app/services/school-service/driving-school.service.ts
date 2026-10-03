@@ -7,6 +7,7 @@ import { ActiveDrivingSchool } from '../../interfaces/ActiveDrivingSchool';
 import { RegistryStats } from '../../interfaces/RegistryStats';
 import { SchoolRegistryDetail } from '../../interfaces/SchoolRegistryDetail';
 import { PagedResponse } from '../../interfaces/PagedResponse';
+import { PendingSchoolRequest } from '../../interfaces/PendingSchoolRequest';
 import { HttpParams } from '@angular/common/http';
 
 
@@ -31,8 +32,9 @@ export class DrivingSchoolService {
     return this.http.get<ActiveDrivingSchool[]>(`${SCHOOL_URL}public/all`);
   }
 
-  pendingSchoolRequest() : Observable<ActiveDrivingSchool[]> {
-    return this.http.get<ActiveDrivingSchool[]>(`${BASE_URL}registries/pending`);
+  /** Demandes de création d'auto-école en attente (DrivingSchoolPendingRequestDTO côté backend). */
+  pendingSchoolRequest() : Observable<PendingSchoolRequest[]> {
+    return this.http.get<PendingSchoolRequest[]>(`${BASE_URL}registries/pending`);
   }
 
   approveRegistry(registryId:string) : Observable<ApiResponse> {

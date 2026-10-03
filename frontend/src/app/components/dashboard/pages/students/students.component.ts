@@ -8,7 +8,10 @@ import { ICONS } from '../../../../shared/icons';
 import { LICENSE_CATEGORIES, formatDate } from '../../shared/labels';
 import { PageHeaderComponent } from '../../shared/page-header.component';
 
-/** Élèves de l'auto-école (moniteur) : catégorie de permis, pièces d'identité, retrait. */
+/**
+ * Élèves de l'auto-école (moniteur) : catégorie de permis, retrait.
+ * Aucun justificatif n'est demandé aux élèves (seuls les moniteurs fournissent pièce d'identité et CAPEC).
+ */
 @Component({
   selector: 'app-students',
   imports: [FormsModule, LucideDynamicIcon, PageHeaderComponent],
@@ -17,16 +20,12 @@ import { PageHeaderComponent } from '../../shared/page-header.component';
     @if (error()) { <div class="alert-error mb-6">{{ error() }}</div> }
 
     @if (editing(); as s) {
-      <form class="premium-card rounded-[24px] p-6 mb-8 grid grid-cols-1 md:grid-cols-4 gap-4 items-end" (ngSubmit)="save(s)">
-        <p class="md:col-span-4 font-bold">{{ s.firstname }} {{ s.lastname }}</p>
-        <div><label class="field-label" for="cat">Catégorie</label>
+      <form class="premium-card rounded-[24px] p-6 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4 items-end" (ngSubmit)="save(s)">
+        <p class="md:col-span-3 font-bold">{{ s.firstname }} {{ s.lastname }}</p>
+        <div><label class="field-label" for="cat">Catégorie de permis</label>
           <select id="cat" class="field-input" name="cat" [(ngModel)]="form.licenseCategory">
             @for (c of categories; track c) { <option [value]="c">{{ c }}</option> }
           </select></div>
-        <div><label class="field-label" for="recto">CNI recto (lien)</label>
-          <input id="recto" class="field-input" name="recto" [(ngModel)]="form.cniRectoUrl" /></div>
-        <div><label class="field-label" for="verso">CNI verso (lien)</label>
-          <input id="verso" class="field-input" name="verso" [(ngModel)]="form.cniVersoUrl" /></div>
         <div class="flex gap-2">
           <button type="submit" class="btn-primary">Enregistrer</button>
           <button type="button" class="btn-ghost" (click)="editing.set(null)">Annuler</button>
@@ -64,8 +63,7 @@ export class StudentsComponent {
   protected readonly students = signal<Student[]>([]);
   protected readonly editing = signal<Student | null>(null);
   protected readonly error = signal('');
-  protected form: { licenseCategory: LicenseCategory; cniRectoUrl: string; cniVersoUrl: string } =
-    { licenseCategory: 'B', cniRectoUrl: '', cniVersoUrl: '' };
+  protected form: { licenseCategory: LicenseCategory } = { licenseCategory: 'B' };
 
   constructor() {
     this.load();
@@ -79,15 +77,17 @@ export class StudentsComponent {
   }
 
   protected edit(s: Student): void {
-    this.form = { licenseCategory: s.licenseCategory ?? 'B', cniRectoUrl: s.cniRectoUrl ?? '', cniVersoUrl: s.cniVersoUrl ?? '' };
+    this.form = { licenseCategory: s.licenseCategory ?? 'B' };
     this.editing.set(s);
   }
 
   protected save(s: Student): void {
+    // Les anciens liens de CNI ne sont plus modifiables ici : on renvoie les valeurs existantes
+    // pour ne pas les effacer (le champ du backend existe encore).
     this.api.updateStudent(s.id, {
       licenseCategory: this.form.licenseCategory,
-      cniRectoUrl: this.form.cniRectoUrl || null,
-      cniVersoUrl: this.form.cniVersoUrl || null,
+      cniRectoUrl: s.cniRectoUrl,
+      cniVersoUrl: s.cniVersoUrl,
     }).subscribe({
       next: () => { this.editing.set(null); this.load(); },
       error: (err) => this.error.set(errorMessage(err)),

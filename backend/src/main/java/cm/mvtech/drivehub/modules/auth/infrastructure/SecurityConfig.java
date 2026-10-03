@@ -54,6 +54,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
+                                "/actuator/health/**",       // santé de l'application (hébergeur, Docker)
                                 "/error",                    // page d'erreur Spring : sinon un 401/400 envoyé par un filtre devient un 403 vide
                                 "/api/auth/**",              // Login/Register users normaux
                                 "/api/webhooks/**",          // Webhooks Campay (vérifiés par signature)
@@ -67,7 +68,8 @@ public class SecurityConfig {
                                 "/api/auth/verify-email",
                                 "/api/auth/resend-verification",
                                 "/api/auth/forgot-password",
-                                "/api/auth/reset-password"
+                                "/api/auth/reset-password",
+                                "/api/auth/accept-invitation"
                         ).permitAll()
                         .requestMatchers(
                                 "/api/platform/admin/login",

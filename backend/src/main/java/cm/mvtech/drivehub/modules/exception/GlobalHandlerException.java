@@ -1,6 +1,7 @@
 package cm.mvtech.drivehub.modules.exception;
 
 import cm.mvtech.drivehub.modules.messageapi.ApiResponseError;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -13,13 +14,13 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Slf4j
@@ -62,21 +63,29 @@ public class GlobalHandlerException {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
+    /**
+     * Formulaire invalide (@Valid) : 400 avec le message de chaque champ dans {@code fieldErrors}.
+     * Le message principal reprend la première erreur, ou indique le nombre de champs à corriger.
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponseError> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
+        Map<String, String> errors = new LinkedHashMap<>();
+        ex.getBindingResult().getFieldErrors()
+                .forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
+        ex.getBindingResult().getGlobalErrors()
+                .forEach(error -> errors.putIfAbsent(error.getObjectName(), error.getDefaultMessage()));
+
+        String message = errors.size() == 1
+                ? errors.values().iterator().next()
+                : errors.size() + " champs sont à corriger : " + String.join(" ; ", errors.values());
 
         ApiResponseError error = new ApiResponseError(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Validation failed: " + errors.toString(),
-                request.getRequestURI()
+                message,
+                request.getRequestURI(),
+                errors
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
@@ -119,23 +128,105 @@ public class GlobalHandlerException {
         return build(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
-    /** Violation d'une contrainte SQL (UNIQUE, FK, CHECK) non anticipée par le service. */
+    /**
+     * Violation d'une contrainte SQL non anticipée par le service.
+     * Le code PostgreSQL (SQLState) permet de donner un message précis :
+     * 22001 = valeur trop longue, 23505 = doublon (contrainte UNIQUE), 23503 = référence inexistante,
+     * 23502 = champ obligatoire manquant.
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponseError> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
-        log.warn("Contrainte SQL violée sur {} : {}", request.getRequestURI(), ex.getMostSpecificCause().getMessage());
+        Throwable cause = ex.getMostSpecificCause();
+        log.warn("Contrainte SQL violée sur {} : {}", request.getRequestURI(), cause.getMessage());
+        String sqlState = cause instanceof SQLException sql ? sql.getSQLState() : null;
+        String detail = cause.getMessage() == null ? "" : cause.getMessage();
+
+        if ("22001".equals(sqlState)) {
+            return build(HttpStatus.BAD_REQUEST,
+                    "Un des champs dépasse la longueur autorisée : raccourcissez le texte saisi", request);
+        }
+        if ("23502".equals(sqlState)) {
+            return build(HttpStatus.BAD_REQUEST, "Un champ obligatoire n'a pas été renseigné", request);
+        }
+        if ("23503".equals(sqlState)) {
+            return build(HttpStatus.CONFLICT,
+                    "Cette opération fait référence à un élément qui n'existe pas ou plus", request);
+        }
+        if ("23505".equals(sqlState)) {
+            return build(HttpStatus.CONFLICT, duplicateMessage(detail), request);
+        }
         return build(HttpStatus.CONFLICT, "L'opération entre en conflit avec des données existantes", request);
     }
 
-    /** JSON illisible ou paramètre de type incorrect (ex : UUID mal formé). */
-    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
-    public ResponseEntity<ApiResponseError> handleBadInput(Exception ex, HttpServletRequest request) {
+    /** Message lisible pour un doublon, selon la contrainte UNIQUE concernée. */
+    private static String duplicateMessage(String detail) {
+        String d = detail.toLowerCase();
+        if (d.contains("school_name")) return "Ce nom d'auto-école est déjà utilisé";
+        if (d.contains("admin_unique") || d.contains("admin_id")) return "Vous avez déjà une demande d'auto-école enregistrée";
+        if (d.contains("matriculation")) return "Un véhicule avec cette immatriculation existe déjà";
+        if (d.contains("email")) return "Cette adresse email est déjà utilisée";
+        if (d.contains("phone")) return "Ce numéro de téléphone est déjà utilisé";
+        return "Cet élément existe déjà";
+    }
+
+    /**
+     * JSON illisible ou paramètre de type incorrect : on précise le champ et la valeur attendue
+     * quand c'est possible (ex : date au mauvais format, valeur de liste inconnue, UUID mal formé).
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponseError> handleUnreadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        if (ex.getCause() instanceof InvalidFormatException invalid && !invalid.getPath().isEmpty()) {
+            String field = invalid.getPath().get(invalid.getPath().size() - 1).getFieldName();
+            Class<?> target = invalid.getTargetType();
+            String expected = target.isEnum()
+                    ? "valeurs possibles : " + String.join(", ", java.util.Arrays.stream(target.getEnumConstants()).map(Object::toString).toList())
+                    : "format attendu : " + target.getSimpleName();
+            return build(HttpStatus.BAD_REQUEST,
+                    "Valeur invalide pour le champ « " + field + " » (" + expected + ")", request);
+        }
         return build(HttpStatus.BAD_REQUEST, "Requête invalide : vérifiez le format des données envoyées", request);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponseError> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST,
+                "Valeur invalide pour le paramètre « " + ex.getName() + " »", request);
+    }
+
+    /** Fichier envoyé trop lourd (limite spring.servlet.multipart.max-file-size). */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponseError> handleMaxUpload(Exception ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST,
+                "Le fichier dépasse 5 Mo : réduisez la taille de la photo ou du PDF", request);
+    }
+
+    /** Champ obligatoire absent d'une requête multipart ou d'un paramètre (ex : fichier non joint). */
+    @ExceptionHandler({org.springframework.web.multipart.support.MissingServletRequestPartException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class})
+    public ResponseEntity<ApiResponseError> handleMissingPart(Exception ex, HttpServletRequest request) {
+        String name = ex instanceof org.springframework.web.multipart.support.MissingServletRequestPartException part
+                ? part.getRequestPartName()
+                : ((org.springframework.web.bind.MissingServletRequestParameterException) ex).getParameterName();
+        return build(HttpStatus.BAD_REQUEST, "Champ obligatoire manquant : « " + name + " »", request);
     }
 
     /**
      * Toute autre erreur : on la journalise, mais on ne renvoie JAMAIS son message au client
      * (il peut contenir du SQL, des noms de tables, des chemins de fichiers...).
      */
+    /** Adresse inexistante (faute de frappe, Swagger désactivé en production...) : 404, pas 500. */
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<ApiResponseError> handleNoResource(Exception ex, HttpServletRequest request) {
+        return build(HttpStatus.NOT_FOUND, "Adresse introuvable : " + request.getRequestURI(), request);
+    }
+
+    /** Bonne adresse, mauvaise méthode HTTP (ex : GET au lieu de POST) : 405. */
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponseError> handleMethodNotSupported(
+            org.springframework.web.HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        return build(HttpStatus.METHOD_NOT_ALLOWED, "Méthode " + ex.getMethod() + " non acceptée sur cette adresse", request);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponseError> handleGlobalException(Exception ex, HttpServletRequest request) {
         log.error("Erreur inattendue sur {}", request.getRequestURI(), ex);

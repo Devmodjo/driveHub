@@ -25,4 +25,7 @@ public interface SchoolJoinRequestRepository extends JpaRepository<SchoolJoinReq
     Optional<SchoolJoinRequest> findFirstByUserAndJoinStatusOrderByCreatedOnDesc(User user, JoinStatus status);
 
     java.util.List<SchoolJoinRequest> findAllByUserOrderByCreatedOnDesc(User user);
+
+    /** Membres acceptés d'une auto-école (envoi d'email aux membres d'une auto-école). */
+    java.util.List<SchoolJoinRequest> findAllByDrivingSchoolIdAndJoinStatus(UUID drivingSchoolId, JoinStatus status);
 }
