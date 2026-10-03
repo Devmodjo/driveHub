@@ -46,6 +46,14 @@ register() { # role email
   local profile="\"firstname\":\"Test\",\"lastname\":\"$1\",\"email\":\"$2\",\"password\":\"Password123\",\"phoneNumber\":\"+237699000000\",\"gender\":\"MALE\",\"nationality\":\"Camerounaise\",\"residenceCity\":\"Douala\",\"dateOfBirth\":\"1995-04-12\",\"acceptPrivacyPolicy\":true"
   expect 201 "$(call POST "/api/auth/register/$1" "" "" "{$profile}")" "Inscription $1 $2"
 }
+# Plus petite image PNG valide (le serveur vérifie la signature binaire du fichier)
+printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' | base64 -d > /tmp/e2e_doc.png
+upload() { # jeton type -> envoie un justificatif (multipart)
+  local code
+  code=$(curl -s -o /tmp/e2e_body -w "%{http_code}" -X POST "$API/api/documents" -H "Authorization: Bearer $1" \
+    -F "type=$2" -F "file=@/tmp/e2e_doc.png;type=image/png")
+  expect 201 "$code $(cat /tmp/e2e_body)" "Justificatif $2 envoyé"
+}
 create_school() { # jeton nom — présentation de 1500 caractères (non-régression : limite de 255 en base)
   local long_desc; long_desc=$(printf 'a%.0s' $(seq 1 1500))
   expect 201 "$(call POST /api/driving-schools/request "$1" "" "{\"name\":\"$2\",\"email\":\"contact-$RUN@ecole.cm\",\"country\":\"Cameroun\",\"city\":\"Douala\",\"phoneNumber\":\"+237699111222\",\"address\":\"Akwa\",\"description\":\"$long_desc\",\"websiteUrl\":null,\"whatsappNumber\":null}")" "Demande de création (présentation de 1500 caractères) : $2"
@@ -56,6 +64,9 @@ MA="monitor-a-$RUN@test.cm"; MB="monitor-b-$RUN@test.cm"; ST="student-$RUN@test.
 register monitor "$MA"; register monitor "$MB"
 verify_email "$MA"; verify_email "$MB"
 TA=$(login "$MA"); TB=$(login "$MB")
+expect 400 "$(call POST /api/driving-schools/request "$TA" "" "{\"name\":\"Sans pieces $RUN\",\"email\":\"np-$RUN@ecole.cm\",\"country\":\"Cameroun\",\"city\":\"Douala\",\"phoneNumber\":\"+237699111000\",\"address\":\"Akwa\",\"description\":\"x\"}")" "Demande refusée sans CNI ni CAPEC"
+upload "$TA" CNI; upload "$TA" CAPEC; upload "$TB" CNI; upload "$TB" CAPEC
+[[ $(psql "$DB" -tAc "SELECT count(*) FROM public.user_documents d JOIN public._users u ON u.id = d.user_id WHERE u.email = '$MA' AND d.file_name_enc LIKE 'v1:%'") == 2 ]] && ok "Justificatifs enregistrés, nom de fichier chiffré en base" || fail "Justificatifs absents ou non chiffrés"
 create_school "$TA" "Auto-École Le Volant $RUN"
 expect 409 "$(call POST /api/driving-schools/request "$TB" "" "{\"name\":\"Auto-École Le Volant $RUN\",\"email\":\"x-$RUN@ecole.cm\",\"phoneNumber\":\"+237699000001\",\"address\":\"Bonapriso\"}")" "Nom d'auto-école déjà pris : refusé"
 TB_RESP=$(call POST /api/driving-schools/request "$TB" "" "{\"name\":\"École Bis $RUN\",\"email\":\"b-$RUN@ecole.cm\",\"country\":\"Cameroun\",\"city\":\"Yaoundé\",\"phoneNumber\":\"+237699333444\",\"address\":\"Bastos\",\"description\":\"B\"}")
@@ -66,6 +77,7 @@ PENDING=$(body "$(call GET /api/platform/registries/pending "$ROOT")")
 RA=$(echo "$PENDING" | jq -r ".[] | select(.schoolName==\"Auto-École Le Volant $RUN\") | .id")
 RB=$(echo "$PENDING" | jq -r ".[] | select(.schoolName==\"École Bis $RUN\") | .id")
 [[ -n "$RA" && -n "$RB" ]] && ok "Demandes visibles par le ROOT" || fail "Demandes introuvables : $PENDING"
+[[ $(body "$(call GET "/api/platform/registries/$RA/documents" "$ROOT")" | jq length) == 2 ]] && ok "Le back-office voit la CNI et le CAPEC du fondateur" || fail "Justificatifs du fondateur invisibles"
 expect 202 "$(call PATCH "/api/platform/registries/$RA/approve" "$ROOT")" "Approbation auto-école A"
 expect 202 "$(call PATCH "/api/platform/registries/$RB/approve" "$ROOT")" "Approbation auto-école B"
 SA=$(psql "$DB" -tAc "SELECT schema_name FROM public.driving_school_registry WHERE id = '$RA'")
@@ -79,6 +91,8 @@ TA=$(login "$MA"); TB=$(login "$MB")   # nouveaux jetons : ils portent maintenan
 echo "3. Élève : inscription, adhésion, validation par le moniteur"
 register student "$ST"; verify_email "$ST"
 TS=$(login "$ST")
+expect 400 "$(call POST /api/join-school/public "$TS" "" "{\"drivingSchoolId\":\"$RA\",\"role\":\"STUDENT\"}")" "Adhésion refusée sans pièce d'identité"
+upload "$TS" CNI
 expect 200 "$(call POST /api/join-school/public "$TS" "" "{\"drivingSchoolId\":\"$RA\",\"role\":\"STUDENT\"}")" "Demande d'adhésion à A"
 REQ=$(body "$(call GET /api/join-school/admin/pending "$TA")" | jq -r '.content[0].requestId')
 expect 403 "$(call POST "/api/join-school/admin/$REQ/approve" "$TB")" "Le moniteur B ne peut pas valider une demande de A"
@@ -140,6 +154,20 @@ R=$(call POST /api/platform/emails "$ROOT" "" "{\"audience\":\"SCHOOL_MEMBERS\",
 expect 202 "$R" "Email aux membres de l'auto-école A"
 [[ $(body "$R" | jq -r .recipientCount) == 2 ]] && ok "Destinataires : le moniteur A et l'élève accepté" || fail "Nombre de destinataires inattendu : $(body "$R")"
 expect 400 "$(call POST /api/auth/register/student "" "" '{"firstname":"X","email":"x-'$RUN'@test.cm","password":"Password123","phoneNumber":"+237699000000","gender":"MALE","nationality":"Camerounaise","residenceCity":"Douala","dateOfBirth":"1995-04-12"}')" "Inscription refusée sans consentement"
+
+echo "8. Période d'essai et moniteur ajouté par le responsable"
+SUB=$(call GET /api/driving-schools/me/subscription "$TA")
+expect 200 "$SUB" "Abonnement de l'auto-école A"
+[[ $(body "$SUB" | jq -r '.status + " " + (.trialDaysLeft|tostring) + " " + (.billingEnabled|tostring)') == "TRIAL 15 false" ]] && ok "Essai de 15 jours, aucune facturation" || fail "Abonnement inattendu : $(body "$SUB")"
+MI="monitor-invite-$RUN@test.cm"
+printf '{"firstname":"Paul","lastname":"Invite","email":"%s","phoneNumber":"+237690000001","gender":"MALE","nationality":"Camerounaise","residenceCity":"Douala","dateOfBirth":"1990-01-01"}' "$MI" > /tmp/e2e_monitor.json
+CODE=$(curl -s -o /tmp/e2e_body -w "%{http_code}" -X POST "$API/api/monitors" -H "Authorization: Bearer $TA" -H "X-Tenant-ID: $SA" \
+  -F "monitor=@/tmp/e2e_monitor.json;type=application/json" -F "cni=@/tmp/e2e_doc.png;type=image/png" -F "capec=@/tmp/e2e_doc.png;type=image/png")
+expect 201 "$CODE $(cat /tmp/e2e_body)" "Le responsable ajoute un moniteur (CNI + CAPEC)"
+INV=$(psql "$DB" -tAc "SELECT t.token FROM public.password_reset_tokens t JOIN public._users u ON u.id = t.user_id WHERE u.email = '$MI'")
+expect 200 "$(call POST /api/auth/accept-invitation "" "" "{\"token\":\"$INV\",\"password\":\"Password123\",\"acceptPrivacyPolicy\":true}")" "Invitation acceptée"
+TI=$(login "$MI")
+expect 200 "$(call GET /api/monitors/me "$TI" "$SA")" "Le moniteur invité accède à l'auto-école A"
 
 echo
 echo "Tous les tests sont passés ($PASS vérifications)."
