@@ -1,5 +1,7 @@
 spring:
   config:
+    # Variables lues dans backend/.env (copie de backend/.env.example) ; en production, les variables
+    # d'environnement du serveur sont prioritaires sur ce fichier.
     import: optional:file:.env[.properties]
   application:
     name: driveHub
@@ -42,17 +44,21 @@ spring:
     properties:
       mail:
         smtp:
+          # Délais en millisecondes : sans eux, un serveur SMTP injoignable bloque l'envoi indéfiniment
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
           auth: true
           starttls:
-            enable: true
-            required: true
+            enable: ${MAIL_STARTTLS:true}
+            required: ${MAIL_STARTTLS:true}
         debug: false
   thymeleaf:
     prefix: classpath:/templates/
     suffix: .html
     mode: HTML
     encoding: UTF-8
-    cache: false   # true en production
+    cache: ${THYMELEAF_CACHE:false}   # true en production
 
   # Envoi de fichiers (justificatifs) : 5 Mo par fichier, 12 Mo par requête (ajout d'un moniteur : 2 fichiers)
   servlet:
@@ -61,7 +67,32 @@ spring:
       max-request-size: 12MB
 
 server:
-  port: 8082
+  port: ${PORT:8082}                       # les hébergeurs (Render, Railway...) fournissent PORT
+  forward-headers-strategy: framework      # derrière le proxy HTTPS de l'hébergeur : vraie adresse et https
+  shutdown: graceful                       # termine les requêtes en cours avant un redéploiement
+
+# Santé de l'application : GET /actuator/health -> {"status":"UP"} (rien d'autre n'est exposé)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    # Un serveur d'emails indisponible ne doit pas faire déclarer l'API « en panne » (ni la redémarrer)
+    mail:
+      enabled: false
+
+# Documentation Swagger : à désactiver en production (SWAGGER_ENABLED=false) si l'API n'est pas publique
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
 
 cors:
   # Origines du front autorisées (séparées par des virgules). Ex : https://app.drivehub.cm
@@ -132,7 +163,12 @@ app:
   root-admin:
     email: ${MOCK_ROOT_USERNAME}
     password: ${MOCK_ROOT_PASSWORD}
-  frontend-url: http://localhost:4200
+  # Adresse publique du frontend : sert à construire les liens des emails (vérification, invitation...)
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:4200}
   mail:
-    from: ${MAIL_USERNAME}
-    from-name: DriveHub
+    # Expéditeur : une adresse de VOTRE domaine (ex : no-reply@drivehub.cm), autorisée par SPF/DKIM
+    # chez le fournisseur d'emails (voir docs/EMAILS-DELIVRABILITE.md). Par défaut : MAIL_USERNAME.
+    from: ${MAIL_FROM:${MAIL_USERNAME}}
+    from-name: ${MAIL_FROM_NAME:DriveHub}
+    reply-to: ${MAIL_REPLY_TO:}              # boîte lue par l'équipe (facultatif)
+    support-email: ${SUPPORT_EMAIL:support@drivehub.cm}

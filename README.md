@@ -330,6 +330,20 @@ npm test             # tests unitaires
 
 ---
 
+## Mise en ligne et CI/CD
+
+**Guide pas à pas : [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md)** — Vercel (frontend), Render (backend, image
+Docker), Neon (PostgreSQL), Cloudflare R2 (justificatifs), Brevo (emails).
+
+| Fichier | Rôle |
+|---------|------|
+| `.github/workflows/ci.yml` | À chaque push / pull request : tests backend (PostgreSQL réel) + build et tests frontend |
+| `.github/workflows/deploy.yml` | Push sur `Develop` : tests, puis redéploiement Render et image `ghcr.io/.../drivehub-api` |
+| `backend/Dockerfile` | Image du backend (Java 21, utilisateur sans droits, vérification de santé `/actuator/health`) |
+| `docker-compose.yml` | API (+ PostgreSQL avec `--profile db`) sur un serveur VPS |
+| `render.yaml` | Description du service Render (Blueprint) |
+| `backend/.env.example` | Toutes les variables d'environnement, commentées |
+
 ## Déployer le frontend sur Vercel
 
 La configuration est dans `frontend/vercel.json`. Dans Vercel → *Settings* :
@@ -338,7 +352,8 @@ La configuration est dans `frontend/vercel.json`. Dans Vercel → *Settings* :
 |---------|--------|
 | **Root Directory** | `frontend` (le dépôt contient aussi `backend/`) |
 | Framework Preset | Angular |
-| Build / Output / Install Command | laisser vides : `vercel.json` les fixe (`npm run build`, `dist/drivehub/browser`) |
+| Build / Output / Install Command | laisser vides : `vercel.json` les fixe (`npm ci`, `npm run build`, `dist/drivehub/browser`) |
+| Environment Variables | `API_URL` = adresse du backend (ex. `https://drivehub-api.onrender.com`) |
 | Node.js Version | 22.x |
 
 Pourquoi une erreur 404 apparaît sinon :
@@ -347,8 +362,8 @@ Pourquoi une erreur 404 apparaît sinon :
 - les pages Angular (`/connexion`, `/dashboard`...) n'existent pas en fichiers : la règle `rewrites` de
   `vercel.json` renvoie toutes les adresses vers `index.html`, puis Angular affiche la bonne page.
 
-**Adresse du backend :** `frontend/src/environments/environment.ts` (`apiUrl`) pour la production,
-`environment.development.ts` pour `npm start`. Tant que le backend n'est pas hébergé, la vitrine
+**Adresse du backend :** variable `API_URL` dans Vercel (injectée au build par `frontend/scripts/set-api-url.mjs`),
+sinon `frontend/src/environments/environment.ts` ; `environment.development.ts` pour `npm start`. Tant que le backend n'est pas hébergé, la vitrine
 fonctionne en ligne mais pas la connexion ni le dashboard. Côté backend, ajouter le domaine du frontend
 dans `CORS_ALLOWED_ORIGINS` et le mettre dans `APP_FRONTEND_URL`.
 
@@ -376,47 +391,33 @@ cd driveHub/backend
 
 ### 2. Configurer les variables d'environnement
 
-Crée un fichier `.env` à la racine du projet :
+Toute la configuration est dans **`backend/.env`** (connexion PostgreSQL, secrets, emails, stockage...).
+Le modèle commenté est [`backend/.env.example`](backend/.env.example) :
+
+```bash
+cp .env.example .env     # dans backend/, puis remplir
+```
 
 ```properties
-# Base de données (valeurs par défaut : localhost:5432, postgres / root)
-DBNAME=drivehubDB
-# DB_URL=jdbc:postgresql://localhost:5432/drivehubDB
-# DB_USERNAME=postgres
-# DB_PASSWORD=root
-
-# Origines du front autorisées (CORS)
-# CORS_ALLOWED_ORIGINS=http://localhost:4200
-
-# Compte ROOT créé au premier démarrage
+DB_URL=jdbc:postgresql://localhost:5432/drivehub
+DB_USERNAME=postgres
+DB_PASSWORD=root
+JWT_SECRET_KEY=...           # openssl rand -base64 48
+DATA_ENCRYPTION_KEY=...      # openssl rand -base64 32 (chiffre les justificatifs : à conserver)
 MOCK_ROOT_USERNAME=root@drivehub.cm
-MOCK_ROOT_PASSWORD=change-moi
-
-# JWT
-JWT_SECRET_KEY=ta_cle_secrete_minimum_32_caracteres   # vérifiée au démarrage
-# JWT_EXPIRATION_MINUTES=1440
-
-# Email (Gmail + App Password par défaut ; en production, un service SMTP transactionnel)
-# MAIL_HOST=smtp.gmail.com
-# MAIL_PORT=587
-MAIL_USERNAME=ton.email@gmail.com
-MAIL_PASSWORD=xxxx xxxx xxxx xxxx
-
-# Frontend (liens envoyés par email)
-APP_FRONTEND_URL=http://localhost:4200
-
-# Paiement : SIMULATED (défaut) ou CAMPAY
-PAYMENT_PROVIDER=SIMULATED
-# CAMPAY_BASE_URL=https://demo.campay.net/api
-# CAMPAY_USERNAME=...            (identifiants de l'application Campay)
-# CAMPAY_PASSWORD=...
-# CAMPAY_WEBHOOK_KEY=...         (clé de signature du webhook)
+MOCK_ROOT_PASSWORD=...
+MAIL_USERNAME=...            # SMTP (Gmail en local, Brevo en production)
+MAIL_PASSWORD=...
 ```
+
+`.env` n'est jamais versionné. En production, les mêmes variables sont saisies chez l'hébergeur
+(voir [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md)) : remplacer la base locale par Neon = changer `DB_URL`,
+`DB_USERNAME` et `DB_PASSWORD`, rien d'autre.
 
 ### 3. Créer la base de données PostgreSQL
 
 ```sql
-CREATE DATABASE "drivehubDB";
+CREATE DATABASE drivehub;
 ```
 
 > **Base existante : inutile de la supprimer.** Au démarrage, Flyway applique les nouvelles
@@ -428,7 +429,7 @@ CREATE DATABASE "drivehubDB";
 ### 4. Lancer l'application
 
 ```bash
-mvn spring-boot:run
+./mvnw spring-boot:run          # ou : docker compose --profile db up -d --build (API + PostgreSQL)
 ```
 
 Flyway applique automatiquement les migrations au démarrage.
@@ -480,7 +481,9 @@ src/main/resources/db/migration/
 │   ├── V10__revoked_tokens.sql                     ← déconnexion (jetons révoqués)
 │   ├── V11__textes_longs.sql                       ← présentation d'auto-école en TEXT
 │   ├── V12__consentement_confidentialite.sql       ← preuve du consentement
-│   └── V13__envois_emails_plateforme.sql           ← historique des emails du back-office
+│   ├── V13__envois_emails_plateforme.sql           ← historique des emails du back-office
+│   ├── V14__justificatifs.sql                      ← CNI et CAPEC des moniteurs (chiffrés), journal des consultations
+│   └── V15__abonnements.sql                        ← offres, période d'essai, factures (facturation désactivée)
 └── tenant/                                  ← appliquées à CHAQUE schéma d'auto-école
     ├── V2__init_tenant_schema_template.sql
     ├── V3__corrections_champs_metier.sql
@@ -491,6 +494,22 @@ src/main/resources/db/migration/
 Les migrations `tenant/` sont exécutées par Flyway à la création d'une auto-école **et** au démarrage
 pour toutes les auto-écoles existantes (`TenantMigrationRunner`). Pour faire évoluer les tables métier :
 créer `tenant/V6__....sql` — ne jamais modifier une migration déjà appliquée.
+
+## Justificatifs des moniteurs (CNI, CAPEC)
+
+Pour écarter les auto-écoles clandestines, chaque **moniteur** fournit sa pièce d'identité et son CAPEC (fondateur :
+avant la demande de création, vérifiés par l'équipe DriveHub ; moniteur qui rejoint une auto-école : vérifiés par
+son responsable ; moniteur ajouté par le responsable : fournis par lui, avec invitation par email). **Rien n'est
+demandé aux élèves.** Fichiers chiffrés (AES-256-GCM, une clé par fichier) avant l'envoi vers Cloudflare R2,
+numéros chiffrés en base, chaque consultation journalisée. API : [docs/API-JUSTIFICATIFS.md](docs/API-JUSTIFICATIFS.md).
+Abonnements (essai de 15 jours, facturation préparée mais désactivée) : [docs/ABONNEMENTS-ET-PAIEMENTS.md](docs/ABONNEMENTS-ET-PAIEMENTS.md).
+
+## Emails
+
+Un seul modèle (`templates/emails/layout.html`, logo DriveHub joint), une version texte et une version HTML,
+en-têtes soignés. Pour ne pas finir dans les spams (domaine, SPF, DKIM, DMARC, Brevo) :
+[docs/EMAILS-DELIVRABILITE.md](docs/EMAILS-DELIVRABILITE.md). L'interface rappelle aux utilisateurs de regarder
+dans leurs courriers indésirables.
 
 ## Données personnelles et vérification des auto-écoles
 
@@ -516,9 +535,9 @@ doublon de nom d'auto-école, d'email ou d'immatriculation...). 400 = donnée in
 payer, se déconnecter, avec les emails attendus à chaque étape) : [docs/GUIDE-TEST-SWAGGER.md](docs/GUIDE-TEST-SWAGGER.md).
 
 ```bash
-cd backend && mvn test                                  # 299 tests unitaires et d'intégration (PostgreSQL local)
+cd backend && ./mvnw test                               # tests unitaires et d'intégration (PostgreSQL local)
 ./scripts/e2e-multitenant.sh http://localhost:8082 \
-   "postgresql://postgres:root@localhost:5432/drivehubDB"  # parcours complet sur l'API lancée (55 vérifications)
+   "postgresql://postgres:root@localhost:5432/drivehub"  # parcours complet sur l'API lancée
 ```
 
 ---
@@ -542,6 +561,8 @@ Pour activer l'envoi d'emails :
 - Déconnexion réelle : le jeton est inscrit (empreinte SHA-256) dans `public.revoked_tokens` et refusé ensuite
 - 401 = pas de jeton valide (absent, expiré, révoqué) ; 403 = connecté mais rôle insuffisant
 - Mots de passe hashés avec BCrypt
+- Justificatifs chiffrés (AES-256-GCM) et secrets uniquement en variables d'environnement
+- Image Docker exécutée sans droits d'administration ; Swagger désactivable en production (`SWAGGER_ENABLED=false`)
 
 ---
 

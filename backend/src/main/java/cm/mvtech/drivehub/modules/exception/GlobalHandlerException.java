@@ -214,6 +214,19 @@ public class GlobalHandlerException {
      * Toute autre erreur : on la journalise, mais on ne renvoie JAMAIS son message au client
      * (il peut contenir du SQL, des noms de tables, des chemins de fichiers...).
      */
+    /** Adresse inexistante (faute de frappe, Swagger désactivé en production...) : 404, pas 500. */
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<ApiResponseError> handleNoResource(Exception ex, HttpServletRequest request) {
+        return build(HttpStatus.NOT_FOUND, "Adresse introuvable : " + request.getRequestURI(), request);
+    }
+
+    /** Bonne adresse, mauvaise méthode HTTP (ex : GET au lieu de POST) : 405. */
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponseError> handleMethodNotSupported(
+            org.springframework.web.HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        return build(HttpStatus.METHOD_NOT_ALLOWED, "Méthode " + ex.getMethod() + " non acceptée sur cette adresse", request);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponseError> handleGlobalException(Exception ex, HttpServletRequest request) {
         log.error("Erreur inattendue sur {}", request.getRequestURI(), ex);

@@ -10,6 +10,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Traduction des erreurs SQL en messages compréhensibles (sans base de données :
@@ -62,5 +63,18 @@ class GlobalHandlerExceptionTest {
     @Test
     void foreignKeyViolation_Returns409() {
         assertEquals(HttpStatus.CONFLICT, handle("23503", "violates foreign key constraint").getStatusCode());
+    }
+
+    @Test
+    void unknownAddress_Is404_AndWrongMethodIs405() {
+        var notFound = handler.handleNoResource(
+                new org.springframework.web.servlet.resource.NoResourceFoundException(
+                        org.springframework.http.HttpMethod.GET, "v3/api-docs"), request);
+        assertEquals(404, notFound.getStatusCode().value());
+
+        var wrongMethod = handler.handleMethodNotSupported(
+                new org.springframework.web.HttpRequestMethodNotSupportedException("GET"), request);
+        assertEquals(405, wrongMethod.getStatusCode().value());
+        assertTrue(wrongMethod.getBody().message().contains("GET"));
     }
 }

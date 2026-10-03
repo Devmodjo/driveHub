@@ -1,0 +1,50 @@
+# =====================================================================
+#  DriveHub avec Docker Compose (serveur VPS ou test local de l'image).
+#
+#  Prérequis : backend/.env rempli (copie de backend/.env.example).
+#
+#  Avec votre propre base (Neon, PostgreSQL déjà installé...) :
+#      docker compose up -d --build
+#  Avec la base PostgreSQL fournie ici (dans .env : DB_URL=jdbc:postgresql://db:5432/drivehub) :
+#      docker compose --profile db up -d --build
+#
+#  Arrêt : docker compose down      Journaux : docker compose logs -f api
+#  Le frontend est hébergé à part (Vercel) ; voir docs/DEPLOIEMENT.md.
+# =====================================================================
+services:
+  api:
+    build: ./backend
+    # Ou l'image publiée par GitHub Actions (au lieu de "build") :
+    # image: ghcr.io/devmodjo/drivehub-api:latest
+    env_file: ./backend/.env
+    environment:
+      STORAGE_LOCAL_DIR: /app/data/documents
+    ports:
+      - "8082:8082"
+    volumes:
+      - documents:/app/data          # justificatifs (stockage LOCAL) conservés entre deux redémarrages
+    depends_on:
+      db:
+        condition: service_healthy   # attend la base fournie... si elle est utilisée (--profile db)
+        required: false
+    restart: unless-stopped
+
+  db:
+    image: postgres:16
+    profiles: ["db"]                 # démarrée seulement avec --profile db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-drivehub}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}   # à changer sur un serveur
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+    # Pas de "ports" : la base n'est joignable que par l'API, pas depuis Internet
+
+volumes:
+  documents:
+  pgdata:

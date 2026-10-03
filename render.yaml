@@ -1,0 +1,72 @@
+# =====================================================================
+#  Render « Blueprint » : décrit le service backend une fois pour toutes.
+#  Render > New > Blueprint > choisir ce dépôt : le service est créé avec ces réglages.
+#  Les valeurs « sync: false » sont demandées à la création (secrets : jamais dans Git).
+#  Guide complet : docs/DEPLOIEMENT.md
+# =====================================================================
+services:
+  - type: web
+    name: drivehub-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    region: frankfurt            # le plus proche du Cameroun ; même région que la base Neon conseillée
+    plan: starter                # Spring Boot a besoin d'au moins 512 Mo ; l'offre gratuite s'endort après 15 min
+    branch: Develop
+    autoDeploy: false            # le déploiement est déclenché par GitHub Actions, seulement si les tests passent
+    healthCheckPath: /actuator/health
+    envVars:
+      # Base de données (ex. Neon : jdbc:postgresql://ep-xxx.eu-central-1.aws.neon.tech/neondb?sslmode=require)
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # Secrets : générez-les vous-même et gardez une copie (voir docs/DEPLOIEMENT.md)
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: DATA_ENCRYPTION_KEY
+        sync: false
+      - key: MOCK_ROOT_USERNAME
+        sync: false
+      - key: MOCK_ROOT_PASSWORD
+        sync: false
+      # Adresses publiques
+      - key: APP_FRONTEND_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      # Emails (Brevo conseillé, voir docs/EMAILS-DELIVRABILITE.md)
+      - key: MAIL_HOST
+        value: smtp-relay.brevo.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_REPLY_TO
+        sync: false
+      # Justificatifs : Cloudflare R2 (le disque d'un service Render est effacé à chaque déploiement)
+      - key: STORAGE_PROVIDER
+        value: R2
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        value: drivehub-documents
+      # Production
+      - key: PAYMENT_PROVIDER
+        value: SIMULATED
+      - key: BILLING_ENABLED
+        value: "false"
+      - key: SWAGGER_ENABLED
+        value: "false"
+      - key: THYMELEAF_CACHE
+        value: "true"

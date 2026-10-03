@@ -1,0 +1,9 @@
+# Fichiers inutiles (ou secrets) à ne pas envoyer dans l'image Docker
+target/
+data/
+.env
+.env.*
+!.env.example
+.idea/
+*.iml
+*.log
