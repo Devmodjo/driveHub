@@ -17,6 +17,42 @@ L'architecture repose sur le modèle **Shared Database / Separate Schema** : une
 
 ---
 
+## Démarrer en local (10 minutes)
+
+Prérequis : **Java 21**, **Node.js 22**, **PostgreSQL** (local).
+
+```bash
+# 1. Configuration : crée backend/.env et génère les secrets (affiche le mot de passe du compte ROOT)
+./scripts/init-env.sh
+#    -> vérifiez DB_URL / DB_USERNAME / DB_PASSWORD dans backend/.env, puis créez la base :
+psql -U postgres -c "CREATE DATABASE drivehub;"
+
+# 2. Backend (http://localhost:8082, tables créées automatiquement)
+cd backend && ./mvnw spring-boot:run
+
+# 3. Frontend, dans un autre terminal (http://localhost:4200)
+cd frontend && npm ci && npm start
+```
+
+Sous Windows : lancez `./scripts/init-env.sh` dans Git Bash (ou copiez `backend/.env.example` en `backend/.env`
+et remplissez `JWT_SECRET_KEY`, `DATA_ENCRYPTION_KEY`, `MOCK_ROOT_PASSWORD`) et utilisez `mvnw.cmd`.
+
+**Sans serveur d'emails**, les liens des emails (vérification d'adresse, invitation) s'affichent dans la console
+du backend : `[DÉVELOPPEMENT] Lien de l'email ...`. Copiez-les dans le navigateur.
+
+**Parcours de test** (tout fonctionne de bout en bout) :
+
+1. `/inscription?role=MONITOR` : créez un moniteur, ouvrez le lien de vérification, connectez-vous.
+2. Page « Bienvenue » : envoyez une CNI et un CAPEC (photo ou PDF), puis la demande de création d'auto-école.
+3. `/backoffice/login` avec le compte ROOT : « Demandes », consultez les justificatifs, approuvez.
+4. Moniteur : « Accéder à mon espace » (période d'essai de 15 jours), ajoutez un véhicule, un moniteur...
+5. `/inscription` : créez un élève (aucun justificatif), « Trouver une auto-école », demandez à rejoindre.
+6. Moniteur : « Demandes d'adhésion », acceptez ; l'élève paie (Mobile Money simulé) et réserve une leçon.
+
+Tests automatiques : `cd backend && ./mvnw test` et `cd frontend && npx ng test --watch=false`.
+Test de l'API pas à pas : [docs/GUIDE-TEST-SWAGGER.md](docs/GUIDE-TEST-SWAGGER.md). Mise en ligne :
+[docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md).
+
 ## Architecture Multi-Tenant
 
 Une seule base PostgreSQL, deux niveaux de données :

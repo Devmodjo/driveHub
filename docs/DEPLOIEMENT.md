@@ -32,9 +32,8 @@ est dans [`backend/.env.example`](../backend/.env.example)).
 ## 0. Développement local : la configuration dans un fichier `.env`
 
 ```bash
-cd backend
-cp .env.example .env      # puis ouvrez .env et remplissez-le
-./mvnw spring-boot:run
+./scripts/init-env.sh     # crée backend/.env et génère les secrets
+cd backend && ./mvnw spring-boot:run
 ```
 
 Votre PostgreSQL local se règle dans `.env` :

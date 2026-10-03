@@ -349,7 +349,19 @@ public class EmailService {
             return true;
         } catch (MessagingException | UnsupportedEncodingException | RuntimeException e) {
             log.error("Échec de l'envoi de l'email « {} » à {} : {}", content.subject(), to, e.getMessage());
+            logLinkForLocalDevelopment(to, content);
             return false;
+        }
+    }
+
+    /**
+     * Développement uniquement (site sur http://localhost) : si l'email n'a pas pu partir (pas de serveur
+     * SMTP configuré), le lien du bouton est écrit dans la console pour pouvoir continuer le test
+     * (vérification d'adresse, invitation...). Jamais en production : le site n'y est pas sur localhost.
+     */
+    private void logLinkForLocalDevelopment(String to, EmailContent content) {
+        if (content.actionUrl() != null && frontendUrl != null && frontendUrl.startsWith("http://localhost")) {
+            log.warn("[DÉVELOPPEMENT] Lien de l'email « {} » pour {} : {}", content.subject(), to, content.actionUrl());
         }
     }
 
