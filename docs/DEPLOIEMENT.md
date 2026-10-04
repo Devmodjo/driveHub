@@ -49,9 +49,11 @@ Gmail refuse le mot de passe normal pour une application : il faut un « mot de 
    - relevez `MOCK_ROOT_PASSWORD` : c'est le mot de passe du back-office ;
    - copiez `DATA_ENCRYPTION_KEY` dans un gestionnaire de mots de passe (si elle était perdue,
      les justificatifs deviendraient illisibles). Ne la modifiez jamais.
-6. **Settings > Deploy Hook** : copiez l'adresse. Sur GitHub, dépôt `driveHub` > **Settings > Secrets and
-   variables > Actions > New repository secret** : nom `RENDER_DEPLOY_HOOK_URL`, valeur = cette adresse.
-   (C'est ce qui permet à GitHub de redéployer l'API après chaque fusion.)
+6. Vérifiez **Settings > Build & Deploy > Auto-Deploy : On Commit** (c'est le réglage de `render.yaml`) :
+   l'API est alors redéployée à chaque fusion sur `Develop`, comme le site sur Vercel.
+   **Important** : le site et l'API doivent toujours être à la même version. Si le site est plus récent que l'API
+   (API pas redéployée), certaines pages nouvelles peuvent ne pas fonctionner : dans ce cas,
+   Render > service > **Manual Deploy > Deploy latest commit**.
 
 ## Étape 3 : Vercel, le site (5 minutes)
 
@@ -87,13 +89,15 @@ Plus une auto-école remplit sa présentation, mieux elle est référencée.
 
 ## Ensuite : publier une nouvelle version
 
-Fusionnez une pull request dans `Develop`. GitHub lance les tests ; s'ils passent, Render redéploie l'API et
-Vercel redéploie le site. Si un test échoue, rien n'est publié.
+Fusionnez une pull request dans `Develop` : Render redéploie l'API et Vercel redéploie le site, chacun de son
+côté, en quelques minutes. GitHub lance aussi les tests : attendez qu'ils soient verts avant de fusionner
+(onglet « Checks » de la pull request). Si la nouvelle API ne démarre pas, Render garde l'ancienne en ligne.
 
 ## En cas de problème
 
 | Symptôme | Que faire |
 |----------|-----------|
+| Une page nouvelle répond « introuvable » alors que les données existent | L'API n'a pas été redéployée : Render > Manual Deploy > Deploy latest commit. En local : relancez le backend après chaque `git pull`. |
 | Le service Render redémarre en boucle | Render > Logs : le message dit quelle variable manque ou est fausse. |
 | Le site s'affiche mais la connexion échoue | `API_URL` (Vercel) incorrecte, ou adresse du site absente de `CORS_ALLOWED_ORIGINS` (Render). |
 | Les emails ne partent pas | Render > Logs : « Échec de l'envoi de l'email ». Vérifiez `MAIL_USERNAME` et le mot de passe d'application. |

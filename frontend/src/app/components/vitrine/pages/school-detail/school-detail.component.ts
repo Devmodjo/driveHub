@@ -158,16 +158,32 @@ export class SchoolDetailComponent implements OnDestroy {
 
   constructor() {
     this.api.publicSchool(this.slug).subscribe({
-      next: (school) => {
-        this.school.set(school);
-        this.loading.set(false);
-        this.applySeo(school);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.seo.setPage({ title: 'Auto-école introuvable - DriveHub', description: 'Cette auto-école n\'est pas présente sur DriveHub.', path: '/auto-ecoles' });
-      },
+      next: (school) => this.show(school),
+      // Secours : on cherche l'auto-école dans le catalogue (par adresse ou identifiant). Ainsi la page
+      // fonctionne même si l'API n'a pas encore été mise à jour en même temps que le site.
+      error: () => this.api.publicSchools().subscribe({
+        next: (schools) => {
+          const found = (schools ?? []).find((s) => s.slug === this.slug || s.id === this.slug);
+          if (found) {
+            this.show(found);
+          } else {
+            this.notFound();
+          }
+        },
+        error: () => this.notFound(),
+      }),
     });
+  }
+
+  private show(school: PublicSchool): void {
+    this.school.set(school);
+    this.loading.set(false);
+    this.applySeo(school);
+  }
+
+  private notFound(): void {
+    this.loading.set(false);
+    this.seo.setPage({ title: 'Auto-école introuvable - DriveHub', description: 'Cette auto-école n\'est pas présente sur DriveHub.', path: '/auto-ecoles' });
   }
 
   ngOnDestroy(): void {
@@ -181,7 +197,7 @@ export class SchoolDetailComponent implements OnDestroy {
   protected join(school: PublicSchool): void {
     if (!this.session.isLoggedIn()) {
       // Après la connexion, retour sur cette page pour envoyer la demande
-      this.router.navigate(['/connexion'], { queryParams: { redirect: `/auto-ecoles/${school.slug}` } });
+      this.router.navigate(['/connexion'], { queryParams: { redirect: `/auto-ecoles/${school.slug || school.id}` } });
       return;
     }
     const role = this.session.role();
@@ -207,7 +223,7 @@ export class SchoolDetailComponent implements OnDestroy {
 
   /** Titre, description et fiche schema.org « DrivingSchool » lus par Google. */
   private applySeo(s: PublicSchool): void {
-    const path = `/auto-ecoles/${s.slug}`;
+    const path = `/auto-ecoles/${s.slug || s.id}`;
     const description = s.description?.trim()
       || `${s.name}, auto-école à ${s.city} vérifiée par DriveHub. Inscription en ligne, réservation des leçons et paiement Mobile Money.`;
     this.seo.setPage({ title: `${s.name} - Auto-école à ${s.city} | DriveHub`, description, path });

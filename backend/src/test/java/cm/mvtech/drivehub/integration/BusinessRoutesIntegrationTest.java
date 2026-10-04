@@ -645,6 +645,10 @@ class BusinessRoutesIntegrationTest {
                 .andExpect(jsonPath("$.admin").doesNotExist());
         mockMvc.perform(get("/api/driving-schools/public/auto-ecole-qui-n-existe-pas"))
                 .andExpect(status().isNotFound());
+        // L'identifiant fonctionne aussi (anciens liens, auto-école sans adresse lisible)
+        mockMvc.perform(get("/api/driving-schools/public/" + registryId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.slug").value("it-auto-ecole-" + run));
         mockMvc.perform(get("/api/driving-schools/public/all"))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$[?(@.slug == 'it-auto-ecole-" + run + "')]").exists());
