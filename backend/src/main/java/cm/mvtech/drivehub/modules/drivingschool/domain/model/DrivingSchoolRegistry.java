@@ -56,4 +56,8 @@ public class DrivingSchoolRegistry extends EntityBase {
 
     @CreationTimestamp
     private LocalDate createdAt;
+
+    /** Adresse publique lisible (ex : auto-ecole-le-volant-douala), unique. Voir SchoolSlugService. */
+    @Column(length = 120, unique = true)
+    private String slug;
 }

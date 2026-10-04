@@ -70,6 +70,21 @@ Si l'adresse du site n'est pas `https://cmdrivehub.vercel.app`, mettez la bonne 
 - Testez : inscription d'un moniteur, email reçu (regardez aussi les spams), justificatifs, création et
   validation d'une auto-école.
 
+## Étape 4 : être trouvé sur Google (10 minutes, une seule fois)
+
+Chaque auto-école validée a sa page publique (`/auto-ecoles/auto-ecole-le-volant-douala`), avec titre,
+description et fiche « auto-école » lisibles par Google. Le plan du site, `/sitemap.xml`, les liste
+automatiquement (une nouvelle auto-école y apparaît sans redéployer).
+
+1. [Google Search Console](https://search.google.com/search-console) > **Ajouter une propriété** >
+   « Préfixe de l'URL » : `https://cmdrivehub.vercel.app` (ou votre domaine).
+2. Méthode de validation **Balise HTML** : copiez la balise `<meta name="google-site-verification" ...>`,
+   collez-la dans `frontend/src/index.html` (dans `<head>`), poussez sur `Develop`, puis cliquez sur **Valider**.
+3. Menu **Sitemaps** : saisissez `sitemap.xml` > **Envoyer**.
+
+Google passe ensuite régulièrement ; les premières pages apparaissent en général sous quelques jours.
+Plus une auto-école remplit sa présentation, mieux elle est référencée.
+
 ## Ensuite : publier une nouvelle version
 
 Fusionnez une pull request dans `Develop`. GitHub lance les tests ; s'ils passent, Render redéploie l'API et
@@ -87,5 +102,10 @@ Vercel redéploie le site. Si un test échoue, rien n'est publié.
 ## Autres options (plus tard, si besoin)
 
 - **Serveur VPS avec Docker** : `docker compose --profile db up -d --build` (voir `docker-compose.yml`).
-- **Beaucoup de justificatifs** : `STORAGE_PROVIDER=R2` (Cloudflare R2) au lieu de la base.
+- **Beaucoup de justificatifs** : Cloudflare R2 au lieu de la base. Créez un bucket **privé**
+  `drivehub-documents` et un jeton API « Object Read & Write » limité à ce bucket, puis dans Render > Environment :
+  `STORAGE_PROVIDER=R2`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`.
+  Les nouveaux fichiers vont dans R2, les anciens restent lus dans la base (aucune migration). Si une valeur R2
+  manque, l'application démarre quand même et continue avec la base (avertissement dans les journaux) : l'absence
+  de R2 ne bloque jamais, ni en local ni en production.
 - **Beaucoup d'emails** (plus de 500 par jour) : un service d'envoi (Brevo...), voir EMAILS-DELIVRABILITE.md.

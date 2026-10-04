@@ -1,5 +1,7 @@
 package cm.mvtech.drivehub.modules.drivingschool.domain.services;
 
+import cm.mvtech.drivehub.modules.exception.ResourceNotFoundException;
+
 import cm.mvtech.drivehub.modules.document.domain.services.DocumentService;
 import cm.mvtech.drivehub.modules.subscription.domain.services.SubscriptionService;
 import cm.mvtech.drivehub.modules.auth.domain.services.EmailService;
@@ -51,6 +53,7 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
     private final EmailService emailService;
     private final DocumentService documentService;
     private final SubscriptionService subscriptionService;
+    private final SchoolSlugService schoolSlugService;
 
     /**
      * Soumet une demande de création d'auto-école au nom de l'utilisateur authentifié. La méthode
@@ -85,6 +88,7 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
             // Lutte contre les auto-écoles clandestines : pièce d'identité et CAPEC du dirigeant obligatoires
             documentService.assertRequiredDocuments(admin.get(), "avant d'envoyer votre demande de création d'auto-école");
             DrivingSchoolRegistry dr = getDrivingSchoolRegistry(req, admin);
+            dr.setSlug(schoolSlugService.uniqueSlug(dr.getSchoolName(), dr.getCity()));
             drivingSchoolRegistryRepository.save(dr);
 
             // Accusé de réception : la demande sera examinée sous 48 à 72 heures
@@ -130,19 +134,25 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
         return drivingSchoolRegistryRepository
                 .findAllByDrivingSchoolStatusIn(EnumSet.of(DrivingSchoolStatus.APPROVED, DrivingSchoolStatus.ACTIVE))
                 .stream()
-                .map(e -> new DrivingSchoolResponseDto(
-                        e.getId(),
-                        e.getSchoolName(),
-                        e.getPhoneNumber(),
-                        e.getAddress(),
-                        e.getEmail(),
-                        e.getCountry(),
-                        e.getCity(),
-                        e.getCreatedAt(),
-                        e.getWhatsappNumber(),
-                        e.getWebsiteUrl(),
-                        e.getDrivingSchoolStatus()))
+                .map(DrivingSchoolServiceImpl::toPublic)
                 .toList();
+    }
+
+    /** Page publique d'une auto-école validée, trouvée par son adresse ; 404 sinon. */
+    @Override
+    @Transactional(readOnly = true)
+    public DrivingSchoolResponseDto publicSchool(String slug) {
+        return drivingSchoolRegistryRepository
+                .findBySlugAndDrivingSchoolStatusIn(slug, EnumSet.of(DrivingSchoolStatus.APPROVED, DrivingSchoolStatus.ACTIVE))
+                .map(DrivingSchoolServiceImpl::toPublic)
+                .orElseThrow(() -> new ResourceNotFoundException("Auto-école introuvable"));
+    }
+
+    /** Informations publiques d'une auto-école (jamais le responsable ni ses justificatifs). */
+    private static DrivingSchoolResponseDto toPublic(DrivingSchoolRegistry e) {
+        return new DrivingSchoolResponseDto(e.getId(), e.getSchoolName(), e.getPhoneNumber(), e.getAddress(), e.getEmail(),
+                e.getCountry(), e.getCity(), e.getCreatedAt(), e.getWhatsappNumber(), e.getWebsiteUrl(),
+                e.getDrivingSchoolStatus(), e.getSlug(), e.getDescription());
     }
 
     /**

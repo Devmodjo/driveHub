@@ -81,6 +81,10 @@ export interface PublicSchool {
   whatsappNumber: string;
   websiteUrl: string;
   drivingSchoolStatus: SchoolStatus;
+  /** Adresse de la page publique : /auto-ecoles/{slug} */
+  slug: string;
+  /** Présentation rédigée par l'auto-école (peut être vide) */
+  description: string | null;
 }
 
 export interface SchoolRequest {

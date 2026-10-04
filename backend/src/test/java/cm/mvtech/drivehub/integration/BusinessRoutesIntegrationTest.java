@@ -133,6 +133,8 @@ class BusinessRoutesIntegrationTest {
         registry.setCity("Douala");
         registry.setCountry("Cameroun");
         registry.setDrivingSchoolStatus(DrivingSchoolStatus.PENDING);
+        registry.setSlug("it-auto-ecole-" + run);
+        registry.setDescription("Auto-école de test : permis B, cours du soir.");
         registry.setAdmin(monitorUser);
         registry = registryRepository.save(registry);
         registryId = registry.getId();
@@ -630,6 +632,22 @@ class BusinessRoutesIntegrationTest {
         String fileNameInDb = jdbcTemplate.queryForObject(
                 "SELECT file_name_enc FROM public.user_documents WHERE id = ?::uuid", String.class, documentId);
         assertTrue(fileNameInDb.startsWith("v1:"), "nom du fichier chiffré en base");
+    }
+
+    /** Page publique d'une auto-école validée : accessible sans compte, par son adresse lisible ; 404 sinon. */
+    @Test
+    void publicSchoolPage_BySlug() throws Exception {
+        mockMvc.perform(get("/api/driving-schools/public/it-auto-ecole-" + run))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("IT Auto-Ecole " + run))
+                .andExpect(jsonPath("$.slug").value("it-auto-ecole-" + run))
+                .andExpect(jsonPath("$.description").value("Auto-école de test : permis B, cours du soir."))
+                .andExpect(jsonPath("$.admin").doesNotExist());
+        mockMvc.perform(get("/api/driving-schools/public/auto-ecole-qui-n-existe-pas"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/driving-schools/public/all"))
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(jsonPath("$[?(@.slug == 'it-auto-ecole-" + run + "')]").exists());
     }
 
     /** Stockage en base : le contenu est chiffré, et remplacer un justificatif supprime l'ancien fichier. */

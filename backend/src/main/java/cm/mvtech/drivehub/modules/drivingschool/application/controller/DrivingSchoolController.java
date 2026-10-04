@@ -75,4 +75,12 @@ public class DrivingSchoolController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(drivingSchoolService.retreiveSchool());
     }
 
+
+    @Operation(summary = "Page publique d'une auto-école",
+            description = "Informations et présentation d'une auto-école validée, par son adresse lisible "
+                    + "(ex : auto-ecole-le-volant-douala). Sans authentification. 404 si elle n'existe pas ou n'est pas validée.")
+    @GetMapping("/public/{slug}")
+    public ResponseEntity<DrivingSchoolResponseDto> publicSchool(@PathVariable String slug) {
+        return ResponseEntity.ok(drivingSchoolService.publicSchool(slug));
+    }
 }

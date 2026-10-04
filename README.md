@@ -520,7 +520,8 @@ src/main/resources/db/migration/
 │   ├── V13__envois_emails_plateforme.sql           ← historique des emails du back-office
 │   ├── V14__justificatifs.sql                      ← CNI et CAPEC des moniteurs (chiffrés), journal des consultations
 │   ├── V15__abonnements.sql                        ← offres, période d'essai, factures (facturation désactivée)
-│   └── V16__justificatifs_en_base.sql              ← contenu chiffré des justificatifs (stockage DATABASE)
+│   ├── V16__justificatifs_en_base.sql              ← contenu chiffré des justificatifs (stockage DATABASE)
+│   └── V17__adresse_publique_auto_ecole.sql        ← adresse lisible de la page publique (slug)
 └── tenant/                                  ← appliquées à CHAQUE schéma d'auto-école
     ├── V2__init_tenant_schema_template.sql
     ├── V3__corrections_champs_metier.sql
@@ -532,6 +533,15 @@ Les migrations `tenant/` sont exécutées par Flyway à la création d'une auto-
 pour toutes les auto-écoles existantes (`TenantMigrationRunner`). Pour faire évoluer les tables métier :
 créer `tenant/V6__....sql` — ne jamais modifier une migration déjà appliquée.
 
+## Pages publiques et référencement Google
+
+Chaque auto-école validée a une page publique : `/auto-ecoles/{adresse}` (ex. `/auto-ecoles/auto-ecole-le-volant-douala`)
+avec sa présentation, ses coordonnées (téléphone, WhatsApp, email, plan) et le bouton « Demander à m'inscrire ».
+L'adresse est créée avec la demande d'auto-école (migration V17, `SchoolSlugService`). Pour Google : titre, description,
+adresse canonique, aperçu de partage et fiche schema.org `DrivingSchool` (`SeoService`), plan du site `/sitemap.xml`
+et `/robots.txt` générés en direct par deux fonctions Vercel (`frontend/api/`). API : `GET /api/driving-schools/public/{slug}`.
+Déclaration dans Google Search Console : [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md), étape 4.
+
 ## Justificatifs des moniteurs (CNI, CAPEC)
 
 Pour écarter les auto-écoles clandestines, chaque **moniteur** fournit sa pièce d'identité et son CAPEC (fondateur :
@@ -541,6 +551,7 @@ demandé aux élèves.** Fichiers chiffrés (AES-256-GCM, une clé par fichier),
 numéros chiffrés en base, chaque consultation journalisée. Les fichiers chiffrés sont stockés dans PostgreSQL par
 défaut (`STORAGE_PROVIDER=DATABASE`) ; Cloudflare R2 reste possible (`STORAGE_PROVIDER=R2`). API : [docs/API-JUSTIFICATIFS.md](docs/API-JUSTIFICATIFS.md).
 Abonnements (essai de 15 jours, facturation préparée mais désactivée) : [docs/ABONNEMENTS-ET-PAIEMENTS.md](docs/ABONNEMENTS-ET-PAIEMENTS.md).
+Plan de mise en œuvre des paiements réels (élèves et abonnements) : [docs/PLAN-PAIEMENTS.md](docs/PLAN-PAIEMENTS.md).
 
 ## Emails
 

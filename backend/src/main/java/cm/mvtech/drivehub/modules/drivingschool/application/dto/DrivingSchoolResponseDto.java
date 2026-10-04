@@ -25,14 +25,17 @@ public record DrivingSchoolResponseDto(
         String country,
 
         String city,
-//
-//        @Schema(defaultValue = "optionel mais essentiel pour attirer plus de prospect")
-//        String description,
 
         LocalDate createdAt,
 
         String whatsappNumber,
         String websiteUrl,
-        DrivingSchoolStatus drivingSchoolStatus
+        DrivingSchoolStatus drivingSchoolStatus,
+
+        @Schema(defaultValue = "auto-ecole-le-volant-douala", description = "Adresse de la page publique : /auto-ecoles/{slug}")
+        String slug,
+
+        @Schema(description = "Présentation de l'auto-école (affichée sur sa page publique)")
+        String description
 ) {
 }

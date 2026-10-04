@@ -17,6 +17,9 @@ public interface DrivingSchoolService {
 
     List<DrivingSchoolResponseDto> retreiveSchool();
 
+    /** Page publique d'une auto-école validée (adresse lisible, ex : auto-ecole-le-volant-douala). */
+    DrivingSchoolResponseDto publicSchool(String slug);
+
     void approveRegistry(UUID registryId);
 
     List<DrivingSchoolPendingRequestDTO> retreivePendingRequest();
