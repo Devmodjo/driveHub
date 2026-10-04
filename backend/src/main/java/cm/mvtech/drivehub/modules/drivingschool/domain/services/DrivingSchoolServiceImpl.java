@@ -141,11 +141,22 @@ public class DrivingSchoolServiceImpl implements DrivingSchoolService {
     /** Page publique d'une auto-école validée, trouvée par son adresse ; 404 sinon. */
     @Override
     @Transactional(readOnly = true)
-    public DrivingSchoolResponseDto publicSchool(String slug) {
-        return drivingSchoolRegistryRepository
-                .findBySlugAndDrivingSchoolStatusIn(slug, EnumSet.of(DrivingSchoolStatus.APPROVED, DrivingSchoolStatus.ACTIVE))
+    public DrivingSchoolResponseDto publicSchool(String slugOrId) {
+        EnumSet<DrivingSchoolStatus> visible = EnumSet.of(DrivingSchoolStatus.APPROVED, DrivingSchoolStatus.ACTIVE);
+        // Adresse lisible (cas normal) ; l'identifiant est aussi accepté (anciens liens, auto-école sans adresse)
+        return drivingSchoolRegistryRepository.findBySlugAndDrivingSchoolStatusIn(slugOrId, visible)
+                .or(() -> parseUuid(slugOrId).flatMap(drivingSchoolRegistryRepository::findById)
+                        .filter(registry -> visible.contains(registry.getDrivingSchoolStatus())))
                 .map(DrivingSchoolServiceImpl::toPublic)
                 .orElseThrow(() -> new ResourceNotFoundException("Auto-école introuvable"));
+    }
+
+    private static Optional<UUID> parseUuid(String value) {
+        try {
+            return Optional.of(UUID.fromString(value));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 
     /** Informations publiques d'une auto-école (jamais le responsable ni ses justificatifs). */

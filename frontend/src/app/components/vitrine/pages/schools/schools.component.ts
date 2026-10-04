@@ -47,7 +47,7 @@ import { ICONS } from '../../../../shared/icons';
         } @else {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             @for (school of filtered(); track school.id) {
-              <a [routerLink]="['/auto-ecoles', school.slug]"
+              <a [routerLink]="['/auto-ecoles', school.slug || school.id]"
                  class="premium-card rounded-[28px] p-8 flex flex-col group transition-transform hover:-translate-y-1">
                 <div class="w-12 h-12 rounded-2xl bg-[#0070f3]/10 text-[#0070f3] flex items-center justify-center mb-6">
                   <svg [lucideIcon]="icons.School" [size]="24" [strokeWidth]="1.5" />

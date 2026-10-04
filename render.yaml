@@ -17,7 +17,9 @@ services:
     region: frankfurt            # le plus proche du Cameroun
     plan: starter                # Spring Boot a besoin d'au moins 512 Mo ; l'offre gratuite s'endort après 15 min
     branch: Develop
-    autoDeploy: false            # redéploiement lancé par GitHub Actions, seulement si les tests passent
+    autoDeploy: true             # redéployé à chaque fusion sur Develop, en même temps que le site (Vercel) :
+                                 # API et site restent toujours à la même version. Si la nouvelle version ne
+                                 # démarre pas (vérification /actuator/health), Render garde l'ancienne en ligne.
     healthCheckPath: /actuator/health
     envVars:
       # --- Base de données : fournie par Render (voir « databases » plus bas) ---
